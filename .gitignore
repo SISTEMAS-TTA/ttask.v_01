@@ -1,0 +1,41 @@
+# Dependencias
+node_modules
+.pnpm-store
+
+# Archivos de construcción
+.next
+out
+build
+dist
+
+# Archivos de entorno local
+.env*.local
+.env
+
+# Archivos de registro
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Archivos del sistema
+.DS_Store
+*.pem
+
+# Archivos de cobertura
+coverage
+
+# Archivos de IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# Archivos de Vercel
+.vercel
+
+# Archivos de TypeScript
+*.tsbuildinfo
+next-env.d.ts
