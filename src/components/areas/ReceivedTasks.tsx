@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Eye, Check, Star } from "lucide-react"
+import { Eye, Check, Star, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
@@ -31,6 +31,11 @@ const initialReceivedTasks: ReceivedTask[] = [
 
 export function ReceivedTasksColumn() {
   const [tasks, setTasks] = useState<ReceivedTask[]>(initialReceivedTasks)
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [filter, setFilter] = useState<{
+    assignedBy?: string
+    view?: "all" | "viewed" | "pending"
+  }>({})
 
   const toggleViewed = (id: string) => {
     setTasks(tasks.map((task) => (task.id === id ? { ...task, viewed: !task.viewed } : task)))
@@ -44,21 +49,43 @@ export function ReceivedTasksColumn() {
     setTasks(tasks.map((task) => (task.id === id ? { ...task, favorite: !task.favorite } : task)))
   }
 
-  const activeTasks = tasks.filter((task) => !task.completed && !task.viewed)
-  const viewedTasks = tasks.filter((task) => task.viewed && !task.completed)
+  // Apply filters
+  const filteredTasks = tasks.filter((task) => {
+    if (filter.assignedBy && task.assignedBy !== filter.assignedBy) return false
+    if (filter.view) {
+      switch (filter.view) {
+        case "viewed":
+          return task.viewed && !task.completed
+        case "pending":
+          return !task.viewed && !task.completed
+        default:
+          return true
+      }
+    }
+    return true
+  })
+
+  const activeTasks = filteredTasks.filter((task) => !task.completed && !task.viewed)
+  const viewedTasks = filteredTasks.filter((task) => task.viewed && !task.completed)
 
   return (
-    <div className="w-100 bg-pink-100 border-r border-gray-200 flex flex-col h-full">
+    <div className="w-full bg-red-200 flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-pink-200">
+      <div className="p-4 border-b border-red-300 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-800">T. Recibidas</h2>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setIsFilterModalOpen(true)}
+          className="h-8 w-8 p-0 hover:bg-red-300"
+        >
+          <Filter className="h-4 w-4" />
+        </Button>
       </div>
-
-      {/* Tasks List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Active Tasks */}
         {activeTasks.map((task) => (
-          <Card key={task.id} className="p-3 bg-pink-200 border-none shadow-sm">
+          <Card key={task.id} className="p-3 bg-red-300 border-none shadow-sm">
             <div className="flex items-start justify-between mb-2">
               <h3 className="font-semibold text-sm text-gray-800">{task.title}</h3>
               <div className="flex space-x-1">

@@ -78,7 +78,7 @@ export function CompletedTasksColumn() {
   })
 
   return (
-    <div className="w-100 bg-green-100 flex flex-col h-full">
+    <div className="w-full bg-green-100 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-green-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-800">T. Finalizadas</h2>

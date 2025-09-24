@@ -85,13 +85,12 @@ export function TasksColumn() {
         return true
     }
   })
-
   const activeTasks = filteredTasks.filter((task) => !task.completed && !task.viewed)
   const viewedTasks = filteredTasks.filter((task) => task.viewed && !task.completed)
   const completedTasks = filteredTasks.filter((task) => task.completed)
 
   return (
-    <div className="w-100 bg-blue-100 border-r border-gray-200 flex flex-col h-full">
+    <div className="w-full bg-blue-50 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-blue-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-800">T. Asignadas</h2>

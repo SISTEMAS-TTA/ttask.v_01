@@ -10,8 +10,8 @@ export function Dashboard() {
 
   return (
     <div className="h-full">
-      {/* Mobile View - Stacked columns */}
-      <div className="md:hidden h-full overflow-y-auto">
+      {/* Mobile View (sm and below) - Stacked columns */}
+      <div className="lg:hidden h-full overflow-y-auto">
         <div className="space-y-4 p-4">
           {/* Project Charts Section */}
           <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -41,33 +41,32 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Desktop View - Side by side columns */}
-      <div className="hidden md:flex h-full">
-        {/* Project Charts Column (Inicio) */}
-        <div className="w-80 bg-white border-r border-gray-200 p-4 flex-shrink-0 h-full overflow-y-auto">
-          <h2 className="text-lg font-semibold mb-4">Inicio</h2>
-          <ProjectCharts />
-        </div>
+      {/* Desktop/Tablet View (lg and above) - Responsive grid */}
+      <div className="hidden lg:block h-full">
+        <div className="grid h-full" style={{gridTemplateColumns: 'minmax(280px, 1fr) repeat(4, minmax(280px, 1fr))'}}>
+          {/* Project Charts Column (Inicio) */}
+          <div className="bg-white border-r border-gray-200 p-4 h-full overflow-y-auto">
+            <h2 className="text-lg font-semibold mb-4">Inicio</h2>
+            <ProjectCharts />
+          </div>
 
-        {/* Scrollable container for task columns */}
-        <div className="flex-1 flex overflow-x-auto h-full">
           {/* Notes Column */}
-          <div className="flex-shrink-0 h-full">
+          <div className="h-full border-r border-gray-200">
             <NotesColumn />
           </div>
 
           {/* Assigned Tasks Column */}
-          <div className="flex-shrink-0 h-full">
+          <div className="h-full border-r border-gray-200">
             <TasksColumn />
           </div>
 
           {/* Received Tasks Column */}
-          <div className="flex-shrink-0 h-full">
+          <div className="h-full border-r border-gray-200">
             <ReceivedTasksColumn />
           </div>
 
           {/* Completed Tasks Column */}
-          <div className="flex-shrink-0 h-full">
+          <div className="h-full">
             <CompletedTasksColumn />
           </div>
         </div>
