@@ -1,76 +1,145 @@
-"use client"
+"use client";
 
-import { NotesColumn } from "@/components/areas/Notes"
-import { TasksColumn } from "@/components/areas/Tasks"
-import { ReceivedTasksColumn } from "@/components/areas/ReceivedTasks"
-import { CompletedTasksColumn } from "@/components/areas/CompletedTasks"
-import { ProjectCharts } from "@/components/charts/ProjectCharts"
+import { NotesColumn } from "@/components/areas/Notes";
+import { TasksColumn } from "@/components/areas/Tasks";
+import { ReceivedTasksColumn } from "@/components/areas/ReceivedTasks";
+import { CompletedTasksColumn } from "@/components/areas/CompletedTasks";
+import { ProjectCharts } from "@/components/charts/ProjectCharts";
 
 export function Dashboard() {
-
   return (
-    <div className="h-full">
-      {/* Mobile View (sm and below) - Stacked columns */}
-      <div className="lg:hidden h-full overflow-y-auto">
-        <div className="space-y-4 p-4">
-          {/* Project Charts Section */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-4">Inicio</h2>
-            <ProjectCharts />
-          </div>
+    <div className="h-full w-full">
+      {/* Mobile View (sm and below) - Horizontal scroll */}
+      <div className="sm:hidden h-full">
+        <div className="h-full overflow-x-auto overflow-y-hidden horizontal-scroll scroll-indicator">
+          <div className="flex h-full" style={{ minWidth: "max-content" }}>
+            {/* Project Charts Column */}
+            <div className="w-80 flex-shrink-0 bg-white border-r border-gray-200 p-4 h-full overflow-y-auto">
+              <h2 className="text-lg font-semibold mb-4">Inicio</h2>
+              <ProjectCharts />
+            </div>
 
-          {/* Notes Section */}
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <NotesColumn />
-          </div>
+            {/* Notes Column */}
+            <div className="w-80 flex-shrink-0 h-full border-r border-gray-200">
+              <NotesColumn />
+            </div>
 
-          {/* Assigned Tasks Section */}
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <TasksColumn />
-          </div>
+            {/* Assigned Tasks Column */}
+            <div className="w-80 flex-shrink-0 h-full border-r border-gray-200">
+              <TasksColumn />
+            </div>
 
-          {/* Received Tasks Section */}
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <ReceivedTasksColumn />
-          </div>
+            {/* Received Tasks Column */}
+            <div className="w-80 flex-shrink-0 h-full border-r border-gray-200">
+              <ReceivedTasksColumn />
+            </div>
 
-          {/* Completed Tasks Section */}
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <CompletedTasksColumn />
+            {/* Completed Tasks Column */}
+            <div className="w-80 flex-shrink-0 h-full">
+              <CompletedTasksColumn />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Desktop/Tablet View (lg and above) - Responsive grid */}
-      <div className="hidden lg:block h-full">
-        <div className="grid h-full" style={{gridTemplateColumns: 'minmax(280px, 1fr) repeat(4, minmax(280px, 1fr))'}}>
-          {/* Project Charts Column (Inicio) */}
-          <div className="bg-white border-r border-gray-200 p-4 h-full overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-4">Inicio</h2>
-            <ProjectCharts />
-          </div>
+      {/* Tablet View (sm to lg) - Horizontal scroll with slightly wider columns */}
+      <div className="hidden sm:block lg:hidden h-full">
+        <div className="h-full overflow-x-auto overflow-y-hidden horizontal-scroll scroll-indicator">
+          <div className="flex h-full" style={{ minWidth: "max-content" }}>
+            {/* Project Charts Column */}
+            <div className="w-96 flex-shrink-0 bg-white border-r border-gray-200 p-4 h-full overflow-y-auto">
+              <h2 className="text-lg font-semibold mb-4">Inicio</h2>
+              <ProjectCharts />
+            </div>
 
-          {/* Notes Column */}
-          <div className="h-full border-r border-gray-200">
-            <NotesColumn />
-          </div>
+            {/* Notes Column */}
+            <div className="w-96 flex-shrink-0 h-full border-r border-gray-200">
+              <NotesColumn />
+            </div>
 
-          {/* Assigned Tasks Column */}
-          <div className="h-full border-r border-gray-200">
-            <TasksColumn />
-          </div>
+            {/* Assigned Tasks Column */}
+            <div className="w-96 flex-shrink-0 h-full border-r border-gray-200">
+              <TasksColumn />
+            </div>
 
-          {/* Received Tasks Column */}
-          <div className="h-full border-r border-gray-200">
-            <ReceivedTasksColumn />
-          </div>
+            {/* Received Tasks Column */}
+            <div className="w-96 flex-shrink-0 h-full border-r border-gray-200">
+              <ReceivedTasksColumn />
+            </div>
 
-          {/* Completed Tasks Column */}
-          <div className="h-full">
-            <CompletedTasksColumn />
+            {/* Completed Tasks Column */}
+            <div className="w-96 flex-shrink-0 h-full">
+              <CompletedTasksColumn />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop View (lg to xl) - Responsive grid with horizontal scroll */}
+      <div className="hidden lg:block xl:hidden h-full">
+        <div className="h-full overflow-x-auto overflow-y-hidden horizontal-scroll scroll-indicator">
+          <div className="flex h-full" style={{ minWidth: "max-content" }}>
+            {/* Project Charts Column (Inicio) */}
+            <div className="flex-1 min-w-80 bg-white border-r border-gray-200 p-4 h-full overflow-y-auto">
+              <h2 className="text-lg font-semibold mb-4">Inicio</h2>
+              <ProjectCharts />
+            </div>
+
+            {/* Notes Column */}
+            <div className="flex-1 min-w-80 h-full border-r border-gray-200">
+              <NotesColumn />
+            </div>
+
+            {/* Assigned Tasks Column */}
+            <div className="flex-1 min-w-80 h-full border-r border-gray-200">
+              <TasksColumn />
+            </div>
+
+            {/* Received Tasks Column */}
+            <div className="flex-1 min-w-80 h-full border-r border-gray-200">
+              <ReceivedTasksColumn />
+            </div>
+
+            {/* Completed Tasks Column */}
+            <div className="flex-1 min-w-80 h-full">
+              <CompletedTasksColumn />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Extra Large Desktop View (xl and above) - Grid layout that fits all columns */}
+      <div className="hidden xl:block h-full">
+        <div className="h-full">
+          <div className="grid h-full grid-cols-5 gap-0">
+            {/* Project Charts Column (Inicio) */}
+            <div className="bg-white border-r border-gray-200 p-4 h-full overflow-y-auto">
+              <h2 className="text-lg font-semibold mb-4">Inicio</h2>
+              <ProjectCharts />
+            </div>
+
+            {/* Notes Column */}
+            <div className="h-full border-r border-gray-200">
+              <NotesColumn />
+            </div>
+
+            {/* Assigned Tasks Column */}
+            <div className="h-full border-r border-gray-200">
+              <TasksColumn />
+            </div>
+
+            {/* Received Tasks Column */}
+            <div className="h-full border-r border-gray-200">
+              <ReceivedTasksColumn />
+            </div>
+
+            {/* Completed Tasks Column */}
+            <div className="h-full">
+              <CompletedTasksColumn />
+            </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
