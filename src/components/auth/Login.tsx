@@ -12,24 +12,41 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSaludo } from "@/lib/greeting";
-// import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
-// import { auth } from "@/app/firebase/config";
+import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
+import { auth } from "@/app/firebase/config";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
   const router = useRouter();
+
   const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Por favor ingresa email y contraseña");
+      return;
+    }
+
     try {
-      // const res = await signInWithEmailAndPassword(email, password);
-      setEmail("");
-      setPassword("");
-      router.push("/");
-      // console.log({ res });
+      setLoading(true);
+      setError("");
+      const res = await signInWithEmailAndPassword(email, password);
+
+      if (res?.user) {
+        setEmail("");
+        setPassword("");
+        router.push("/");
+      } else {
+        setError("Credenciales incorrectas. Verifica tu email y contraseña.");
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Error en login:", error);
+      setError("Error al iniciar sesión. Verifica tus credenciales.");
+    } finally {
+      setLoading(false);
     }
   };
   return (
@@ -46,8 +63,18 @@ export default function Login() {
           </CardAction>
         </CardHeader>
         <CardContent>
-          <form>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleLogin();
+            }}
+          >
             <div className="flex flex-col gap-4 sm:gap-6">
+              {error && (
+                <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
+                  {error}
+                </div>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="email" className="text-sm sm:text-base">
                   Email
@@ -60,6 +87,7 @@ export default function Login() {
                   className="h-9 sm:h-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -75,6 +103,7 @@ export default function Login() {
                   className="h-9 sm:h-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -85,8 +114,9 @@ export default function Login() {
             type="submit"
             className="w-full h-9 sm:h-10 text-sm sm:text-base"
             onClick={handleLogin}
+            disabled={loading}
           >
-            Login
+            {loading ? "Iniciando sesión..." : "Login"}
           </Button>
           <h3 className="mt-2 text-sm sm:text-base">
             &ldquo;Lo esencial es comprender que siempre hay espacio para

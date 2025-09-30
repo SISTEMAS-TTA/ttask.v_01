@@ -17,7 +17,6 @@ function login() {
       />
       {/* Overlay oscuro para mejorar legibilidad */}
       <div className="absolute inset-0 bg-black/20 z-10" />
-      {/* Encabezado con logotipo */}
       <AuthHeader />
       {/* Contenido */}
       <div className="relative z-20 pt-24 sm:pt-28 md:pt-32">
