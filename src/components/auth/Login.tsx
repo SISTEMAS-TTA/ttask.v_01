@@ -12,18 +12,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSaludo } from "@/lib/greeting";
-import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
-import { auth } from "@/app/firebase/config";
+// import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
+// import { auth } from "@/app/firebase/config";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
+  // const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
   const router = useRouter();
   const handleLogin = async () => {
     try {
-      const res = await signInWithEmailAndPassword(email, password);
+      // const res = await signInWithEmailAndPassword(email, password);
       setEmail("");
       setPassword("");
       router.push("/");
