@@ -10,11 +10,14 @@ import React from "react";
 const navigationItems = [
   { icon: Home, label: "Inicio", href: "/", progress: null },
   { icon: FileText, label: "Notas", href: "/notes", progress: 50 },
-  { icon: Folder, label: "Tareas", href: "/tasks", progress: 75 },
+  { icon: Folder, label: "Tareas", href: "/projects", progress: 75 },
   { icon: BarChart3, label: "Proyectos", href: "/projects", progress: 30 },
 ];
 
-export function Sidebar() {
+const projectProgress = () =>{
+  // aqui va la logica para cambiar dinamicamente los iconos depende del rol
+}
+export function SidebarMenu() {
   const pathname = usePathname();
   const router = useRouter();
 
