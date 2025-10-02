@@ -1,10 +1,15 @@
-// types/index.ts
 import { Timestamp } from "firebase/firestore";
 
 export interface UserProfile {
+  id?: string;
   email: string;
-  role: "Usuario" | "Administrador" | "Director" | "Diseno" | "Proyectos" | "Administracion" ;
+  firstName: string;
+  lastName: string;
+  fullName?: string;
+  role: "Director" | "Administrador" | "Proyectos" | "Diseno" | "Gerencia" | "Obra" | "Sistemas" | "Practicante" | "Usuario";
   createdAt: Timestamp;
+  lastLogin?: Date;
+  active?: boolean;
 }
 
 export interface Task {

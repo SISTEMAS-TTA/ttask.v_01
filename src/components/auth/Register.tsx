@@ -24,6 +24,7 @@ import { DatePicker } from "../core/DatePicker";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "@/app/firebase/config";
 import { Timestamp } from "firebase/firestore";
+import { createUserProfile } from "@/app/firebase/firestore";
 import { UserProfile } from "@/app/types/index";
 import { USER_PROFILE_STORAGE_KEY } from "@/hooks/useUser";
 
@@ -68,19 +69,22 @@ export default function Register() {
       console.log({ res, role });
 
       if (res?.user) {
-        const minimalProfile: UserProfile = {
+        const userProfile: UserProfile = {
           email: res.user.email ?? email,
+          firstName,
+          lastName,
           role: (role as UserProfile["role"]) || "Usuario",
           createdAt: Timestamp.now(),
         };
         try {
+          await createUserProfile(res.user.uid, userProfile);
           localStorage.setItem(
             USER_PROFILE_STORAGE_KEY,
-            JSON.stringify(minimalProfile),
+            JSON.stringify(userProfile)
           );
-          // TODO: Reemplazar este almacenamiento local con la persistencia real en Firestore cuando el backend esté configurado.
         } catch (storageError) {
-          console.error("Error storing fallback user profile", storageError);
+          console.error("Error creating user profile", storageError);
+          throw new Error("Error creating user profile");
         }
       }
       setEmail("");
