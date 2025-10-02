@@ -41,10 +41,11 @@ export default function Register() {
   const [fieldErrors, setFieldErrors] = useState<{ [k: string]: string }>({});
   const router = useRouter();
 
-  const [createUserWithEmailAndPassword] =
+  const [createUserWithEmailAndPassword, user, loading, authError] =
     useCreateUserWithEmailAndPassword(auth);
 
   const handleSignUp = async () => {
+    if (loading) return; // Prevenir envíos concurrentes
     setError("");
     setFieldErrors({});
     const errs: { [k: string]: string } = {};
@@ -276,8 +277,8 @@ export default function Register() {
               </div>
 
               <div className="mt-4">
-                <Button type="submit" className="w-full">
-                  Crear cuenta
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Creando cuenta..." : "Crear cuenta"}
                 </Button>
               </div>
             </div>
