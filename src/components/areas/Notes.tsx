@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Plus, Check, Star } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { AddNoteModal } from "@/components/modals/AddNoteModal"
+import { useState, useMemo } from "react";
+import { Plus, Check, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { AddNoteModal } from "@/components/modals/AddNoteModal";
 
 interface Note {
-  id: string
-  title: string
-  content: string
-  color: string
-  completed: boolean
-  favorite: boolean
-  project: string
+  id: string;
+  title: string;
+  content: string;
+  color: string;
+  completed: boolean;
+  favorite: boolean;
+  project: string;
 }
 
 const initialNotes: Note[] = [
@@ -44,29 +44,52 @@ const initialNotes: Note[] = [
     favorite: false,
     project: "Casa 3",
   },
-]
+];
 
 export function NotesColumn() {
-  const [notes, setNotes] = useState<Note[]>(initialNotes)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [notes, setNotes] = useState<Note[]>(initialNotes);
+  const [filterCompleted, setFilterCompleted] = useState(false);
+  const [filterFavorites, setFilterFavorites] = useState(false);
+
+  // Memoizar las notas filtradas
+  const filteredNotes = useMemo(() => {
+    return notes.filter((note) => {
+      if (filterCompleted && !note.completed) return false;
+      if (filterFavorites && !note.favorite) return false;
+      return true;
+    });
+  }, [notes, filterCompleted, filterFavorites]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const toggleComplete = (id: string) => {
-    setNotes(notes.map((note) => (note.id === id ? { ...note, completed: !note.completed } : note)))
-  }
+    setNotes((prevNotes) =>
+      prevNotes.map((note) =>
+        note.id === id ? { ...note, completed: !note.completed } : note
+      )
+    );
+  };
 
   const toggleFavorite = (id: string) => {
-    setNotes(notes.map((note) => (note.id === id ? { ...note, favorite: !note.favorite } : note)))
-  }
+    setNotes((prevNotes) =>
+      prevNotes.map((note) =>
+        note.id === id ? { ...note, favorite: !note.favorite } : note
+      )
+    );
+  };
 
   const addNote = (newNote: Omit<Note, "id">) => {
     const note: Note = {
       ...newNote,
       id: Date.now().toString(),
-    }
-    setNotes([note, ...notes])
-  }
-  const activeNotes = notes.filter((note) => !note.completed)
-  const completedNotes = notes.filter((note) => note.completed)
+    };
+    setNotes((prevNotes) => [note, ...prevNotes]);
+  };
+  // Memoizar la separación de notas activas y completadas
+  const { activeNotes, completedNotes } = useMemo(() => {
+    const active = filteredNotes.filter((note) => !note.completed);
+    const completed = filteredNotes.filter((note) => note.completed);
+    return { activeNotes: active, completedNotes: completed };
+  }, [filteredNotes]);
 
   return (
     <div className="w-full bg-yellow-100 flex flex-col h-full">
@@ -87,9 +110,14 @@ export function NotesColumn() {
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Active Notes */}
         {activeNotes.map((note) => (
-          <Card key={note.id} className={`p-3 ${note.color} border-none shadow-sm`}>
+          <Card
+            key={note.id}
+            className={`p-3 ${note.color} border-none shadow-sm`}
+          >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800">{note.title}</h3>
+              <h3 className="font-semibold text-sm text-gray-800">
+                {note.title}
+              </h3>
               <div className="flex space-x-1">
                 <Button
                   size="sm"
@@ -97,7 +125,11 @@ export function NotesColumn() {
                   onClick={() => toggleComplete(note.id)}
                   className="h-6 w-6 p-0 hover:bg-black/10"
                 >
-                  <Check className={`h-3 w-3 ${note.completed ? "text-green-600" : "text-gray-400"}`} />
+                  <Check
+                    className={`h-3 w-3 ${
+                      note.completed ? "text-green-600" : "text-gray-400"
+                    }`}
+                  />
                 </Button>
                 <Button
                   size="sm"
@@ -105,7 +137,13 @@ export function NotesColumn() {
                   onClick={() => toggleFavorite(note.id)}
                   className="h-6 w-6 p-0 hover:bg-black/10"
                 >
-                  <Star className={`h-3 w-3 ${note.favorite ? "text-yellow-600 fill-current" : "text-gray-400"}`} />
+                  <Star
+                    className={`h-3 w-3 ${
+                      note.favorite
+                        ? "text-yellow-600 fill-current"
+                        : "text-gray-400"
+                    }`}
+                  />
                 </Button>
               </div>
             </div>
@@ -115,9 +153,14 @@ export function NotesColumn() {
 
         {/* Completed Notes */}
         {completedNotes.map((note) => (
-          <Card key={note.id} className={`p-3 ${note.color} border-none shadow-sm opacity-60`}>
+          <Card
+            key={note.id}
+            className={`p-3 ${note.color} border-none shadow-sm opacity-60`}
+          >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800 line-through">{note.title}</h3>
+              <h3 className="font-semibold text-sm text-gray-800 line-through">
+                {note.title}
+              </h3>
               <div className="flex space-x-1">
                 <Button
                   size="sm"
@@ -133,7 +176,13 @@ export function NotesColumn() {
                   onClick={() => toggleFavorite(note.id)}
                   className="h-6 w-6 p-0 hover:bg-black/10"
                 >
-                  <Star className={`h-3 w-3 ${note.favorite ? "text-yellow-600 fill-current" : "text-gray-400"}`} />
+                  <Star
+                    className={`h-3 w-3 ${
+                      note.favorite
+                        ? "text-yellow-600 fill-current"
+                        : "text-gray-400"
+                    }`}
+                  />
                 </Button>
               </div>
             </div>
@@ -142,7 +191,11 @@ export function NotesColumn() {
         ))}
       </div>
 
-      <AddNoteModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAddNote={addNote} />
+      <AddNoteModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAddNote={addNote}
+      />
     </div>
-  )
+  );
 }

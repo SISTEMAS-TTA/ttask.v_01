@@ -24,7 +24,7 @@ export function SidebarMenu() {
   const handleLogOut = async () => {
     try {
       await signOut(auth);
-      router.push("/");
+      router.push("/login");
     } catch (error) {
       console.error("Error al Iniciar Sesion", error);
     }

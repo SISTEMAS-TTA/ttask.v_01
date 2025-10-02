@@ -15,6 +15,7 @@ export default function useUser() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
+      setLoading(true); // Reiniciar loading al inicio del listener
       setUser(u);
       if (u) {
         try {
@@ -26,13 +27,14 @@ export default function useUser() {
           }
         } catch (error) {
           console.error("Error fetching user profile", error);
+          setLoading(false); // Asegurar que loading se desactive en caso de error
         }
 
         let fallbackProfile: UserProfile | null = null;
         if (typeof window !== "undefined") {
           try {
             const storedProfile = localStorage.getItem(
-              USER_PROFILE_STORAGE_KEY,
+              USER_PROFILE_STORAGE_KEY
             );
             if (storedProfile) {
               fallbackProfile = JSON.parse(storedProfile) as UserProfile;
