@@ -3,7 +3,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/app/firebase/config";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SidebarMenu } from "@/components/SideBarMenu";
+import { SidebarMenu } from "@/components/core/SideBarMenu";
 import { Menu } from "lucide-react";
 import { NotesColumn } from "@/components/areas/Notes";
 import { TasksColumn } from "@/components/areas/Tasks";

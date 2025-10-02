@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSaludo } from "@/lib/greeting";
-import { DatePicker } from "../DatePicker";
+import { DatePicker } from "../core/DatePicker";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "@/app/firebase/config";
 

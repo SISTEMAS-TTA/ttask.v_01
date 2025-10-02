@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/app/firebase/config";
-import { Dashboard } from "@/components/Dashboard";
+import { Dashboard } from "@/components/core/Dashboard";
 // import { SidebarMenu } from "@/components/SideBarMenu";
-import { SidebarMenu } from "@/components/SideBarMenu";
+import { SidebarMenu } from "@/components/core/SideBarMenu";
 import { AuthWrapper } from "@/components/auth/AuhWrapper";
 import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
