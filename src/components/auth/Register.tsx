@@ -20,7 +20,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { getSaludo } from "@/lib/greeting";
-import { DatePicker } from "../DatePicker";
+import { DatePicker } from "../core/DatePicker";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "@/app/firebase/config";
 import { Timestamp } from "firebase/firestore";
