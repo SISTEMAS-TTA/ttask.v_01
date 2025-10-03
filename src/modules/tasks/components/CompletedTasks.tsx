@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Filter, Check, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { CompletedTaskFilterModal } from "@/components/modals/CompletedTaskFilterModal"
+import { CompletedTaskFilterModal } from "@/modules/tasks/components/CompletedTaskFilterModal"
 
 interface CompletedTask {
   id: string

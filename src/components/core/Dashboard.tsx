@@ -1,9 +1,9 @@
 "use client";
 
-import { NotesColumn } from "@/components/areas/Notes";
-import { TasksColumn } from "@/components/areas/Tasks";
-import { ReceivedTasksColumn } from "@/components/areas/ReceivedTasks";
-import { CompletedTasksColumn } from "@/components/areas/CompletedTasks";
+import { NotesColumn } from "@/modules/notes/components/Notes";
+import { TasksColumn } from "@/modules/tasks/components/Tasks";
+import { ReceivedTasksColumn } from "@/modules/tasks/components/ReceivedTasks";
+import { CompletedTasksColumn } from "@/modules/tasks/components/CompletedTasks";
 import { ProjectCharts } from "@/components/charts/ProjectCharts";
 
 export function Dashboard() {

@@ -2,7 +2,7 @@
 
 import { Home, FileText, Folder, BarChart3, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { auth } from "@/app/firebase/config";
+import { auth } from "@/lib/firebase/config";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import React from "react";
@@ -14,9 +14,9 @@ const navigationItems = [
   { icon: BarChart3, label: "Proyectos", href: "/projects", progress: 30 },
 ];
 
-const projectProgress = () =>{
+const projectProgress = () => {
   // aqui va la logica para cambiar dinamicamente los iconos depende del rol
-}
+};
 export function SidebarMenu() {
   const pathname = usePathname();
   const router = useRouter();
