@@ -22,3 +22,27 @@ export interface Task {
   updatedAt?: Timestamp;
   status?: "pending" | "in-progress" | "completed";
 }
+
+
+export type UserRole =
+  | "Director"
+  | "Administrador"
+  | "Proyectos"
+  | "Diseno"
+  | "Gerencia"
+  | "Obra"
+  | "Sistemas"
+  | "Practicante"
+  | "Usuario";
+
+export interface UserProfile {
+  id?: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName?: string;
+  role: UserRole;
+  createdAt: Timestamp;
+  lastLogin?: Date;
+  active?: boolean;
+}

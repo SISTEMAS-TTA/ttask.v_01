@@ -244,14 +244,14 @@ export default function Register() {
               </div>
 
               <div className="flex flex-col space-y-1.5 mt-4">
-                <Label htmlFor="role">Rol</Label>
+                <Label htmlFor="role">Area</Label>
                 <Select onValueChange={(val) => setRole(val)} value={role}>
                   <SelectTrigger
                     className="w-full"
                     aria-label="Selecciona rol"
                     aria-describedby="role-help"
                   >
-                    <SelectValue placeholder="Selecciona un rol" />
+                    <SelectValue placeholder="Selecciona un Area" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Director">Director</SelectItem>
@@ -265,7 +265,7 @@ export default function Register() {
                   </SelectContent>
                 </Select>
                 <p id="role-help" className="text-xs text-muted-foreground">
-                  Selecciona tu rol — se usará para permisos.
+                  Selecciona tu area — se usará para permisos.
                 </p>
                 {fieldErrors.role && (
                   <p className="text-xs text-red-600">{fieldErrors.role}</p>

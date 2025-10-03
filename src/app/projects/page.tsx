@@ -1,19 +1,10 @@
 "use client";
 import React from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-// import { AuthLoadingSpinner } from "@/components/LoadingSpinner";
 import { AuthWrapper } from "@/components/auth/AuhWrapper";
 
 const ProjectsPage = () => {
   const { user, loading, isAuthenticated } = useRequireAuth();
-
-  // if (loading) {
-  //   return <AuthLoadingSpinner />;
-  // }
-
-  // if (!isAuthenticated) {
-  //   return null;
-  // }
 
   return (
     <AuthWrapper>

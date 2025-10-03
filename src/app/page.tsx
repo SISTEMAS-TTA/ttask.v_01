@@ -39,23 +39,7 @@ export default function Home() {
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Mobile Header - Only visible on mobile */}
-          <header className="md:hidden bg-white border-b border-gray-200 p-4 flex justify-between items-center">
-            {/* Mobile menu button */}
-            <button
-              className="p-2 hover:bg-gray-100 rounded-md transition-colors duration-200"
-              onClick={() => setIsMobileSidebarOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-
-            {/* Logo for mobile */}
-            <div className="text-sm font-bold">
-              <span className="bg-red-500 text-white px-2 py-1 rounded text-xs">
-                tt
-              </span>
-              <span className="ml-1 text-xs">ARQUITECTOS</span>
-            </div>
-          </header>
+          
 
           {/* Dashboard Content - Full height */}
           <div className="flex-1 overflow-hidden">
