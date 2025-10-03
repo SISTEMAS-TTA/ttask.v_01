@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
-import Login from "@/components/auth/Login";
-import { AuthHeader } from "@/components/auth/AuthHeader";
+import Login from "@/modules/auth/components/Login";
+import { AuthHeader } from "@/modules/auth/components/AuthHeader";
 
 function login() {
   return (

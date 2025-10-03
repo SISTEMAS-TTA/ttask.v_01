@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/app/firebase/config";
+import { auth } from "@/lib/firebase/config";
 import { Dashboard } from "@/components/core/Dashboard";
 // import { SidebarMenu } from "@/components/SideBarMenu";
 import { SidebarMenu } from "@/components/core/SideBarMenu";
-import { AuthWrapper } from "@/components/auth/AuhWrapper";
+import { AuthWrapper } from "@/modules/auth/components/AuhWrapper";
 import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 
@@ -39,7 +39,6 @@ export default function Home() {
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Mobile Header - Only visible on mobile */}
-          
 
           {/* Dashboard Content - Full height */}
           <div className="flex-1 overflow-hidden">

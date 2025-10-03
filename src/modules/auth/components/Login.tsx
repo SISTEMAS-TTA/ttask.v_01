@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSaludo } from "@/lib/greeting";
 import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
-import { auth } from "@/app/firebase/config";
+import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
 
 export default function Login() {

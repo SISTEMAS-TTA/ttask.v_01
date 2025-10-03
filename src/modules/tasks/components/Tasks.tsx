@@ -4,8 +4,8 @@ import { useState } from "react"
 import { Plus, Filter, Eye, Check, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { AddTaskModal } from "@/components/modals/AddTaskModal"
-import { TaskFilterModal } from "@/components/modals/TaskFilterModal"
+import { AddTaskModal } from "@/modules/tasks/components/AddTaskModal"
+import { TaskFilterModal } from "@/modules/tasks/components/TaskFilterModal"
 
 interface Task {
   id: string

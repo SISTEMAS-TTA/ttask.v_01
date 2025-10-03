@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { onAuthStateChanged, prodErrorMap, User } from "firebase/auth";
-import { auth, db } from "@/app/firebase/config";
+import { auth, db } from "@/lib/firebase/config";
 import { doc, getDoc } from "firebase/firestore";
-import { UserProfile } from "@/app/types/index";
+import { UserProfile } from "@/modules/types/index";
 
 export const USER_PROFILE_STORAGE_KEY = "user_profile_fallback";
 

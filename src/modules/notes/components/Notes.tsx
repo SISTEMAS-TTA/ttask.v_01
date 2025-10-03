@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Plus, Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { AddNoteModal } from "@/components/modals/AddNoteModal";
+import { AddNoteModal } from "@/modules/notes/components/AddNoteModal";
 
 interface Note {
   id: string;

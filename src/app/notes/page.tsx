@@ -1,15 +1,15 @@
 "use client";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/app/firebase/config";
+import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SidebarMenu } from "@/components/core/SideBarMenu";
 import { Menu } from "lucide-react";
-import { NotesColumn } from "@/components/areas/Notes";
-import { TasksColumn } from "@/components/areas/Tasks";
-import { ReceivedTasksColumn } from "@/components/areas/ReceivedTasks";
-import { CompletedTasksColumn } from "@/components/areas/CompletedTasks";
-import { AuthWrapper } from "@/components/auth/AuhWrapper";
+import { NotesColumn } from "@/modules/notes/components/Notes";
+import { TasksColumn } from "@/modules/tasks/components/Tasks";
+import { ReceivedTasksColumn } from "@/modules/tasks/components/ReceivedTasks";
+import { CompletedTasksColumn } from "@/modules/tasks/components/CompletedTasks";
+import { AuthWrapper } from "@/modules/auth/components/AuhWrapper";
 
 export default function NotesPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
