@@ -46,14 +46,6 @@ export default function NotesPage() {
             >
               <Menu className="h-5 w-5" />
             </button>
-
-            {/* Logo for mobile */}
-            <div className="text-sm font-bold">
-              <span className="bg-red-500 text-white px-2 py-1 rounded text-xs">
-                tt
-              </span>
-              <span className="ml-1 text-xs">ARQUITECTOS</span>
-            </div>
           </header>
 
           {/* Notes Dashboard Content - Full height */}

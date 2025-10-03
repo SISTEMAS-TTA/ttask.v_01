@@ -14,10 +14,10 @@ import {
   SquareTerminal,
 } from "lucide-react";
 
-import { NavMain } from "@/components/sidebarMenu/NavMain";
-import { NavProjects } from "@/components/sidebarMenu/NavProjects";
-import { NavUser } from "@/components/sidebarMenu/NavUser";
-import { TeamSwitcher } from "@/components/sidebarMenu/TeamSwitcher";
+import { NavMain } from "@/modules/dashboard/components/NavMain";
+import { NavProjects } from "@/modules/dashboard/components/NavProjects";
+import { NavUser } from "@/modules/dashboard/components/NavUser";
+import { TeamSwitcher } from "@/modules/dashboard/components/TeamSwitcher";
 import {
   Sidebar,
   SidebarContent,
@@ -52,21 +52,21 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
+      title: "Area de Trabajo",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
+          title: "Notas",
           url: "#",
         },
         {
-          title: "Starred",
+          title: "Tareas asignadas",
           url: "#",
         },
         {
-          title: "Settings",
+          title: "Tareas Recibidas",
           url: "#",
         },
       ],

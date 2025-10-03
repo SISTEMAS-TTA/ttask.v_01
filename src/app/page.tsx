@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/lib/firebase/config";
-import { Dashboard } from "@/components/core/Dashboard";
+// import { useAuthState } from "react-firebase-hooks/auth";
+// import { auth } from "@/lib/firebase/config";
+// import { Dashboard } from "@/components/core/Dashboard";
+import DashboardPage from "./dashboard/page";
 // import { SidebarMenu } from "@/components/SideBarMenu";
 import { SidebarMenu } from "@/components/core/SideBarMenu";
 import { AuthWrapper } from "@/modules/auth/components/AuhWrapper";
@@ -11,19 +12,26 @@ import { useRouter } from "next/navigation";
 import { Menu } from "lucide-react";
 
 export default function Home() {
-  const [user, loading] = useAuthState(auth);
+  // const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
     <AuthWrapper>
-      <div className="h-screen flex relative">
-        {/* Desktop Sidebar */}
+      <DashboardPage/>
+    </AuthWrapper>
+  );
+}
+
+
+
+{/* <div className="h-screen flex relative">
+        Desktop Sidebar
         <div className="hidden md:block">
           <SidebarMenu />
         </div>
 
-        {/* Mobile Sidebar Overlay */}
+        Mobile Sidebar Overlay
         {isMobileSidebarOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             <div
@@ -36,16 +44,13 @@ export default function Home() {
           </div>
         )}
 
-        {/* Main Content Area */}
+        Main Content Area
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Mobile Header - Only visible on mobile */}
+          Mobile Header - Only visible on mobile
 
-          {/* Dashboard Content - Full height */}
+          Dashboard Content - Full height
           <div className="flex-1 overflow-hidden">
             <Dashboard />
           </div>
         </main>
-      </div>
-    </AuthWrapper>
-  );
-}
+      </div> */}

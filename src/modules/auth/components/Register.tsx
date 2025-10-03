@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +24,7 @@ import { DatePicker } from "@/components/core/DatePicker";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/config";
 import { Timestamp } from "firebase/firestore";
+
 import { createUserProfile } from "@/lib/firebase/firestore";
 import { UserProfile } from "@/modules/types/index";
 import { USER_PROFILE_STORAGE_KEY } from "@/modules/auth/hooks/useUser";
@@ -32,6 +33,11 @@ export default function Register() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [saludo, setSaludo] = useState("");
+
+  useEffect(() => {
+    setSaludo(getSaludo());
+  }, []);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -106,7 +112,7 @@ export default function Register() {
       <Card className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl">
         <CardHeader className="space-y-1 sm:space-y-2">
           <CardTitle className="text-xl sm:text-2xl md:text-3xl">
-            {getSaludo()}
+            {saludo || "Hola"}
           </CardTitle>
           <CardDescription className="text-sm sm:text-base">
             Crea una cuenta para acceder al sistema

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,8 +21,13 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saludo, setSaludo] = useState("");
   const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
   const router = useRouter();
+
+  useEffect(() => {
+    setSaludo(getSaludo());
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -54,7 +59,7 @@ export default function Login() {
       <Card className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl">
         <CardHeader className="space-y-1 sm:space-y-2">
           <CardTitle className="text-xl sm:text-2xl md:text-3xl">
-            {getSaludo()}
+            {saludo || "Hola"}
           </CardTitle>
           <CardAction className="mt-2">
             <Button variant="link" className="text-sm sm:text-base">
