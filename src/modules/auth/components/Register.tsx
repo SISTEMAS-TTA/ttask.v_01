@@ -20,13 +20,13 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { getSaludo } from "@/lib/greeting";
-import { DatePicker } from "../core/DatePicker";
+import { DatePicker } from "@/components/core/DatePicker";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/config";
 import { Timestamp } from "firebase/firestore";
 import { createUserProfile } from "@/lib/firebase/firestore";
 import { UserProfile } from "@/modules/types/index";
-import { USER_PROFILE_STORAGE_KEY } from "@/hooks/useUser";
+import { USER_PROFILE_STORAGE_KEY } from "@/modules/auth/hooks/useUser";
 
 export default function Register() {
   const [firstName, setFirstName] = useState("");

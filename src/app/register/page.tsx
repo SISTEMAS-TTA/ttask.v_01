@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Register from "@/components/auth/Register";
+import Register from "@/modules/auth/components/Register";
 import { AuthHeader } from "@/modules/auth/components/AuthHeader";
 
 export default function RegisterPage() {
