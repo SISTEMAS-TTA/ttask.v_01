@@ -1,17 +1,17 @@
-"use client";
+// "use client";
 
-import useUser from "./useUser";
+// import useUser from "./useUser";
 
-export const useAdmin = () => {
-  const { user, profile, loading } = useUser();
+// export const useAdmin = () => {
+//   const { user, profile, loading } = useUser();
 
-  const isAdmin = profile?.role === "admin";
-  const isAuthenticated = !!user;
-  return {
-    user,
-    profile,
-    loading,
-    isAdmin,
-    isAuthenticated,
-  };
-};
+//   const isAdmin = profile?.role === "admin";
+//   const isAuthenticated = !!user;
+//   return {
+//     user,
+//     profile,
+//     loading,
+//     isAdmin,
+//     isAuthenticated,
+//   };
+// };
