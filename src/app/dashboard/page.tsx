@@ -1,5 +1,5 @@
 "use client";
-import { ProjectCharts } from "@/components/charts/ProjectCharts";
+import { ProjectCharts } from "@/modules/charts/components/ProjectCharts";
 import { AppSidebar } from "@/modules/dashboard/components/AppSideBar"
 import {
   Breadcrumb,

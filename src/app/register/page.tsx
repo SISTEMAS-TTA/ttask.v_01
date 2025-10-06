@@ -1,8 +1,48 @@
+"use client";
+
+import { useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+
 import Register from "@/modules/auth/components/Register";
 import { AuthHeader } from "@/modules/auth/components/AuthHeader";
+import { AuthWrapper } from "@/modules/auth/components/AuhWrapper";
+import { useAdmin } from "@/hooks/useAdmin";
 
 export default function RegisterPage() {
+  return (
+    <AuthWrapper>
+      <AdminRegisterContent />
+    </AuthWrapper>
+  );
+}
+
+function AdminRegisterContent() {
+  const { isAdmin, isAuthenticated, loading } = useAdmin();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (!isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!isAdmin) {
+      router.replace("/");
+    }
+  }, [isAdmin, isAuthenticated, loading, router]);
+
+  if (loading || !isAuthenticated || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen">
       {/* Imagen de fondo */}
