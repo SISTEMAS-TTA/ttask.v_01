@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Filter, Check, Star } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { CompletedTaskFilterModal } from "@/components/modals/CompletedTaskFilterModal"
+import { useState } from "react";
+import { Filter, Check, Star, CheckCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CompletedTaskFilterModal } from "@/modules/tasks/components/CompletedTaskFilterModal";
 
 interface CompletedTask {
-  id: string
-  title: string
-  project: string
-  assignedTo?: string
-  assignedBy?: string
-  completedAt: Date
-  favorite: boolean
-  type: "assigned" | "received"
+  id: string;
+  title: string;
+  project: string;
+  assignedTo?: string;
+  assignedBy?: string;
+  completedAt: Date;
+  favorite: boolean;
+  type: "assigned" | "received";
 }
 
 const initialCompletedTasks: CompletedTask[] = [
@@ -54,28 +54,32 @@ const initialCompletedTasks: CompletedTask[] = [
     favorite: true,
     type: "assigned",
   },
-]
+];
 
 export function CompletedTasksColumn() {
-  const [tasks, setTasks] = useState<CompletedTask[]>(initialCompletedTasks)
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [tasks, setTasks] = useState<CompletedTask[]>(initialCompletedTasks);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filter, setFilter] = useState<{
-    user?: string
-    project?: string
-  }>({})
+    user?: string;
+    project?: string;
+  }>({});
 
   const toggleFavorite = (id: string) => {
-    setTasks(tasks.map((task) => (task.id === id ? { ...task, favorite: !task.favorite } : task)))
-  }
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, favorite: !task.favorite } : task
+      )
+    );
+  };
 
   const filteredTasks = tasks.filter((task) => {
     if (filter.user) {
-      const taskUser = task.assignedTo || task.assignedBy
-      if (taskUser !== filter.user) return false
+      const taskUser = task.assignedTo || task.assignedBy;
+      if (taskUser !== filter.user) return false;
     }
-    if (filter.project && task.project !== filter.project) return false
-    return true
-  })
+    if (filter.project && task.project !== filter.project) return false;
+    return true;
+  });
 
   return (
     <div className="w-full bg-green-100 flex flex-col h-full">
@@ -95,27 +99,47 @@ export function CompletedTasksColumn() {
       {/* Tasks List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {filteredTasks.map((task) => (
-          <Card key={task.id} className="p-3 bg-green-200 border-none shadow-sm">
+          <Card
+            key={task.id}
+            className="p-3 bg-green-200 border-none shadow-sm"
+          >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800 line-through">{task.title}</h3>
+              <h3 className="font-semibold text-sm text-gray-800 line-through">
+                {task.title}
+              </h3>
               <div className="flex space-x-1">
-                <Check className="h-3 w-3 text-green-600" />
-                <Check className="h-3 w-3 text-green-600" />
+                <Check className="h-5 w-5 text-green-600" />
+                <CheckCheck className="h-5 w-5 text-green-600" />
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => toggleFavorite(task.id)}
-                  className="h-6 w-6 p-0 hover:bg-black/10"
+                  className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <Star className={`h-3 w-3 ${task.favorite ? "text-yellow-600 fill-current" : "text-gray-400"}`} />
+                  <Star
+                    className={`h-5 w-5 ${
+                      task.favorite
+                        ? "text-yellow-600 fill-current"
+                        : "text-gray-400"
+                    }`}
+                  />
                 </Button>
               </div>
             </div>
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
-              {task.type === "assigned" ? `Asignado a: ${task.assignedTo}` : `Asignado por: ${task.assignedBy}`}
+              {task.type === "assigned"
+                ? `Asignado a: ${task.assignedTo}`
+                : `Asignado por: ${task.assignedBy}`}
             </p>
-            <p className="text-xs text-gray-400 mt-1">Completado: {task.completedAt.toLocaleDateString()}</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Completado:{" "}
+              {task.completedAt.toLocaleDateString("es-ES", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })}
+            </p>
           </Card>
         ))}
       </div>
@@ -128,5 +152,5 @@ export function CompletedTasksColumn() {
         tasks={tasks}
       />
     </div>
-  )
+  );
 }

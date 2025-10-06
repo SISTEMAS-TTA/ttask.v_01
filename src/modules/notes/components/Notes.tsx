@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { Plus, Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { AddNoteModal } from "@/components/modals/AddNoteModal";
+import { AddNoteModal } from "@/modules/notes/components/AddNoteModal";
 
 interface Note {
   id: string;
@@ -123,10 +123,10 @@ export function NotesColumn() {
                   size="sm"
                   variant="ghost"
                   onClick={() => toggleComplete(note.id)}
-                  className="h-6 w-6 p-0 hover:bg-black/10"
+                  className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Check
-                    className={`h-3 w-3 ${
+                    className={`h-5 w-5 ${
                       note.completed ? "text-green-600" : "text-gray-400"
                     }`}
                   />
@@ -135,10 +135,10 @@ export function NotesColumn() {
                   size="sm"
                   variant="ghost"
                   onClick={() => toggleFavorite(note.id)}
-                  className="h-6 w-6 p-0 hover:bg-black/10"
+                  className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Star
-                    className={`h-3 w-3 ${
+                    className={`h-5 w-5 ${
                       note.favorite
                         ? "text-yellow-600 fill-current"
                         : "text-gray-400"
@@ -166,18 +166,18 @@ export function NotesColumn() {
                   size="sm"
                   variant="ghost"
                   onClick={() => toggleComplete(note.id)}
-                  className="h-6 w-6 p-0 hover:bg-black/10"
+                  className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <Check className="h-3 w-3 text-green-600" />
+                  <Check className="h-5 w-5 text-green-600" />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => toggleFavorite(note.id)}
-                  className="h-6 w-6 p-0 hover:bg-black/10"
+                  className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Star
-                    className={`h-3 w-3 ${
+                    className={`h-5 w-5 ${
                       note.favorite
                         ? "text-yellow-600 fill-current"
                         : "text-gray-400"
