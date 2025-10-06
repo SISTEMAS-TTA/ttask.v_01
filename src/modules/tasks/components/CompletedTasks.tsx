@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Filter, Check, Star } from "lucide-react";
+import { Filter, Check, Star, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CompletedTaskFilterModal } from "@/modules/tasks/components/CompletedTaskFilterModal";
@@ -108,16 +108,16 @@ export function CompletedTasksColumn() {
                 {task.title}
               </h3>
               <div className="flex space-x-1">
-                <Check className="h-3 w-3 text-green-600" />
-                <Check className="h-3 w-3 text-green-600" />
+                <Check className="h-5 w-5 text-green-600" />
+                <CheckCheck className="h-5 w-5 text-green-600" />
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => toggleFavorite(task.id)}
-                  className="h-6 w-6 p-0 hover:bg-black/10"
+                  className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Star
-                    className={`h-3 w-3 ${
+                    className={`h-5 w-5 ${
                       task.favorite
                         ? "text-yellow-600 fill-current"
                         : "text-gray-400"

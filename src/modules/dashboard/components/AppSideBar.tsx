@@ -58,8 +58,12 @@ const data = {
       isActive: true,
       items: [
         {
+          title: "Dashboard",
+          url:"/"
+        },
+        {
           title: "Notas",
-          url: "#",
+          url: "/notes",
         },
         {
           title: "Tareas asignadas",
@@ -67,6 +71,10 @@ const data = {
         },
         {
           title: "Tareas Recibidas",
+          url: "#",
+        },
+        {
+          title: "Tareas Finalizadas",
           url: "#",
         },
       ],

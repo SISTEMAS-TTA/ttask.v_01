@@ -183,64 +183,70 @@ export default function Register() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 mt-4">
-                <div className="flex flex-col space-y-1.5 relative">
+                <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="password">Contraseña</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Ingresa tu contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    aria-invalid={!!fieldErrors.password}
-                  />
-                  <button
-                    type="button"
-                    aria-label={
-                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                    }
-                    onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-2 top-8 inline-flex items-center justify-center p-1"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="size-4" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
-                  </button>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Ingresa tu contraseña"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      aria-invalid={!!fieldErrors.password}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      aria-label={
+                        showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                      }
+                      onClick={() => setShowPassword((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center p-1 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4 text-gray-500" />
+                      ) : (
+                        <Eye className="size-4 text-gray-500" />
+                      )}
+                    </button>
+                  </div>
                   {fieldErrors.password && (
                     <p className="text-xs text-red-600">
                       {fieldErrors.password}
                     </p>
                   )}
                 </div>
-                <div className="flex flex-col space-y-1.5 relative">
+                <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirma tu contraseña"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    aria-invalid={!!fieldErrors.confirmPassword}
-                  />
-                  <button
-                    type="button"
-                    aria-label={
-                      showConfirmPassword
-                        ? "Ocultar contraseña"
-                        : "Mostrar contraseña"
-                    }
-                    onClick={() => setShowConfirmPassword((s) => !s)}
-                    className="absolute right-2 top-8 inline-flex items-center justify-center p-1"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="size-4" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
-                  </button>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirma tu contraseña"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      aria-invalid={!!fieldErrors.confirmPassword}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      aria-label={
+                        showConfirmPassword
+                          ? "Ocultar contraseña"
+                          : "Mostrar contraseña"
+                      }
+                      onClick={() => setShowConfirmPassword((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center p-1 hover:bg-gray-100 rounded-md transition-colors"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="size-4 text-gray-500" />
+                      ) : (
+                        <Eye className="size-4 text-gray-500" />
+                      )}
+                    </button>
+                  </div>
                   {fieldErrors.confirmPassword && (
                     <p className="text-xs text-red-600">
                       {fieldErrors.confirmPassword}
