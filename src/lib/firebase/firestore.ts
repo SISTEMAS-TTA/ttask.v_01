@@ -48,3 +48,21 @@ export const getUserProfile = async (userId: string) => {
     throw error;
   }
 };
+
+export const listAllUsers = async () => {
+  try {
+    const ref = collection(db, USERS_COLLECTION);
+    const snap = await getDocs(ref);
+    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as UserProfile) }));
+  } catch (error) {
+    console.error("Error listing users:", error);
+    throw error;
+  }
+};
+
+export const getUsersMap = async () => {
+  const users = await listAllUsers();
+  const map = new Map<string, UserProfile & { id: string }>();
+  users.forEach((u) => map.set(u.id!, u as any));
+  return map;
+};

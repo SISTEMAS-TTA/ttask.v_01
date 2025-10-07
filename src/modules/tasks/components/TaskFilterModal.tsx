@@ -1,62 +1,83 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface Task {
-  id: string
-  title: string
-  project: string
-  assignedTo: string
-  viewed: boolean
-  completed: boolean
-  favorite: boolean
-  createdAt: Date
+  id: string;
+  title: string;
+  project: string;
+  assigneeId: string;
+  viewed: boolean;
+  completed: boolean;
+  favorite: boolean;
+  createdAt: Date;
 }
 
 interface TaskFilterModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
   currentFilter: {
-    assignedTo?: string
-    view?: "all" | "viewed" | "completed" | "favorites"
-  }
+    assigneeId?: string;
+    view?: "all" | "viewed" | "completed" | "favorites";
+  };
   onApplyFilter: (filter: {
-    assignedTo?: string
-    view?: "all" | "viewed" | "completed" | "favorites"
-  }) => void
-  tasks: Task[]
+    assigneeId?: string;
+    view?: "all" | "viewed" | "completed" | "favorites";
+  }) => void;
+  tasks: Task[];
 }
 
-export function TaskFilterModal({ isOpen, onClose, currentFilter, onApplyFilter, tasks }: TaskFilterModalProps) {
-  const [assignedTo, setAssignedTo] = useState(currentFilter.assignedTo || "all")
-  const [view, setView] = useState(currentFilter.view || "all")
+export function TaskFilterModal({
+  isOpen,
+  onClose,
+  currentFilter,
+  onApplyFilter,
+  tasks,
+}: TaskFilterModalProps) {
+  const [assignedTo, setAssignedTo] = useState(
+    currentFilter.assigneeId || "all"
+  );
+  const [view, setView] = useState(currentFilter.view || "all");
 
   useEffect(() => {
-    setAssignedTo(currentFilter.assignedTo || "all")
-    setView(currentFilter.view || "all")
-  }, [currentFilter])
+    setAssignedTo(currentFilter.assigneeId || "all");
+    setView(currentFilter.view || "all");
+  }, [currentFilter]);
 
-  const uniqueUsers = Array.from(new Set(tasks.map((task) => task.assignedTo)))
+  const uniqueUsers: string[] = Array.from(
+    new Set(tasks.map((task) => task.assigneeId))
+  );
 
   const handleApply = () => {
     onApplyFilter({
-      assignedTo: assignedTo === "all" ? undefined : assignedTo,
+      assigneeId: assignedTo === "all" ? undefined : assignedTo,
       view: view as "all" | "viewed" | "completed" | "favorites",
-    })
-    onClose()
-  }
+    });
+    onClose();
+  };
 
   const handleClear = () => {
-    setAssignedTo("all")
-    setView("all")
-    onApplyFilter({ view: "all" })
-    onClose()
-  }
+    setAssignedTo("all");
+    setView("all");
+    onApplyFilter({ view: "all" });
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -73,9 +94,9 @@ export function TaskFilterModal({ isOpen, onClose, currentFilter, onApplyFilter,
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los usuarios</SelectItem>
-                {uniqueUsers.map((user) => (
-                  <SelectItem key={user} value={user}>
-                    {user}
+                {uniqueUsers.map((userId) => (
+                  <SelectItem key={userId} value={userId}>
+                    {userId}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -84,7 +105,12 @@ export function TaskFilterModal({ isOpen, onClose, currentFilter, onApplyFilter,
 
           <div className="space-y-3">
             <Label>Vista</Label>
-            <RadioGroup value={view} onValueChange={(value) => setView(value as "all" | "viewed" | "completed" | "favorites")}>
+            <RadioGroup
+              value={view}
+              onValueChange={(value) =>
+                setView(value as "all" | "viewed" | "completed" | "favorites")
+              }
+            >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="all" id="all" />
                 <Label htmlFor="all">Todas</Label>
@@ -116,5 +142,5 @@ export function TaskFilterModal({ isOpen, onClose, currentFilter, onApplyFilter,
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

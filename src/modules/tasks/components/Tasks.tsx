@@ -1,61 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Filter, Eye, Check, Star, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddTaskModal } from "@/modules/tasks/components/AddTaskModal";
 import { TaskFilterModal } from "@/modules/tasks/components/TaskFilterModal";
+import useUser from "@/modules/auth/hooks/useUser";
+import {
+  createTask,
+  NewTaskInput,
+  subscribeToTasksAssignedBy,
+  updateTask,
+} from "@/lib/firebase/tasks";
+import { useUsersMap } from "@/hooks/useUsersMap";
+import { Timestamp } from "firebase/firestore";
 
-interface Task {
+interface UITask {
   id: string;
   title: string;
   project: string;
-  assignedTo: string;
+  assigneeId: string;
   viewed: boolean;
   completed: boolean;
   favorite: boolean;
   createdAt: Date;
 }
 
-const initialTasks: Task[] = [
-  {
-    id: "1",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedTo: "Juan Pérez",
-    viewed: false,
-    completed: false,
-    favorite: true,
-    createdAt: new Date(),
-  },
-  {
-    id: "2",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedTo: "María García",
-    viewed: true,
-    completed: false,
-    favorite: false,
-    createdAt: new Date(),
-  },
-];
+const initialTasks: UITask[] = [];
 
 export function TasksColumn() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { user, loading: userLoading } = useUser();
+  const { getUserName } = useUsersMap();
+  const [tasks, setTasks] = useState<UITask[]>(initialTasks);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filter, setFilter] = useState<{
-    assignedTo?: string;
+    assigneeId?: string;
     view?: "all" | "viewed" | "completed" | "favorites";
   }>({ view: "all" });
 
-  const toggleViewed = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, viewed: !task.viewed } : task
-      )
+  useEffect(() => {
+    if (userLoading) return;
+    if (!user) {
+      setTasks([]);
+      return;
+    }
+
+    const unsubscribe = subscribeToTasksAssignedBy(
+      user.uid,
+      (docs) => {
+        setTasks(
+          docs.map((d) => ({
+            id: d.id,
+            title: d.title,
+            project: d.project,
+            assigneeId: d.assigneeId,
+            viewed: d.viewed,
+            completed: d.completed,
+            favorite: d.favorite,
+            createdAt: d.createdAt.toDate(),
+          }))
+        );
+      },
+      () => setTasks([])
     );
+
+    return () => unsubscribe();
+  }, [user, userLoading]);
+
+  const toggleViewed = async (id: string) => {
+    const current = tasks.find((t) => t.id === id);
+    if (!current) return;
+    await updateTask(id, { viewed: !current.viewed });
   };
 
   // const toggleCompleted = (id: string) => {
@@ -73,33 +90,39 @@ export function TasksColumn() {
   //     )
   //   );
   // };
-  const toggleCompleted = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const toggleCompleted = async (id: string) => {
+    const current = tasks.find((t) => t.id === id);
+    if (!current) return;
+    await updateTask(id, { completed: !current.completed });
   };
 
-  const toggleFavorite = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, favorite: !task.favorite } : task
-      )
-    );
+  const toggleFavorite = async (id: string) => {
+    const current = tasks.find((t) => t.id === id);
+    if (!current) return;
+    await updateTask(id, { favorite: !current.favorite });
   };
 
-  const addTask = (newTask: Omit<Task, "id" | "createdAt">) => {
-    const task: Task = {
-      ...newTask,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-    };
-    setTasks([task, ...tasks]);
+  const addTask = async (task: {
+    title: string;
+    project: string;
+    assigneeId: string;
+    description?: string;
+  }) => {
+    if (!user) return;
+    const payload: NewTaskInput = {
+      title: task.title,
+      project: task.project,
+      description: task.description ?? "",
+      assigneeId: task.assigneeId,
+      viewed: false,
+      completed: false,
+      favorite: false,
+    } as any;
+    await createTask(user.uid, payload);
   };
 
   const filteredTasks = tasks.filter((task) => {
-    if (filter.assignedTo && task.assignedTo !== filter.assignedTo)
+    if (filter.assigneeId && task.assigneeId !== filter.assigneeId)
       return false;
 
     switch (filter.view) {
@@ -152,7 +175,11 @@ export function TasksColumn() {
         {activeTasks.map((task) => (
           <Card key={task.id} className="p-3 bg-blue-200 border-none shadow-sm">
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800">
+              <h3
+                className={`font-semibold text-sm text-gray-800 ${
+                  task.viewed ? "line-through opacity-70" : ""
+                }`}
+              >
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -199,7 +226,7 @@ export function TasksColumn() {
             </div>
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
-              Asignado a: {task.assignedTo}
+              Asignado a: {getUserName(task.assigneeId)}
             </p>
           </Card>
         ))}
@@ -253,7 +280,7 @@ export function TasksColumn() {
             </div>
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
-              Asignado a: {task.assignedTo}
+              Asignado a: {getUserName(task.assigneeId)}
             </p>
           </Card>
         ))}
@@ -270,7 +297,7 @@ export function TasksColumn() {
         onClose={() => setIsFilterModalOpen(false)}
         currentFilter={filter}
         onApplyFilter={setFilter}
-        tasks={tasks}
+        tasks={tasks as any}
       />
     </div>
   );

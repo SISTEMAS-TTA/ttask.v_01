@@ -1,68 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Filter, Check, Star, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CompletedTaskFilterModal } from "@/modules/tasks/components/CompletedTaskFilterModal";
+import useUser from "@/modules/auth/hooks/useUser";
+import { subscribeToCompletedTasks } from "@/lib/firebase/tasks";
+import { useUsersMap } from "@/hooks/useUsersMap";
 
 interface CompletedTask {
   id: string;
   title: string;
   project: string;
-  assignedTo?: string;
+  assigneeId?: string;
   assignedBy?: string;
   completedAt: Date;
   favorite: boolean;
   type: "assigned" | "received";
 }
 
-const initialCompletedTasks: CompletedTask[] = [
-  {
-    id: "1",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedTo: "Juan Pérez",
-    completedAt: new Date(),
-    favorite: false,
-    type: "assigned",
-  },
-  {
-    id: "2",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedTo: "María García",
-    completedAt: new Date(),
-    favorite: true,
-    type: "assigned",
-  },
-  {
-    id: "3",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedBy: "Carlos López",
-    completedAt: new Date(),
-    favorite: false,
-    type: "received",
-  },
-  {
-    id: "4",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedTo: "Ana Martínez",
-    completedAt: new Date(),
-    favorite: true,
-    type: "assigned",
-  },
-];
+const initialCompletedTasks: CompletedTask[] = [];
 
 export function CompletedTasksColumn() {
+  const { user, loading: userLoading } = useUser();
+  const { getUserName } = useUsersMap();
   const [tasks, setTasks] = useState<CompletedTask[]>(initialCompletedTasks);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filter, setFilter] = useState<{
     user?: string;
     project?: string;
   }>({});
+
+  useEffect(() => {
+    if (userLoading || !user) return;
+
+    const unsubscribe = subscribeToCompletedTasks(
+      user.uid,
+      (docs) => {
+        const completedTasks = docs.map((d) => ({
+          id: d.id,
+          title: d.title,
+          project: d.project,
+          assigneeId: d.assigneeId,
+          assignedBy: d.assignedBy,
+          completedAt: d.updatedAt?.toDate() ?? d.createdAt.toDate(),
+          favorite: d.favorite,
+          type: (d.assignedBy === user.uid ? "assigned" : "received") as
+            | "assigned"
+            | "received",
+        }));
+        setTasks(completedTasks);
+      },
+      () => setTasks([])
+    );
+
+    return () => unsubscribe();
+  }, [user, userLoading]);
 
   const toggleFavorite = (id: string) => {
     setTasks(
@@ -74,7 +68,7 @@ export function CompletedTasksColumn() {
 
   const filteredTasks = tasks.filter((task) => {
     if (filter.user) {
-      const taskUser = task.assignedTo || task.assignedBy;
+      const taskUser = task.assigneeId || task.assignedBy;
       if (taskUser !== filter.user) return false;
     }
     if (filter.project && task.project !== filter.project) return false;
@@ -129,8 +123,8 @@ export function CompletedTasksColumn() {
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
               {task.type === "assigned"
-                ? `Asignado a: ${task.assignedTo}`
-                : `Asignado por: ${task.assignedBy}`}
+                ? `Asignado a: ${getUserName(task.assigneeId!)}`
+                : `Asignado por: ${getUserName(task.assignedBy!)}`}
             </p>
             <p className="text-xs text-gray-400 mt-1">
               Completado:{" "}
