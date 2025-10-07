@@ -11,7 +11,7 @@ import {
   createTask,
   NewTaskInput,
   subscribeToTasksAssignedBy,
-  updateTask,
+  updateTaskFavorite,
 } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
 import { Timestamp } from "firebase/firestore";
@@ -58,7 +58,7 @@ export function TasksColumn() {
             assigneeId: d.assigneeId,
             viewed: d.viewed,
             completed: d.completed,
-            favorite: d.favorite,
+            favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
             createdAt: d.createdAt.toDate(),
           }))
         );
@@ -69,37 +69,10 @@ export function TasksColumn() {
     return () => unsubscribe();
   }, [user, userLoading]);
 
-  const toggleViewed = async (id: string) => {
-    const current = tasks.find((t) => t.id === id);
-    if (!current) return;
-    await updateTask(id, { viewed: !current.viewed });
-  };
-
-  // const toggleCompleted = (id: string) => {
-  //   setTasks(
-  //     tasks.map((task) =>
-  //       task.id === id ? { ...task, completed: !task.completed } : task
-  //     )
-  //   );
-  // };
-
-  // const toggleComplete = (id: string) => {
-  //   setNotes((prevNotes) =>
-  //     prevNotes.map((note) =>
-  //       note.id === id ? { ...note, completed: !note.completed } : note
-  //     )
-  //   );
-  // };
-  const toggleCompleted = async (id: string) => {
-    const current = tasks.find((t) => t.id === id);
-    if (!current) return;
-    await updateTask(id, { completed: !current.completed });
-  };
-
   const toggleFavorite = async (id: string) => {
     const current = tasks.find((t) => t.id === id);
-    if (!current) return;
-    await updateTask(id, { favorite: !current.favorite });
+    if (!current || !user?.uid) return;
+    await updateTaskFavorite(id, user.uid, !current.favorite);
   };
 
   const addTask = async (task: {
@@ -144,6 +117,14 @@ export function TasksColumn() {
   );
   const completedTasks = filteredTasks.filter((task) => task.completed);
 
+  // Orden: favoritas arriba
+  const orderedTasks = filteredTasks
+    .slice()
+    .sort((a, b) => (a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1));
+
+  // Visibles en asignadas: excluir las completadas (segundo check)
+  const visibleTasks = orderedTasks.filter((t) => !t.completed);
+
   return (
     <div className="w-full bg-blue-100 flex flex-col h-full">
       {/* Header */}
@@ -172,7 +153,7 @@ export function TasksColumn() {
       {/* Tasks List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Active Tasks */}
-        {activeTasks.map((task) => (
+        {visibleTasks.map((task) => (
           <Card key={task.id} className="p-3 bg-blue-200 border-none shadow-sm">
             <div className="flex items-start justify-between mb-2">
               <h3
@@ -183,85 +164,10 @@ export function TasksColumn() {
                 {task.title}
               </h3>
               <div className="flex space-x-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => toggleCompleted(task.id)}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Check
-                    className={`h-5 w-5 ${
-                      task.completed ? "text-green-600" : "text-gray-400"
-                    }`}
-                  />
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => toggleCompleted(task.id)}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <CheckCheck
-                    className={`h-5 w-5 ${
-                      task.completed ? "text-green-600" : "text-gray-400"
-                    }`}
-                  />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => toggleFavorite(task.id)}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Star
-                    className={`h-5 w-5 ${
-                      task.favorite
-                        ? "text-yellow-600 fill-current"
-                        : "text-gray-400"
-                    }`}
-                  />
-                </Button>
-              </div>
-            </div>
-            <p className="text-xs text-gray-600">{task.project}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Asignado a: {getUserName(task.assigneeId)}
-            </p>
-          </Card>
-        ))}
-
-        {/* Viewed Tasks */}
-        {viewedTasks.map((task) => (
-          <Card
-            key={task.id}
-            className="p-3 bg-blue-200 border-none shadow-sm opacity-70"
-          >
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800">
-                {task.title}
-              </h3>
-              <div className="flex space-x-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => toggleCompleted(task.id)}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Check
-                    className={`h-5 w-5 ${
-                      task.completed ? "text-green-600" : "text-gray-400"
-                    }`}
-                  />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => toggleViewed(task.id)}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Eye className="h-5 w-5 text-blue-600" />
-                </Button>
+                {/* Checks deshabilitados para el asignador */}
+                <Check className="h-5 w-5 text-gray-400" aria-hidden />
+                <CheckCheck className="h-5 w-5 text-gray-400" aria-hidden />
+                {/* Mantener estrella/favorito como esté implementado */}
                 <Button
                   size="sm"
                   variant="ghost"

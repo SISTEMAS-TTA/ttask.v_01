@@ -5,9 +5,11 @@ import {
   doc,
   onSnapshot,
   query,
+  serverTimestamp,
   Timestamp,
   updateDoc,
   where,
+  getDoc,
 } from "firebase/firestore";
 
 export type TaskDoc = {
@@ -23,6 +25,7 @@ export type TaskDoc = {
   deleted: boolean;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
+  favorites?: Record<string, boolean>; // favoritos por usuario
 };
 
 export type NewTaskInput = Omit<
@@ -139,16 +142,46 @@ export const createTask = async (
   });
 };
 
-export const updateTask = async (
+// Solo el asignado puede marcar viewed/completed
+export async function updateTask(
   taskId: string,
-  updates: Partial<Omit<TaskDoc, "id" | "createdAt">>
-) => {
-  const taskRef = doc(db, TASKS_COLLECTION, taskId);
-  await updateDoc(taskRef, {
+  updates: Partial<{
+    viewed: boolean;
+    completed: boolean;
+    favorite: boolean;
+    title: string;
+    project: string;
+    description?: string;
+  }>,
+  currentUserId?: string
+) {
+  const ref = doc(db, "tasks", taskId);
+
+  // Si se intenta actualizar viewed/completed, validar asignado
+  const touchesViewedOrCompleted =
+    Object.prototype.hasOwnProperty.call(updates, "viewed") ||
+    Object.prototype.hasOwnProperty.call(updates, "completed");
+
+  if (touchesViewedOrCompleted) {
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const data = snap.data() as { assigneeId?: string };
+    if (
+      !currentUserId ||
+      !data.assigneeId ||
+      data.assigneeId !== currentUserId
+    ) {
+      throw new Error(
+        "Solo el usuario asignado puede actualizar viewed/completed"
+      );
+    }
+  }
+
+  await updateDoc(ref, {
     ...updates,
-    updatedAt: Timestamp.now(),
+    updatedAt: serverTimestamp(),
   });
-};
+}
 
 // Suscripción a tareas completadas (tanto las asignadas por el usuario como las recibidas por él)
 export const subscribeToCompletedTasks = (
@@ -240,3 +273,15 @@ export const subscribeToCompletedTasks = (
     unsubscribers.forEach((unsub) => unsub());
   };
 };
+
+export async function updateTaskFavorite(
+  taskId: string,
+  userId: string,
+  value: boolean
+) {
+  const ref = doc(db, "tasks", taskId);
+  await updateDoc(ref, {
+    [`favorites.${userId}`]: value,
+    updatedAt: serverTimestamp(),
+  });
+}

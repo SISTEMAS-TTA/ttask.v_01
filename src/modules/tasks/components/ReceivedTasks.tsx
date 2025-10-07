@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Eye, Check, Star, Filter, CheckCheck } from "lucide-react";
+import { Check, Star, Filter, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import useUser from "@/modules/auth/hooks/useUser";
-import { subscribeToTasksAssignedTo, updateTask } from "@/lib/firebase/tasks";
+import {
+  subscribeToTasksAssignedTo,
+  updateTask,
+  updateTaskFavorite,
+} from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
 
 interface ReceivedTask {
@@ -48,7 +52,7 @@ export function ReceivedTasksColumn() {
             assignedBy: d.assignedBy,
             viewed: d.viewed,
             completed: d.completed,
-            favorite: d.favorite,
+            favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
             createdAt: d.createdAt.toDate(),
           }))
         );
@@ -58,22 +62,26 @@ export function ReceivedTasksColumn() {
     return () => unsub();
   }, [user, userLoading]);
 
-  const toggleViewed = async (id: string) => {
-    const current = tasks.find((t) => t.id === id);
-    if (!current) return;
-    await updateTask(id, { viewed: !current.viewed });
+  const onToggleViewed = async (taskId: string, next: boolean) => {
+    try {
+      await updateTask(taskId, { viewed: next }, user?.uid);
+    } catch (e) {
+      console.warn("No autorizado para marcar viewed", e);
+    }
   };
 
-  const toggleCompleted = async (id: string) => {
-    const current = tasks.find((t) => t.id === id);
-    if (!current) return;
-    await updateTask(id, { completed: !current.completed });
+  const onToggleCompleted = async (taskId: string, next: boolean) => {
+    try {
+      await updateTask(taskId, { completed: next }, user?.uid);
+    } catch (e) {
+      console.warn("No autorizado para marcar completed", e);
+    }
   };
 
   const toggleFavorite = async (id: string) => {
     const current = tasks.find((t) => t.id === id);
-    if (!current) return;
-    await updateTask(id, { favorite: !current.favorite });
+    if (!current || !user?.uid) return;
+    await updateTaskFavorite(id, user.uid, !current.favorite);
   };
 
   // Apply filters
@@ -93,10 +101,15 @@ export function ReceivedTasksColumn() {
     return true;
   });
 
-  const activeTasks = filteredTasks.filter(
+  // Orden: favoritas arriba
+  const orderedTasks = filteredTasks
+    .slice()
+    .sort((a, b) => (a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1));
+
+  const activeTasks = orderedTasks.filter(
     (task) => !task.completed && !task.viewed
   );
-  const viewedTasks = filteredTasks.filter(
+  const viewedTasks = orderedTasks.filter(
     (task) => task.viewed && !task.completed
   );
 
@@ -130,7 +143,7 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleViewed(task.id)}
+                  onClick={() => onToggleViewed(task.id, !task.viewed)}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Check
@@ -142,7 +155,7 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleCompleted(task.id)}
+                  onClick={() => onToggleCompleted(task.id, !task.completed)}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <CheckCheck
@@ -188,7 +201,7 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleViewed(task.id)}
+                  onClick={() => onToggleViewed(task.id, !task.viewed)}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Check className="h-5 w-5 text-blue-600" />
@@ -196,7 +209,7 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleCompleted(task.id)}
+                  onClick={() => onToggleCompleted(task.id, !task.completed)}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <CheckCheck

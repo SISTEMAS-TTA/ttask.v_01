@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CompletedTaskFilterModal } from "@/modules/tasks/components/CompletedTaskFilterModal";
 import useUser from "@/modules/auth/hooks/useUser";
-import { subscribeToCompletedTasks } from "@/lib/firebase/tasks";
+import {
+  subscribeToCompletedTasks,
+  updateTaskFavorite,
+} from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
 
 interface CompletedTask {
@@ -45,7 +48,7 @@ export function CompletedTasksColumn() {
           assigneeId: d.assigneeId,
           assignedBy: d.assignedBy,
           completedAt: d.updatedAt?.toDate() ?? d.createdAt.toDate(),
-          favorite: d.favorite,
+          favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
           type: (d.assignedBy === user.uid ? "assigned" : "received") as
             | "assigned"
             | "received",
@@ -58,12 +61,11 @@ export function CompletedTasksColumn() {
     return () => unsubscribe();
   }, [user, userLoading]);
 
-  const toggleFavorite = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, favorite: !task.favorite } : task
-      )
-    );
+  const toggleFavorite = async (id: string) => {
+    if (!user?.uid) return;
+    const current = tasks.find((t) => t.id === id);
+    if (!current) return;
+    await updateTaskFavorite(id, user.uid, !current.favorite);
   };
 
   const filteredTasks = tasks.filter((task) => {
@@ -73,6 +75,13 @@ export function CompletedTasksColumn() {
     }
     if (filter.project && task.project !== filter.project) return false;
     return true;
+  });
+
+  const orderedTasks = filteredTasks.slice().sort((a, b) => {
+    if (a.favorite === b.favorite) {
+      return b.completedAt.getTime() - a.completedAt.getTime();
+    }
+    return a.favorite ? -1 : 1;
   });
 
   return (
@@ -92,7 +101,7 @@ export function CompletedTasksColumn() {
 
       {/* Tasks List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {filteredTasks.map((task) => (
+        {orderedTasks.map((task) => (
           <Card
             key={task.id}
             className="p-3 bg-green-200 border-none shadow-sm"
