@@ -1,25 +1,25 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import type { NewNoteInput } from "@/lib/firebase/notes";
 
 interface AddNoteModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onAddNote: (note: {
-    title: string
-    content: string
-    color: string
-    completed: boolean
-    favorite: boolean
-    project: string
-  }) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onAddNote: (note: NewNoteInput) => Promise<void> | void;
 }
 
 const pastelColors = [
@@ -31,36 +31,57 @@ const pastelColors = [
   { name: "Naranja", value: "bg-orange-200", class: "bg-orange-200" },
   { name: "Índigo", value: "bg-indigo-200", class: "bg-indigo-200" },
   { name: "Gris", value: "bg-gray-200", class: "bg-gray-200" },
-]
+];
 
-export function AddNoteModal({ isOpen, onClose, onAddNote }: AddNoteModalProps) {
-  const [title, setTitle] = useState("")
-  const [content, setContent] = useState("")
-  const [selectedColor, setSelectedColor] = useState(pastelColors[0].value)
+export function AddNoteModal({
+  isOpen,
+  onClose,
+  onAddNote,
+}: AddNoteModalProps) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [selectedColor, setSelectedColor] = useState(pastelColors[0].value);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (title.trim() && content.trim()) {
-      onAddNote({
+  const resetForm = () => {
+    setTitle("");
+    setContent("");
+    setSelectedColor(pastelColors[0].value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !content.trim() || isSubmitting) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onAddNote({
         title: title.trim(),
         content: content.trim(),
         color: selectedColor,
         completed: false,
         favorite: false,
         project: "General",
-      })
-      setTitle("")
-      setContent("")
-      setSelectedColor(pastelColors[0].value)
-      onClose()
+      });
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error("Error al guardar la nota", error);
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Agregar Nueva Nota</DialogTitle>
+          {/* <DialogDescription>
+            Completa los campos para crear una nueva nota personalizada.
+          </DialogDescription> */}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -94,7 +115,9 @@ export function AddNoteModal({ isOpen, onClose, onAddNote }: AddNoteModalProps) 
                   key={color.value}
                   type="button"
                   onClick={() => setSelectedColor(color.value)}
-                  className={`w-full h-8 rounded-md border-2 transition-all ${color.class} ${
+                  className={`w-full h-8 rounded-md border-2 transition-all ${
+                    color.class
+                  } ${
                     selectedColor === color.value
                       ? "border-gray-800 scale-105"
                       : "border-gray-300 hover:border-gray-500"
@@ -106,13 +129,23 @@ export function AddNoteModal({ isOpen, onClose, onAddNote }: AddNoteModalProps) 
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                resetForm();
+                onClose();
+              }}
+              disabled={isSubmitting}
+            >
               Cancelar
             </Button>
-            <Button type="submit">Agregar Nota</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Guardando..." : "Agregar Nota"}
+            </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

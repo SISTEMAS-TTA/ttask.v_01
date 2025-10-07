@@ -46,3 +46,15 @@ export interface UserProfile {
   lastLogin?: Date;
   active?: boolean;
 }
+
+export interface Note {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  color: string;
+  completed: boolean;
+  favorite: boolean;
+  project: string;
+  createdAt: Timestamp;
+}

@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Eye, Check, Star, Filter, CheckCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Star, Filter, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import useUser from "@/modules/auth/hooks/useUser";
+import {
+  subscribeToTasksAssignedTo,
+  updateTask,
+  updateTaskFavorite,
+} from "@/lib/firebase/tasks";
+import { useUsersMap } from "@/hooks/useUsersMap";
 
 interface ReceivedTask {
   id: string;
@@ -16,20 +23,11 @@ interface ReceivedTask {
   createdAt: Date;
 }
 
-const initialReceivedTasks: ReceivedTask[] = [
-  {
-    id: "1",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedBy: "Carlos López",
-    viewed: false,
-    completed: false,
-    favorite: false,
-    createdAt: new Date(),
-  },
-];
+const initialReceivedTasks: ReceivedTask[] = [];
 
 export function ReceivedTasksColumn() {
+  const { user, loading: userLoading } = useUser();
+  const { getUserName } = useUsersMap();
   const [tasks, setTasks] = useState<ReceivedTask[]>(initialReceivedTasks);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filter, setFilter] = useState<{
@@ -37,28 +35,53 @@ export function ReceivedTasksColumn() {
     view?: "all" | "viewed" | "pending";
   }>({});
 
-  const toggleViewed = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, viewed: !task.viewed } : task
-      )
+  useEffect(() => {
+    if (userLoading) return;
+    if (!user) {
+      setTasks([]);
+      return;
+    }
+    const unsub = subscribeToTasksAssignedTo(
+      user.uid,
+      (docs) => {
+        setTasks(
+          docs.map((d) => ({
+            id: d.id,
+            title: d.title,
+            project: d.project,
+            assignedBy: d.assignedBy,
+            viewed: d.viewed,
+            completed: d.completed,
+            favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
+            createdAt: d.createdAt.toDate(),
+          }))
+        );
+      },
+      () => setTasks([])
     );
+    return () => unsub();
+  }, [user, userLoading]);
+
+  const onToggleViewed = async (taskId: string, next: boolean) => {
+    try {
+      await updateTask(taskId, { viewed: next }, user?.uid);
+    } catch (e) {
+      console.warn("No autorizado para marcar viewed", e);
+    }
   };
 
-  const toggleCompleted = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const onToggleCompleted = async (taskId: string, next: boolean) => {
+    try {
+      await updateTask(taskId, { completed: next }, user?.uid);
+    } catch (e) {
+      console.warn("No autorizado para marcar completed", e);
+    }
   };
 
-  const toggleFavorite = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, favorite: !task.favorite } : task
-      )
-    );
+  const toggleFavorite = async (id: string) => {
+    const current = tasks.find((t) => t.id === id);
+    if (!current || !user?.uid) return;
+    await updateTaskFavorite(id, user.uid, !current.favorite);
   };
 
   // Apply filters
@@ -78,10 +101,15 @@ export function ReceivedTasksColumn() {
     return true;
   });
 
-  const activeTasks = filteredTasks.filter(
+  // Orden: favoritas arriba
+  const orderedTasks = filteredTasks
+    .slice()
+    .sort((a, b) => (a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1));
+
+  const activeTasks = orderedTasks.filter(
     (task) => !task.completed && !task.viewed
   );
-  const viewedTasks = filteredTasks.filter(
+  const viewedTasks = orderedTasks.filter(
     (task) => task.viewed && !task.completed
   );
 
@@ -104,31 +132,35 @@ export function ReceivedTasksColumn() {
         {activeTasks.map((task) => (
           <Card key={task.id} className="p-3 bg-red-300 border-none shadow-sm">
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800">
+              <h3
+                className={`font-semibold text-sm text-gray-800 ${
+                  task.viewed ? "line-through opacity-70" : ""
+                }`}
+              >
                 {task.title}
               </h3>
               <div className="flex space-x-1">
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleCompleted(task.id)}
+                  onClick={() => onToggleViewed(task.id, !task.viewed)}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Check
                     className={`h-5 w-5 ${
-                      task.completed ? "text-green-600" : "text-gray-400"
+                      task.viewed ? "text-blue-600" : "text-gray-400"
                     }`}
                   />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleViewed(task.id)}
+                  onClick={() => onToggleCompleted(task.id, !task.completed)}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <CheckCheck
                     className={`h-5 w-5 ${
-                      task.viewed ? "text-blue-600" : "text-gray-400"
+                      task.completed ? "text-green-600" : "text-gray-400"
                     }`}
                   />
                 </Button>
@@ -150,7 +182,7 @@ export function ReceivedTasksColumn() {
             </div>
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
-              Asignado por: {task.assignedBy}
+              Asignado por: {getUserName(task.assignedBy)}
             </p>
           </Card>
         ))}
@@ -169,22 +201,22 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleCompleted(task.id)}
+                  onClick={() => onToggleViewed(task.id, !task.viewed)}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <Check
-                    className={`h-5 w-5 ${
-                      task.completed ? "text-green-600" : "text-gray-400"
-                    }`}
-                  />
+                  <Check className="h-5 w-5 text-blue-600" />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleViewed(task.id)}
+                  onClick={() => onToggleCompleted(task.id, !task.completed)}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <CheckCheck className="h-5 w-5 text-blue-600" />
+                  <CheckCheck
+                    className={`h-5 w-5 ${
+                      task.completed ? "text-green-600" : "text-gray-400"
+                    }`}
+                  />
                 </Button>
                 <Button
                   size="sm"
@@ -204,7 +236,7 @@ export function ReceivedTasksColumn() {
             </div>
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
-              Asignado por: {task.assignedBy}
+              Asignado por: {getUserName(task.assignedBy)}
             </p>
           </Card>
         ))}

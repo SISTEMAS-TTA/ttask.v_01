@@ -1,62 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Filter, Check, Star, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CompletedTaskFilterModal } from "@/modules/tasks/components/CompletedTaskFilterModal";
+import useUser from "@/modules/auth/hooks/useUser";
+import {
+  subscribeToCompletedTasks,
+  updateTaskFavorite,
+} from "@/lib/firebase/tasks";
+import { useUsersMap } from "@/hooks/useUsersMap";
 
 interface CompletedTask {
   id: string;
   title: string;
   project: string;
-  assignedTo?: string;
+  assigneeId?: string;
   assignedBy?: string;
   completedAt: Date;
   favorite: boolean;
   type: "assigned" | "received";
 }
 
-const initialCompletedTasks: CompletedTask[] = [
-  {
-    id: "1",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedTo: "Juan Pérez",
-    completedAt: new Date(),
-    favorite: false,
-    type: "assigned",
-  },
-  {
-    id: "2",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedTo: "María García",
-    completedAt: new Date(),
-    favorite: true,
-    type: "assigned",
-  },
-  {
-    id: "3",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedBy: "Carlos López",
-    completedAt: new Date(),
-    favorite: false,
-    type: "received",
-  },
-  {
-    id: "4",
-    title: "TITULO DE LA TAREA",
-    project: "Proyecto al que pertenece",
-    assignedTo: "Ana Martínez",
-    completedAt: new Date(),
-    favorite: true,
-    type: "assigned",
-  },
-];
+const initialCompletedTasks: CompletedTask[] = [];
 
 export function CompletedTasksColumn() {
+  const { user, loading: userLoading } = useUser();
+  const { getUserName } = useUsersMap();
   const [tasks, setTasks] = useState<CompletedTask[]>(initialCompletedTasks);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filter, setFilter] = useState<{
@@ -64,21 +35,53 @@ export function CompletedTasksColumn() {
     project?: string;
   }>({});
 
-  const toggleFavorite = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, favorite: !task.favorite } : task
-      )
+  useEffect(() => {
+    if (userLoading || !user) return;
+
+    const unsubscribe = subscribeToCompletedTasks(
+      user.uid,
+      (docs) => {
+        const completedTasks = docs.map((d) => ({
+          id: d.id,
+          title: d.title,
+          project: d.project,
+          assigneeId: d.assigneeId,
+          assignedBy: d.assignedBy,
+          completedAt: d.updatedAt?.toDate() ?? d.createdAt.toDate(),
+          favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
+          type: (d.assignedBy === user.uid ? "assigned" : "received") as
+            | "assigned"
+            | "received",
+        }));
+        setTasks(completedTasks);
+      },
+      () => setTasks([])
     );
+
+    return () => unsubscribe();
+  }, [user, userLoading]);
+
+  const toggleFavorite = async (id: string) => {
+    if (!user?.uid) return;
+    const current = tasks.find((t) => t.id === id);
+    if (!current) return;
+    await updateTaskFavorite(id, user.uid, !current.favorite);
   };
 
   const filteredTasks = tasks.filter((task) => {
     if (filter.user) {
-      const taskUser = task.assignedTo || task.assignedBy;
+      const taskUser = task.assigneeId || task.assignedBy;
       if (taskUser !== filter.user) return false;
     }
     if (filter.project && task.project !== filter.project) return false;
     return true;
+  });
+
+  const orderedTasks = filteredTasks.slice().sort((a, b) => {
+    if (a.favorite === b.favorite) {
+      return b.completedAt.getTime() - a.completedAt.getTime();
+    }
+    return a.favorite ? -1 : 1;
   });
 
   return (
@@ -98,7 +101,7 @@ export function CompletedTasksColumn() {
 
       {/* Tasks List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {filteredTasks.map((task) => (
+        {orderedTasks.map((task) => (
           <Card
             key={task.id}
             className="p-3 bg-green-200 border-none shadow-sm"
@@ -129,8 +132,8 @@ export function CompletedTasksColumn() {
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
               {task.type === "assigned"
-                ? `Asignado a: ${task.assignedTo}`
-                : `Asignado por: ${task.assignedBy}`}
+                ? `Asignado a: ${getUserName(task.assigneeId!)}`
+                : `Asignado por: ${getUserName(task.assignedBy!)}`}
             </p>
             <p className="text-xs text-gray-400 mt-1">
               Completado:{" "}
