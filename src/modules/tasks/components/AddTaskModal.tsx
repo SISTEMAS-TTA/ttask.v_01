@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { listAllUsers } from "@/lib/firebase/firestore";
 import useUser from "@/modules/auth/hooks/useUser";
+import { Textarea } from "@/components/ui/textarea";
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export function AddTaskModal({
   const { user } = useUser();
   const [title, setTitle] = useState("");
   const [project, setProject] = useState("");
+  const [content, setContent] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [users, setUsers] = useState<
     Array<{
@@ -73,14 +75,17 @@ export function AddTaskModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (title.trim() && project && assigneeId) {
+    // Validar título y asignado
+    if (title.trim() && assigneeId) {
       onAddTask({
         title: title.trim(),
         project,
+        description: content.trim(),
         assigneeId,
       });
       setTitle("");
       setProject("");
+      setContent("");
       setAssigneeId("");
       onClose();
     }
@@ -103,13 +108,23 @@ export function AddTaskModal({
               required
             />
           </div>
-
           <div className="space-y-2">
+            <Label htmlFor="content">Contenido</Label>
+            <Textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Ingresa el contenido de la tarea..."
+              required
+            />
+          </div>
+
+          {/* <div className="space-y-2">
             <Label htmlFor="project">Proyecto</Label>
             <Select value={project} onValueChange={setProject} required>
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un proyecto" />
-              </SelectTrigger>
+              </SelectTrigger>q 
               <SelectContent>
                 {projects.map((proj) => (
                   <SelectItem key={proj} value={proj}>
@@ -118,7 +133,7 @@ export function AddTaskModal({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
 
           <div className="space-y-2">
             <Label htmlFor="assignedTo">Asignar a</Label>
