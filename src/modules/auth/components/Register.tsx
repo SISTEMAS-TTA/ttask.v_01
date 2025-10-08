@@ -47,8 +47,14 @@ export default function Register() {
   const [fieldErrors, setFieldErrors] = useState<{ [k: string]: string }>({});
   const router = useRouter();
 
-  const [createUserWithEmailAndPassword, user, loading, authError] =
+  const [createUserWithEmailAndPassword, , loading, firebaseError] =
     useCreateUserWithEmailAndPassword(auth);
+
+  useEffect(() => {
+    if (firebaseError) {
+      setError(firebaseError.message ?? "Error al crear la cuenta");
+    }
+  }, [firebaseError]);
 
   const handleSignUp = async () => {
     if (loading) return; // Prevenir envíos concurrentes

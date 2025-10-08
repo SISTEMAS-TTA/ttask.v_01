@@ -1,14 +1,5 @@
 import { db } from "./config";
-import {
-  collection,
-  doc,
-  setDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  deleteDoc,
-} from "firebase/firestore";
+import { collection, doc, setDoc, getDoc, getDocs, deleteDoc } from "firebase/firestore";
 import { UserProfile } from "../../modules/types";
 
 const USERS_COLLECTION = "users";
@@ -50,7 +41,9 @@ export const getUserProfile = async (userId: string) => {
   }
 };
 
-export const listAllUsers = async () => {
+export type UserWithId = UserProfile & { id: string };
+
+export const listAllUsers = async (): Promise<UserWithId[]> => {
   try {
     const ref = collection(db, USERS_COLLECTION);
     const snap = await getDocs(ref);
@@ -61,10 +54,10 @@ export const listAllUsers = async () => {
   }
 };
 
-export const getUsersMap = async () => {
+export const getUsersMap = async (): Promise<Map<string, UserWithId>> => {
   const users = await listAllUsers();
-  const map = new Map<string, UserProfile & { id: string }>();
-  users.forEach((u) => map.set(u.id!, u as any));
+  const map = new Map<string, UserWithId>();
+  users.forEach((u) => map.set(u.id, u));
   return map;
 };
 

@@ -31,8 +31,6 @@ interface Task {
   createdAt?: Date;
 }
 
-type ViewValue = "all" | "viewed" | "pending" | "completed" | "favorites";
-
 interface TaskFilterModalProps {
   isOpen: boolean;
   onClose: () => void;

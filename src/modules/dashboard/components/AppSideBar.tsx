@@ -2,24 +2,10 @@
 
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
-import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-  Users,
-} from "lucide-react";
+import { SquareTerminal } from "lucide-react";
 
 import { NavMain } from "@/modules/dashboard/components/NavMain";
-import { NavProjects } from "@/modules/dashboard/components/NavProjects";
 import { NavUser } from "@/modules/dashboard/components/NavUser";
-import { TeamSwitcher } from "@/modules/dashboard/components/TeamSwitcher";
 import {
   Sidebar,
   SidebarContent,
@@ -28,42 +14,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useAdmin } from "@/hooks/useAdmin";
-
-const teams = [
-  {
-    name: "Acme Inc",
-    logo: GalleryVerticalEnd,
-    plan: "Enterprise",
-  },
-  {
-    name: "Acme Corp.",
-    logo: AudioWaveform,
-    plan: "Startup",
-  },
-  {
-    name: "Evil Corp.",
-    logo: Command,
-    plan: "Free",
-  },
-];
-
-const projects = [
-  {
-    name: "Design Engineering",
-    url: "#",
-    icon: Frame,
-  },
-  {
-    name: "Sales & Marketing",
-    url: "#",
-    icon: PieChart,
-  },
-  {
-    name: "Travel",
-    url: "#",
-    icon: Map,
-  },
-];
 
 // Extender tipo NavItem
 interface NavItem {
@@ -210,7 +160,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>{/* <TeamSwitcher teams={teams} /> */}</SidebarHeader>
+      <SidebarHeader />
       <SidebarContent>
         <NavMain
           items={navMain
@@ -222,7 +172,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             }))
             .filter((item) => !item.adminOnly || isAdmin)}
         />
-        {/* <NavProjects projects={projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={sidebarUser} />
