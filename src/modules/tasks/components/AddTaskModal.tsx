@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { listAllUsers } from "@/lib/firebase/firestore";
+import { listAllUsers, type UserWithId } from "@/lib/firebase/firestore";
 import useUser from "@/modules/auth/hooks/useUser";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -34,8 +34,6 @@ interface AddTaskModalProps {
   }) => Promise<void> | void;
 }
 
-const projects = ["Casa 1", "Casa 2", "Casa 3", "Proyecto General"];
-
 export function AddTaskModal({
   isOpen,
   onClose,
@@ -43,18 +41,10 @@ export function AddTaskModal({
 }: AddTaskModalProps) {
   const { user } = useUser();
   const [title, setTitle] = useState("");
-  const [project, setProject] = useState("");
+  const [project, setProject] = useState("General");
   const [content, setContent] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
-  const [users, setUsers] = useState<
-    Array<{
-      id: string;
-      fullName?: string;
-      firstName?: string;
-      lastName?: string;
-      email: string;
-    }>
-  >([]);
+  const [users, setUsers] = useState<UserWithId[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
   useEffect(() => {
@@ -65,7 +55,7 @@ export function AddTaskModal({
         const list = await listAllUsers();
         // Excluir al usuario actual de la lista
         const availableUsers = list.filter((u) => u.id !== user.uid);
-        setUsers(availableUsers as any);
+        setUsers(availableUsers);
       } finally {
         setLoadingUsers(false);
       }
@@ -84,7 +74,7 @@ export function AddTaskModal({
         assigneeId,
       });
       setTitle("");
-      setProject("");
+      setProject("General");
       setContent("");
       setAssigneeId("");
       onClose();

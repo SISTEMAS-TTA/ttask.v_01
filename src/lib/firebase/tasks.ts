@@ -10,6 +10,8 @@ import {
   updateDoc,
   where,
   getDoc,
+  DocumentData,
+  QuerySnapshot,
 } from "firebase/firestore";
 
 export type TaskDoc = {
@@ -33,6 +35,21 @@ export type NewTaskInput = Omit<
   "id" | "assignedBy" | "deleted" | "createdAt" | "updatedAt"
 >;
 
+type FirebaseTaskData = {
+  title?: string;
+  project?: string;
+  description?: string;
+  assigneeId?: string;
+  assignedBy?: string;
+  viewed?: boolean;
+  completed?: boolean;
+  favorite?: boolean;
+  deleted?: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  favorites?: Record<string, boolean>;
+};
+
 const TASKS_COLLECTION = "tasks";
 
 // Suscripción a tareas asignadas POR el usuario actual (columna T. Asignadas)
@@ -48,7 +65,7 @@ export const subscribeToTasksAssignedBy = (
     q,
     (snapshot) => {
       const tasks = snapshot.docs.map((d) => {
-        const data = d.data() as any;
+        const data = d.data() as FirebaseTaskData;
         const task: TaskDoc = {
           id: d.id,
           title: data.title ?? "",
@@ -95,7 +112,7 @@ export const subscribeToTasksAssignedTo = (
     q,
     (snapshot) => {
       const tasks = snapshot.docs.map((d) => {
-        const data = d.data() as any;
+        const data = d.data() as FirebaseTaskData;
         const task: TaskDoc = {
           id: d.id,
           title: data.title ?? "",
@@ -207,9 +224,9 @@ export const subscribeToCompletedTasks = (
   const unsubscribers: (() => void)[] = [];
   const allTasks = new Map<string, TaskDoc>();
 
-  const handleSnapshot = (snapshot: any, source: "assigned" | "received") => {
-    snapshot.docs.forEach((d: any) => {
-      const data = d.data() as any;
+  const handleSnapshot = (snapshot: QuerySnapshot<DocumentData>) => {
+    snapshot.docs.forEach((d) => {
+      const data = d.data() as FirebaseTaskData;
       const task: TaskDoc = {
         id: d.id,
         title: data.title ?? "",
@@ -243,7 +260,7 @@ export const subscribeToCompletedTasks = (
   // Suscripción a tareas asignadas por el usuario
   const unsubAssignedBy = onSnapshot(
     assignedByQuery,
-    (snapshot) => handleSnapshot(snapshot, "assigned"),
+    (snapshot) => handleSnapshot(snapshot),
     (err) => {
       console.error(
         "Error al suscribirse a tareas completadas asignadas por usuario",
@@ -256,7 +273,7 @@ export const subscribeToCompletedTasks = (
   // Suscripción a tareas asignadas al usuario
   const unsubAssignedTo = onSnapshot(
     assignedToQuery,
-    (snapshot) => handleSnapshot(snapshot, "received"),
+    (snapshot) => handleSnapshot(snapshot),
     (err) => {
       console.error(
         "Error al suscribirse a tareas completadas asignadas al usuario",

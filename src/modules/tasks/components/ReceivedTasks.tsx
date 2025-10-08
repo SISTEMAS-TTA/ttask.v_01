@@ -26,9 +26,6 @@ interface ReceivedTask {
 
 const initialReceivedTasks: ReceivedTask[] = [];
 
-// Tipos de vista compatibles con el modal
-type ViewValue = "all" | "viewed" | "pending" | "completed" | "favorites";
-
 export function ReceivedTasksColumn() {
   const { user, loading: userLoading } = useUser();
   const { getUserName } = useUsersMap();

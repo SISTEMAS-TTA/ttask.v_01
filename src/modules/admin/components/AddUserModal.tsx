@@ -54,8 +54,12 @@ export function AddUserModal({
       toast.success("Usuario creado correctamente");
       setFormData({ email: "", password: "", fullName: "", role: "user" });
       onUserAdded();
-    } catch (error: any) {
-      toast.error(error.message || "Error al crear usuario");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error al crear usuario";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
