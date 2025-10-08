@@ -11,6 +11,7 @@ import {
   updateTaskFavorite,
 } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
+import { TaskFilterModal } from "@/modules/tasks/components/TaskFilterModal";
 
 interface ReceivedTask {
   id: string;
@@ -25,14 +26,18 @@ interface ReceivedTask {
 
 const initialReceivedTasks: ReceivedTask[] = [];
 
+// Tipos de vista compatibles con el modal
+type ViewValue = "all" | "viewed" | "pending" | "completed" | "favorites";
+
 export function ReceivedTasksColumn() {
   const { user, loading: userLoading } = useUser();
   const { getUserName } = useUsersMap();
   const [tasks, setTasks] = useState<ReceivedTask[]>(initialReceivedTasks);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filter, setFilter] = useState<{
-    assignedBy?: string;
-    view?: "all" | "viewed" | "pending";
+    user?: string;
+    project?: string;
+    view?: string;
   }>({});
 
   useEffect(() => {
@@ -86,19 +91,21 @@ export function ReceivedTasksColumn() {
 
   // Apply filters
   const filteredTasks = tasks.filter((task) => {
-    if (filter.assignedBy && task.assignedBy !== filter.assignedBy)
-      return false;
+    if (filter.user && task.assignedBy !== filter.user) return false;
+    if (filter.project && task.project !== filter.project) return false;
     if (filter.view) {
       switch (filter.view) {
         case "viewed":
           return task.viewed && !task.completed;
         case "pending":
           return !task.viewed && !task.completed;
+        case "favorites":
+          return task.favorite && !task.completed;
         default:
-          return true;
+          return !task.completed;
       }
     }
-    return true;
+    return !task.completed;
   });
 
   // Orden: favoritas arriba
@@ -241,6 +248,20 @@ export function ReceivedTasksColumn() {
           </Card>
         ))}
       </div>
+      <TaskFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        currentFilter={filter}
+        onApplyFilter={(f) => setFilter(f)}
+        tasks={tasks}
+        userField="assignedBy"
+        viewOptions={[
+          { value: "all", label: "Todas" },
+          { value: "viewed", label: "Vistas" },
+          { value: "pending", label: "Pendientes" },
+          { value: "favorites", label: "Favoritas" },
+        ]}
+      />
     </div>
   );
 }
