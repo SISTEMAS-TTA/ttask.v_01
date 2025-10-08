@@ -17,30 +17,38 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useUsersMap } from "@/hooks/useUsersMap";
 
 interface Task {
   id: string;
   title: string;
   project: string;
-  assigneeId: string;
-  viewed: boolean;
-  completed: boolean;
-  favorite: boolean;
-  createdAt: Date;
+  assigneeId?: string;
+  assignedBy?: string;
+  viewed?: boolean;
+  completed?: boolean;
+  favorite?: boolean;
+  createdAt?: Date;
 }
+
+type ViewValue = "all" | "viewed" | "pending" | "completed" | "favorites";
 
 interface TaskFilterModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentFilter: {
-    assigneeId?: string;
-    view?: "all" | "viewed" | "completed" | "favorites";
+    user?: string;
+    project?: string;
+    view?: string;
   };
   onApplyFilter: (filter: {
-    assigneeId?: string;
-    view?: "all" | "viewed" | "completed" | "favorites";
+    user?: string;
+    project?: string;
+    view?: string;
   }) => void;
   tasks: Task[];
+  userField?: "assigneeId" | "assignedBy";
+  viewOptions?: { value: string; label: string }[];
 }
 
 export function TaskFilterModal({
@@ -49,33 +57,56 @@ export function TaskFilterModal({
   currentFilter,
   onApplyFilter,
   tasks,
+  userField = "assigneeId",
+  viewOptions = [
+    { value: "all", label: "Todas" },
+    { value: "viewed", label: "Vistas" },
+    { value: "completed", label: "Terminadas" },
+    { value: "favorites", label: "Favoritas" },
+  ],
 }: TaskFilterModalProps) {
-  const [assignedTo, setAssignedTo] = useState(
-    currentFilter.assigneeId || "all"
+  const { getUserName } = useUsersMap();
+
+  const [selectedUser, setSelectedUser] = useState(currentFilter.user || "all");
+  const [selectedProject, setSelectedProject] = useState(
+    currentFilter.project || "all"
   );
-  const [view, setView] = useState(currentFilter.view || "all");
+  const [view, setView] = useState<string>(currentFilter.view || "all");
 
   useEffect(() => {
-    setAssignedTo(currentFilter.assigneeId || "all");
+    setSelectedUser(currentFilter.user || "all");
+    setSelectedProject(currentFilter.project || "all");
     setView(currentFilter.view || "all");
   }, [currentFilter]);
 
   const uniqueUsers: string[] = Array.from(
-    new Set(tasks.map((task) => task.assigneeId))
+    new Set(
+      tasks
+        .map((task) =>
+          userField === "assigneeId" ? task.assigneeId : task.assignedBy
+        )
+        .filter((v): v is string => Boolean(v))
+    )
+  );
+
+  const uniqueProjects: string[] = Array.from(
+    new Set(tasks.map((task) => task.project).filter(Boolean))
   );
 
   const handleApply = () => {
     onApplyFilter({
-      assigneeId: assignedTo === "all" ? undefined : assignedTo,
-      view: view as "all" | "viewed" | "completed" | "favorites",
+      user: selectedUser === "all" ? undefined : selectedUser,
+      project: selectedProject === "all" ? undefined : selectedProject,
+      view,
     });
     onClose();
   };
 
   const handleClear = () => {
-    setAssignedTo("all");
+    setSelectedUser("all");
+    setSelectedProject("all");
     setView("all");
-    onApplyFilter({ view: "all" });
+    onApplyFilter({});
     onClose();
   };
 
@@ -87,8 +118,10 @@ export function TaskFilterModal({
         </DialogHeader>
         <div className="space-y-6">
           <div className="space-y-2">
-            <Label>Asignado a</Label>
-            <Select value={assignedTo} onValueChange={setAssignedTo}>
+            <Label>
+              {userField === "assigneeId" ? "Asignado a" : "Asignado por"}
+            </Label>
+            <Select value={selectedUser} onValueChange={setSelectedUser}>
               <SelectTrigger>
                 <SelectValue placeholder="Todos los usuarios" />
               </SelectTrigger>
@@ -96,7 +129,24 @@ export function TaskFilterModal({
                 <SelectItem value="all">Todos los usuarios</SelectItem>
                 {uniqueUsers.map((userId) => (
                   <SelectItem key={userId} value={userId}>
-                    {userId}
+                    {getUserName(userId)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Proyecto</Label>
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos los proyectos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los proyectos</SelectItem>
+                {uniqueProjects.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -105,28 +155,13 @@ export function TaskFilterModal({
 
           <div className="space-y-3">
             <Label>Vista</Label>
-            <RadioGroup
-              value={view}
-              onValueChange={(value) =>
-                setView(value as "all" | "viewed" | "completed" | "favorites")
-              }
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="all" id="all" />
-                <Label htmlFor="all">Todas</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="viewed" id="viewed" />
-                <Label htmlFor="viewed">Vistas</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="completed" id="completed" />
-                <Label htmlFor="completed">Terminadas</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="favorites" id="favorites" />
-                <Label htmlFor="favorites">Favoritas</Label>
-              </div>
+            <RadioGroup value={view} onValueChange={(value) => setView(value)}>
+              {viewOptions.map((opt) => (
+                <div key={opt.value} className="flex items-center space-x-2">
+                  <RadioGroupItem value={opt.value} id={opt.value} />
+                  <Label htmlFor={opt.value}>{opt.label}</Label>
+                </div>
+              ))}
             </RadioGroup>
           </div>
 

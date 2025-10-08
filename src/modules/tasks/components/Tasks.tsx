@@ -29,6 +29,9 @@ interface UITask {
 
 const initialTasks: UITask[] = [];
 
+// Tipos de vista compatibles con el modal
+// type ViewValue = "all" | "viewed" | "completed" | "favorites";
+
 export function TasksColumn() {
   const { user, loading: userLoading } = useUser();
   const { getUserName } = useUsersMap();
@@ -36,9 +39,10 @@ export function TasksColumn() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [filter, setFilter] = useState<{
-    assigneeId?: string;
-    view?: "all" | "viewed" | "completed" | "favorites";
-  }>({ view: "all" });
+    user?: string;
+    project?: string;
+    view?: string;
+  }>({});
 
   useEffect(() => {
     if (userLoading) return;
@@ -94,20 +98,13 @@ export function TasksColumn() {
     await createTask(user.uid, payload);
   };
 
+  // Aplicar filtros
   const filteredTasks = tasks.filter((task) => {
-    if (filter.assigneeId && task.assigneeId !== filter.assigneeId)
-      return false;
-
-    switch (filter.view) {
-      case "viewed":
-        return task.viewed && !task.completed;
-      case "completed":
-        return task.completed;
-      case "favorites":
-        return task.favorite && !task.completed;
-      default:
-        return true;
-    }
+    if (filter.user && task.assigneeId !== filter.user) return false;
+    if (filter.project && task.project !== filter.project) return false;
+    if (filter.view === "viewed" && !task.viewed) return false;
+    if (filter.view === "favorites" && !task.favorite) return false;
+    return true;
   });
   const activeTasks = filteredTasks.filter(
     (task) => !task.completed && !task.viewed
@@ -202,8 +199,14 @@ export function TasksColumn() {
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
         currentFilter={filter}
-        onApplyFilter={setFilter}
-        tasks={tasks as any}
+        onApplyFilter={(f) => setFilter(f)}
+        tasks={tasks}
+        userField="assigneeId"
+        viewOptions={[
+          { value: "all", label: "Todas" },
+          { value: "viewed", label: "Vistas" },
+          { value: "favorites", label: "Favoritas" },
+        ]}
       />
     </div>
   );

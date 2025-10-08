@@ -33,6 +33,8 @@ export function CompletedTasksColumn() {
   const [filter, setFilter] = useState<{
     user?: string;
     project?: string;
+    dateFrom?: string;
+    dateTo?: string;
   }>({});
 
   useEffect(() => {
@@ -74,6 +76,18 @@ export function CompletedTasksColumn() {
       if (taskUser !== filter.user) return false;
     }
     if (filter.project && task.project !== filter.project) return false;
+    if (filter.dateFrom) {
+      const from = new Date(filter.dateFrom);
+      if (task.completedAt < from) return false;
+    }
+    if (filter.dateTo) {
+      const to = new Date(filter.dateTo);
+      if (
+        task.completedAt >
+        new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59, 999)
+      )
+        return false;
+    }
     return true;
   });
 

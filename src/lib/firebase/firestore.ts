@@ -7,6 +7,7 @@ import {
   getDocs,
   query,
   where,
+  deleteDoc,
 } from "firebase/firestore";
 import { UserProfile } from "../../modules/types";
 
@@ -66,3 +67,8 @@ export const getUsersMap = async () => {
   users.forEach((u) => map.set(u.id!, u as any));
   return map;
 };
+
+export async function deleteUser(uid: string): Promise<void> {
+  const userRef = doc(db, "users", uid);
+  await deleteDoc(userRef);
+}
