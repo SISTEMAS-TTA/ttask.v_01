@@ -6,7 +6,6 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -79,9 +78,6 @@ export function AddNoteModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Agregar Nueva Nota</DialogTitle>
-          {/* <DialogDescription>
-            Completa los campos para crear una nueva nota personalizada.
-          </DialogDescription> */}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

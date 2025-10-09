@@ -44,18 +44,21 @@ export function ReceivedTasksColumn() {
     const unsub = subscribeToTasksAssignedTo(
       user.uid,
       (docs) => {
-        setTasks(
-          docs.map((d) => ({
-            id: d.id,
-            title: d.title,
-            project: d.project,
-            assignedBy: d.assignedBy,
-            viewed: d.viewed,
-            completed: d.completed,
-            favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
-            createdAt: d.createdAt.toDate(),
-          }))
+        const mapped = docs.map((d) => ({
+          id: d.id,
+          title: d.title,
+          project: d.project,
+          assignedBy: d.assignedBy,
+          viewed: d.viewed,
+          completed: d.completed,
+          favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
+          createdAt: d.createdAt.toDate(),
+        }));
+        console.debug(
+          "subscribeToTasksAssignedTo -> received docs:",
+          mapped.map((m) => ({ id: m.id, favorite: m.favorite }))
         );
+        setTasks(mapped);
       },
       () => setTasks([])
     );
@@ -81,7 +84,32 @@ export function ReceivedTasksColumn() {
   const toggleFavorite = async (id: string) => {
     const current = tasks.find((t) => t.id === id);
     if (!current || !user?.uid) return;
-    await updateTaskFavorite(id, user.uid, !current.favorite);
+
+    console.debug("toggleFavorite requested", {
+      id,
+      currentFavorite: current.favorite,
+      user: user.uid,
+    });
+    // Optimista: actualizar UI inmediatamente
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, favorite: !t.favorite } : t))
+    );
+
+    try {
+      await updateTaskFavorite(id, user.uid, !current.favorite);
+      console.debug("updateTaskFavorite succeeded", {
+        id,
+        newValue: !current.favorite,
+      });
+    } catch (err) {
+      console.error("Error al actualizar favorito", err);
+      // Revertir en caso de error
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, favorite: current.favorite } : t
+        )
+      );
+    }
   };
 
   // Apply filters
