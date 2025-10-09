@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Filter, Eye, Check, Star, CheckCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Filter, Check, Star, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddTaskModal } from "@/modules/tasks/components/AddTaskModal";
@@ -14,7 +14,6 @@ import {
   updateTaskFavorite,
 } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
-import { Timestamp } from "firebase/firestore";
 
 interface UITask {
   id: string;
@@ -115,7 +114,7 @@ export function TasksColumn() {
       viewed: false,
       completed: false,
       favorite: false,
-    } as any;
+    };
     await createTask(user.uid, payload);
   };
 
@@ -134,13 +133,7 @@ export function TasksColumn() {
         return true;
     }
   });
-  // const activeTasks = filteredTasks.filter(
-  //   (task) => !task.completed && !task.viewed
-  // );
-  // const viewedTasks = filteredTasks.filter(
-  //   (task) => task.viewed && !task.completed
-  // );
-  // const completedTasks = filteredTasks.filter((task) => task.completed);
+  // (nota: descomentaba vistas separadas si se necesitan más adelante)
 
   // Orden: favoritas arriba
   const orderedTasks = filteredTasks
@@ -228,7 +221,7 @@ export function TasksColumn() {
         onClose={() => setIsFilterModalOpen(false)}
         currentFilter={filter}
         onApplyFilter={setFilter}
-        tasks={tasks as any}
+        tasks={tasks}
       />
     </div>
   );

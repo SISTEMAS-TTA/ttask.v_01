@@ -29,8 +29,8 @@ export function ReceivedTasksColumn() {
   const { user, loading: userLoading } = useUser();
   const { getUserName } = useUsersMap();
   const [tasks, setTasks] = useState<ReceivedTask[]>(initialReceivedTasks);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filter, setFilter] = useState<{
+  const [, setIsFilterModalOpen] = useState(false);
+  const [filter] = useState<{
     assignedBy?: string;
     view?: "all" | "viewed" | "pending";
   }>({});
