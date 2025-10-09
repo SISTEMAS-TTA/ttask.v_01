@@ -134,13 +134,13 @@ export function TasksColumn() {
         return true;
     }
   });
-  const activeTasks = filteredTasks.filter(
-    (task) => !task.completed && !task.viewed
-  );
-  const viewedTasks = filteredTasks.filter(
-    (task) => task.viewed && !task.completed
-  );
-  const completedTasks = filteredTasks.filter((task) => task.completed);
+  // const activeTasks = filteredTasks.filter(
+  //   (task) => !task.completed && !task.viewed
+  // );
+  // const viewedTasks = filteredTasks.filter(
+  //   (task) => task.viewed && !task.completed
+  // );
+  // const completedTasks = filteredTasks.filter((task) => task.completed);
 
   // Orden: favoritas arriba
   const orderedTasks = filteredTasks
