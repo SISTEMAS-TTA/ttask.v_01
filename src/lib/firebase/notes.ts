@@ -3,6 +3,7 @@ import {
   addDoc,
   collection,
   doc,
+  deleteDoc,
   onSnapshot,
   query,
   Timestamp,
@@ -32,7 +33,10 @@ export const subscribeToUserNotes = (
     notesQuery,
     (snapshot) => {
       const notes = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
+        const data = docSnap.data() as Record<string, unknown>;
+        const favoritesMap: Record<string, boolean> | undefined =
+          (data.favorites as Record<string, boolean> | undefined) ?? undefined;
+
         const note: Note = {
           id: docSnap.id,
           userId: (data.userId as string) ?? userId,
@@ -40,19 +44,24 @@ export const subscribeToUserNotes = (
           content: (data.content as string) ?? "",
           color: (data.color as string) ?? "bg-yellow-200",
           completed: Boolean(data.completed),
-          favorite: Boolean(data.favorite),
+          // favorite individual: primero revisamos favorites[userId], si no existe usamos el campo legacy `favorite`
+          favorite: Boolean(favoritesMap?.[userId]) || Boolean(data.favorite),
+          favorites: favoritesMap,
           project: (data.project as string) ?? "General",
           createdAt:
             data.createdAt instanceof Timestamp
               ? data.createdAt
               : Timestamp.now(),
-        };
+        } as Note;
         return note;
       });
 
-      // Ordenamos en el cliente en lugar de en la consulta
+      // Ordenamos: primero las favoritas del usuario, luego por createdAt desc
       const sortedNotes = notes.sort((a, b) => {
-        return b.createdAt.toMillis() - a.createdAt.toMillis();
+        if (a.favorite === b.favorite) {
+          return b.createdAt.toMillis() - a.createdAt.toMillis();
+        }
+        return a.favorite ? -1 : 1;
       });
 
       onNotes(sortedNotes);
@@ -63,6 +72,22 @@ export const subscribeToUserNotes = (
     }
   );
 };
+
+export async function updateNoteFavorite(
+  noteId: string,
+  userId: string,
+  value: boolean
+) {
+  const noteRef = doc(db, NOTES_COLLECTION, noteId);
+  await updateDoc(noteRef, {
+    [`favorites.${userId}`]: value,
+  });
+}
+
+export async function deleteNote(noteId: string) {
+  const noteRef = doc(db, NOTES_COLLECTION, noteId);
+  await deleteDoc(noteRef);
+}
 
 export const createNote = async (userId: string, note: NewNoteInput) => {
   const notesRef = collection(db, NOTES_COLLECTION);

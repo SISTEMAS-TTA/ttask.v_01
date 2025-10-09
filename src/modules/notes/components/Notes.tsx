@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, Plus, Star } from "lucide-react";
+import { Check, Loader2, Plus, Star, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddNoteModal } from "@/modules/notes/components/AddNoteModal";
+import { EditNoteModal } from "@/modules/notes/components/EditNoteModal";
 import useUser from "@/modules/auth/hooks/useUser";
 import type { Note } from "@/modules/types";
 import {
@@ -12,6 +13,7 @@ import {
   NewNoteInput,
   subscribeToUserNotes,
   updateNote,
+  updateNoteFavorite,
 } from "@/lib/firebase/notes";
 
 export function NotesColumn() {
@@ -80,10 +82,45 @@ export function NotesColumn() {
 
   const toggleFavorite = async (note: Note) => {
     try {
-      await updateNote(note.id, { favorite: !note.favorite });
+      if (!user) return;
+      await updateNoteFavorite(note.id, user.uid, !note.favorite);
     } catch (error) {
       console.error("Error al actualizar la nota", error);
     }
+  };
+
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+
+  const handleDelete = async (noteId: string) => {
+    // optimista: remover del estado local inmediatamente
+    setNotes((prev) => prev.filter((n) => n.id !== noteId));
+
+    try {
+      await (await import("@/lib/firebase/notes")).deleteNote(noteId);
+    } catch (err) {
+      console.error("Error al eliminar la nota", err);
+      // Revertir: recargar las notas (simple) -- la suscripción los recuperará pronto
+      if (user) {
+        // no forzamos una recarga aquí; la suscripción onSnapshot se encargará
+      }
+    }
+  };
+
+  const handleSaveEdit = async (
+    id: string,
+    updates: Partial<Omit<Note, "id" | "userId" | "createdAt">>
+  ) => {
+    // optimista: aplicar cambios en cliente
+    setNotes((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, ...updates } : n))
+    );
+    try {
+      await updateNote(id, updates);
+    } catch (err) {
+      console.error("Error al guardar edición de la nota", err);
+      // la suscripción corregirá el estado en breve
+    }
+    setEditingNote(null);
   };
   // Memoizar la separación de notas activas y completadas
   const { activeNotes, completedNotes } = useMemo(() => {
@@ -153,6 +190,25 @@ export function NotesColumn() {
                         }`}
                       />
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingNote(note)}
+                      className="h-8 w-8 p-0 hover:bg-black/10"
+                    >
+                      <Edit className="h-5 w-5 text-gray-600" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        if (confirm("¿Eliminar nota?"))
+                          void handleDelete(note.id);
+                      }}
+                      className="h-8 w-8 p-0 hover:bg-black/10"
+                    >
+                      <Trash2 className="h-5 w-5 text-red-500" />
+                    </Button>
                   </div>
                 </div>
                 <p className="text-xs text-gray-600">{note.content}</p>
@@ -211,6 +267,12 @@ export function NotesColumn() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAddNote={handleAddNote}
+      />
+      <EditNoteModal
+        isOpen={!!editingNote}
+        onClose={() => setEditingNote(null)}
+        note={editingNote}
+        onSave={handleSaveEdit}
       />
     </div>
   );
