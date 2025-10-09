@@ -29,26 +29,10 @@ export type TaskDoc = {
   updatedAt?: Timestamp;
   favorites?: Record<string, boolean>; // favoritos por usuario
 };
-
 export type NewTaskInput = Omit<
   TaskDoc,
   "id" | "assignedBy" | "deleted" | "createdAt" | "updatedAt"
 >;
-
-type FirebaseTaskData = {
-  title?: string;
-  project?: string;
-  description?: string;
-  assigneeId?: string;
-  assignedBy?: string;
-  viewed?: boolean;
-  completed?: boolean;
-  favorite?: boolean;
-  deleted?: boolean;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  favorites?: Record<string, boolean>;
-};
 
 const TASKS_COLLECTION = "tasks";
 
@@ -65,31 +49,39 @@ export const subscribeToTasksAssignedBy = (
     q,
     (snapshot) => {
       const tasks = snapshot.docs.map((d) => {
-        const data = d.data() as FirebaseTaskData;
+        const data = d.data() as Record<string, unknown>;
+        const favoritesMap =
+          (data.favorites as Record<string, boolean> | undefined) ?? undefined;
         const task: TaskDoc = {
           id: d.id,
-          title: data.title ?? "",
-          project: data.project ?? "General",
-          description: data.description ?? "",
-          assigneeId: data.assigneeId ?? "",
-          assignedBy: data.assignedBy ?? userId,
+          title: (data.title as string) ?? "",
+          project: (data.project as string) ?? "General",
+          description: (data.description as string) ?? "",
+          assigneeId: (data.assigneeId as string) ?? "",
+          assignedBy: (data.assignedBy as string) ?? userId,
           viewed: Boolean(data.viewed),
           completed: Boolean(data.completed),
-          favorite: Boolean(data.favorite),
+          favorite: Boolean(favoritesMap?.[userId]) || Boolean(data.favorite),
           deleted: Boolean(data.deleted),
+          favorites: favoritesMap,
           createdAt:
             data.createdAt instanceof Timestamp
-              ? data.createdAt
+              ? (data.createdAt as Timestamp)
               : Timestamp.now(),
           updatedAt:
-            data.updatedAt instanceof Timestamp ? data.updatedAt : undefined,
+            data.updatedAt instanceof Timestamp
+              ? (data.updatedAt as Timestamp)
+              : undefined,
         };
         return task;
       });
 
-      const sorted = tasks.sort(
-        (a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()
-      );
+      // Ordenar: favoritas del usuario primero, luego por createdAt desc
+      const sorted = tasks.sort((a, b) => {
+        if (a.favorite === b.favorite)
+          return b.createdAt.toMillis() - a.createdAt.toMillis();
+        return a.favorite ? -1 : 1;
+      });
       onTasks(sorted);
     },
     (err) => {
@@ -112,31 +104,38 @@ export const subscribeToTasksAssignedTo = (
     q,
     (snapshot) => {
       const tasks = snapshot.docs.map((d) => {
-        const data = d.data() as FirebaseTaskData;
+        const data = d.data() as Record<string, unknown>;
+        const favoritesMap =
+          (data.favorites as Record<string, boolean> | undefined) ?? undefined;
         const task: TaskDoc = {
           id: d.id,
-          title: data.title ?? "",
-          project: data.project ?? "General",
-          description: data.description ?? "",
-          assigneeId: data.assigneeId ?? userId,
-          assignedBy: data.assignedBy ?? "",
+          title: (data.title as string) ?? "",
+          project: (data.project as string) ?? "General",
+          description: (data.description as string) ?? "",
+          assigneeId: (data.assigneeId as string) ?? userId,
+          assignedBy: (data.assignedBy as string) ?? "",
           viewed: Boolean(data.viewed),
           completed: Boolean(data.completed),
-          favorite: Boolean(data.favorite),
+          favorite: Boolean(favoritesMap?.[userId]) || Boolean(data.favorite),
           deleted: Boolean(data.deleted),
+          favorites: favoritesMap,
           createdAt:
             data.createdAt instanceof Timestamp
-              ? data.createdAt
+              ? (data.createdAt as Timestamp)
               : Timestamp.now(),
           updatedAt:
-            data.updatedAt instanceof Timestamp ? data.updatedAt : undefined,
+            data.updatedAt instanceof Timestamp
+              ? (data.updatedAt as Timestamp)
+              : undefined,
         };
         return task;
       });
 
-      const sorted = tasks.sort(
-        (a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()
-      );
+      const sorted = tasks.sort((a, b) => {
+        if (a.favorite === b.favorite)
+          return b.createdAt.toMillis() - a.createdAt.toMillis();
+        return a.favorite ? -1 : 1;
+      });
       onTasks(sorted);
     },
     (err) => {
@@ -224,36 +223,48 @@ export const subscribeToCompletedTasks = (
   const unsubscribers: (() => void)[] = [];
   const allTasks = new Map<string, TaskDoc>();
 
-  const handleSnapshot = (snapshot: QuerySnapshot<DocumentData>) => {
+  const handleSnapshot = (snapshot: {
+    docs: Array<{ data: () => Record<string, unknown>; id: string }>;
+  }) => {
     snapshot.docs.forEach((d) => {
-      const data = d.data() as FirebaseTaskData;
+      const data = d.data() as Record<string, unknown>;
+      const favoritesMap =
+        (data.favorites as Record<string, boolean> | undefined) ?? undefined;
       const task: TaskDoc = {
         id: d.id,
-        title: data.title ?? "",
-        project: data.project ?? "General",
-        description: data.description ?? "",
-        assigneeId: data.assigneeId ?? "",
-        assignedBy: data.assignedBy ?? "",
+        title: (data.title as string) ?? "",
+        project: (data.project as string) ?? "General",
+        description: (data.description as string) ?? "",
+        assigneeId: (data.assigneeId as string) ?? "",
+        assignedBy: (data.assignedBy as string) ?? "",
         viewed: Boolean(data.viewed),
         completed: Boolean(data.completed),
-        favorite: Boolean(data.favorite),
+        favorite: Boolean(favoritesMap?.[userId]) || Boolean(data.favorite),
         deleted: Boolean(data.deleted),
+        favorites: favoritesMap,
         createdAt:
           data.createdAt instanceof Timestamp
-            ? data.createdAt
+            ? (data.createdAt as Timestamp)
             : Timestamp.now(),
         updatedAt:
-          data.updatedAt instanceof Timestamp ? data.updatedAt : undefined,
+          data.updatedAt instanceof Timestamp
+            ? (data.updatedAt as Timestamp)
+            : undefined,
       };
       allTasks.set(task.id, task);
     });
 
     // Ordenar y enviar todas las tareas
-    const sorted = Array.from(allTasks.values()).sort(
-      (a, b) =>
-        (b.updatedAt?.toMillis() ?? b.createdAt.toMillis()) -
-        (a.updatedAt?.toMillis() ?? a.createdAt.toMillis())
-    );
+    const sorted = Array.from(allTasks.values()).sort((a, b) => {
+      // favoritas del usuario arriba; si igual, por updatedAt/createdAt desc
+      if (a.favorite === b.favorite) {
+        return (
+          (b.updatedAt?.toMillis() ?? b.createdAt.toMillis()) -
+          (a.updatedAt?.toMillis() ?? a.createdAt.toMillis())
+        );
+      }
+      return a.favorite ? -1 : 1;
+    });
     onTasks(sorted);
   };
 

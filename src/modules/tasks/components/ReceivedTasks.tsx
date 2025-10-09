@@ -30,11 +30,10 @@ export function ReceivedTasksColumn() {
   const { user, loading: userLoading } = useUser();
   const { getUserName } = useUsersMap();
   const [tasks, setTasks] = useState<ReceivedTask[]>(initialReceivedTasks);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [filter, setFilter] = useState<{
-    user?: string;
-    project?: string;
-    view?: string;
+  const [, setIsFilterModalOpen] = useState(false);
+  const [filter] = useState<{
+    assignedBy?: string;
+    view?: "all" | "viewed" | "pending";
   }>({});
 
   useEffect(() => {
@@ -46,18 +45,21 @@ export function ReceivedTasksColumn() {
     const unsub = subscribeToTasksAssignedTo(
       user.uid,
       (docs) => {
-        setTasks(
-          docs.map((d) => ({
-            id: d.id,
-            title: d.title,
-            project: d.project,
-            assignedBy: d.assignedBy,
-            viewed: d.viewed,
-            completed: d.completed,
-            favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
-            createdAt: d.createdAt.toDate(),
-          }))
+        const mapped = docs.map((d) => ({
+          id: d.id,
+          title: d.title,
+          project: d.project,
+          assignedBy: d.assignedBy,
+          viewed: d.viewed,
+          completed: d.completed,
+          favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
+          createdAt: d.createdAt.toDate(),
+        }));
+        console.debug(
+          "subscribeToTasksAssignedTo -> received docs:",
+          mapped.map((m) => ({ id: m.id, favorite: m.favorite }))
         );
+        setTasks(mapped);
       },
       () => setTasks([])
     );
@@ -83,21 +85,44 @@ export function ReceivedTasksColumn() {
   const toggleFavorite = async (id: string) => {
     const current = tasks.find((t) => t.id === id);
     if (!current || !user?.uid) return;
-    await updateTaskFavorite(id, user.uid, !current.favorite);
+
+    console.debug("toggleFavorite requested", {
+      id,
+      currentFavorite: current.favorite,
+      user: user.uid,
+    });
+    // Optimista: actualizar UI inmediatamente
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, favorite: !t.favorite } : t))
+    );
+
+    try {
+      await updateTaskFavorite(id, user.uid, !current.favorite);
+      console.debug("updateTaskFavorite succeeded", {
+        id,
+        newValue: !current.favorite,
+      });
+    } catch (err) {
+      console.error("Error al actualizar favorito", err);
+      // Revertir en caso de error
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, favorite: current.favorite } : t
+        )
+      );
+    }
   };
 
   // Apply filters
   const filteredTasks = tasks.filter((task) => {
-    if (filter.user && task.assignedBy !== filter.user) return false;
-    if (filter.project && task.project !== filter.project) return false;
+    if (filter.assignedBy && task.assignedBy !== filter.assignedBy)
+      return false;
     if (filter.view) {
       switch (filter.view) {
         case "viewed":
           return task.viewed && !task.completed;
         case "pending":
           return !task.viewed && !task.completed;
-        case "favorites":
-          return task.favorite && !task.completed;
         default:
           return !task.completed;
       }
@@ -245,20 +270,6 @@ export function ReceivedTasksColumn() {
           </Card>
         ))}
       </div>
-      <TaskFilterModal
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        currentFilter={filter}
-        onApplyFilter={(f) => setFilter(f)}
-        tasks={tasks}
-        userField="assignedBy"
-        viewOptions={[
-          { value: "all", label: "Todas" },
-          { value: "viewed", label: "Vistas" },
-          { value: "pending", label: "Pendientes" },
-          { value: "favorites", label: "Favoritas" },
-        ]}
-      />
     </div>
   );
 }

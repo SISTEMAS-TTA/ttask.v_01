@@ -4,7 +4,7 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey:
@@ -20,8 +20,7 @@ const firebaseConfig = {
   messagingSenderId:
     process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "000000000000",
   appId:
-    process.env.NEXT_PUBLIC_FIREBASE_APP_ID ??
-    "1:000000000000:web:demoapp",
+    process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? "1:000000000000:web:demoapp",
 };
 
 if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
@@ -34,6 +33,14 @@ if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Enable IndexedDB persistence to reduce network reads and improve offline support
+if (typeof window !== "undefined") {
+  enableIndexedDbPersistence(db).catch((err) => {
+    // Common failures: multiple tabs open (failed-precondition) or browser not supported
+    console.warn("IndexedDB persistence not enabled:", err?.code ?? err);
+  });
+}
 
 // Configurar persistencia local para mantener la sesión
 if (typeof window !== "undefined") {

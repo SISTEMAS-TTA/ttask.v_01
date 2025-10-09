@@ -6,7 +6,16 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   fullName?: string;
-  role: "Director" | "Administrador" | "Proyectos" | "Diseno" | "Gerencia" | "Obra" | "Sistemas" | "Practicante" | "Usuario";
+  role:
+    | "Director"
+    | "Administrador"
+    | "Proyectos"
+    | "Diseno"
+    | "Gerencia"
+    | "Obra"
+    | "Sistemas"
+    | "Practicante"
+    | "Usuario";
   createdAt: Timestamp;
   lastLogin?: Date;
   active?: boolean;
@@ -22,7 +31,6 @@ export interface Task {
   updatedAt?: Timestamp;
   status?: "pending" | "in-progress" | "completed";
 }
-
 
 export type UserRole =
   | "Director"
@@ -54,7 +62,8 @@ export interface Note {
   content: string;
   color: string;
   completed: boolean;
-  favorite: boolean;
+  favorite: boolean; // valor legacy (global)
+  favorites?: Record<string, boolean>; // favoritos por usuario: { userId: true }
   project: string;
   createdAt: Timestamp;
 }

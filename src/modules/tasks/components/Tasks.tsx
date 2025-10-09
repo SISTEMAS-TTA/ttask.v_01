@@ -53,18 +53,21 @@ export function TasksColumn() {
     const unsubscribe = subscribeToTasksAssignedBy(
       user.uid,
       (docs) => {
-        setTasks(
-          docs.map((d) => ({
-            id: d.id,
-            title: d.title,
-            project: d.project,
-            assigneeId: d.assigneeId,
-            viewed: d.viewed,
-            completed: d.completed,
-            favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
-            createdAt: d.createdAt.toDate(),
-          }))
+        const mapped = docs.map((d) => ({
+          id: d.id,
+          title: d.title,
+          project: d.project,
+          assigneeId: d.assigneeId,
+          viewed: d.viewed,
+          completed: d.completed,
+          favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
+          createdAt: d.createdAt.toDate(),
+        }));
+        console.debug(
+          "subscribeToTasksAssignedBy -> received docs:",
+          mapped.map((m) => ({ id: m.id, favorite: m.favorite }))
         );
+        setTasks(mapped);
       },
       () => setTasks([])
     );
@@ -75,7 +78,29 @@ export function TasksColumn() {
   const toggleFavorite = async (id: string) => {
     const current = tasks.find((t) => t.id === id);
     if (!current || !user?.uid) return;
-    await updateTaskFavorite(id, user.uid, !current.favorite);
+
+    console.debug("toggleFavorite requested", {
+      id,
+      currentFavorite: current.favorite,
+      user: user.uid,
+    });
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, favorite: !t.favorite } : t))
+    );
+    try {
+      await updateTaskFavorite(id, user.uid, !current.favorite);
+      console.debug("updateTaskFavorite succeeded", {
+        id,
+        newValue: !current.favorite,
+      });
+    } catch (err) {
+      console.error("Error al actualizar favorito", err);
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, favorite: current.favorite } : t
+        )
+      );
+    }
   };
 
   const addTask = async (task: {
@@ -105,6 +130,8 @@ export function TasksColumn() {
     if (filter.view === "favorites" && !task.favorite) return false;
     return true;
   });
+  // (nota: descomentaba vistas separadas si se necesitan más adelante)
+
   // Orden: favoritas arriba
   const orderedTasks = filteredTasks
     .slice()
@@ -190,14 +217,8 @@ export function TasksColumn() {
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
         currentFilter={filter}
-        onApplyFilter={(f) => setFilter(f)}
+        onApplyFilter={setFilter}
         tasks={tasks}
-        userField="assigneeId"
-        viewOptions={[
-          { value: "all", label: "Todas" },
-          { value: "viewed", label: "Vistas" },
-          { value: "favorites", label: "Favoritas" },
-        ]}
       />
     </div>
   );

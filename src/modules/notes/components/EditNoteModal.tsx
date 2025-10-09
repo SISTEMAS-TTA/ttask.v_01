@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,12 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import type { Note } from "@/modules/types";
 import type { NewNoteInput } from "@/lib/firebase/notes";
 
-interface AddNoteModalProps {
+interface EditNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddNote: (note: NewNoteInput) => Promise<void> | void;
+  note?: Note | null;
+  onSave: (id: string, updates: Partial<NewNoteInput>) => Promise<void> | void;
 }
 
 const pastelColors = [
@@ -32,42 +33,44 @@ const pastelColors = [
   { name: "Gris", value: "bg-gray-200", class: "bg-gray-200" },
 ];
 
-export function AddNoteModal({
+export function EditNoteModal({
   isOpen,
   onClose,
-  onAddNote,
-}: AddNoteModalProps) {
+  note,
+  onSave,
+}: EditNoteModalProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedColor, setSelectedColor] = useState(pastelColors[0].value);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const resetForm = () => {
-    setTitle("");
-    setContent("");
-    setSelectedColor(pastelColors[0].value);
-  };
+  useEffect(() => {
+    if (note) {
+      setTitle(note.title ?? "");
+      setContent(note.content ?? "");
+      setSelectedColor(note.color ?? pastelColors[0].value);
+    } else {
+      setTitle("");
+      setContent("");
+      setSelectedColor(pastelColors[0].value);
+    }
+  }, [note]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || isSubmitting) {
-      return;
-    }
+    if (!note) return;
+    if (!title.trim() || !content.trim() || isSubmitting) return;
 
     try {
       setIsSubmitting(true);
-      await onAddNote({
+      await onSave(note.id, {
         title: title.trim(),
         content: content.trim(),
         color: selectedColor,
-        completed: false,
-        favorite: false,
-        project: "General",
       });
-      resetForm();
       onClose();
-    } catch (error) {
-      console.error("Error al guardar la nota", error);
+    } catch (err) {
+      console.error("Error al guardar cambios de la nota", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -77,16 +80,15 @@ export function AddNoteModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Agregar Nueva Nota</DialogTitle>
+          <DialogTitle>Editar Nota</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Título de la nota</Label>
+            <Label htmlFor="title">Título</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ingresa el título..."
               required
             />
           </div>
@@ -97,7 +99,6 @@ export function AddNoteModal({
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Ingresa el contenido de la nota..."
               rows={3}
               required
             />
@@ -128,16 +129,13 @@ export function AddNoteModal({
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                resetForm();
-                onClose();
-              }}
+              onClick={onClose}
               disabled={isSubmitting}
             >
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Guardando..." : "Agregar Nota"}
+              {isSubmitting ? "Guardando..." : "Guardar cambios"}
             </Button>
           </div>
         </form>

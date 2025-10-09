@@ -55,6 +55,10 @@ export function CompletedTasksColumn() {
             | "assigned"
             | "received",
         }));
+        console.debug(
+          "subscribeToCompletedTasks -> received docs:",
+          completedTasks.map((m) => ({ id: m.id, favorite: m.favorite }))
+        );
         setTasks(completedTasks);
       },
       () => setTasks([])
@@ -67,7 +71,29 @@ export function CompletedTasksColumn() {
     if (!user?.uid) return;
     const current = tasks.find((t) => t.id === id);
     if (!current) return;
-    await updateTaskFavorite(id, user.uid, !current.favorite);
+
+    console.debug("toggleFavorite requested", {
+      id,
+      currentFavorite: current.favorite,
+      user: user.uid,
+    });
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, favorite: !t.favorite } : t))
+    );
+    try {
+      await updateTaskFavorite(id, user.uid, !current.favorite);
+      console.debug("updateTaskFavorite succeeded", {
+        id,
+        newValue: !current.favorite,
+      });
+    } catch (err) {
+      console.error("Error al actualizar favorito", err);
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, favorite: current.favorite } : t
+        )
+      );
+    }
   };
 
   const filteredTasks = tasks.filter((task) => {
