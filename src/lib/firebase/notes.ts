@@ -4,7 +4,6 @@ import {
   collection,
   doc,
   onSnapshot,
-  orderBy,
   query,
   Timestamp,
   updateDoc,
@@ -67,8 +66,13 @@ export const subscribeToUserNotes = (
 
 export const createNote = async (userId: string, note: NewNoteInput) => {
   const notesRef = collection(db, NOTES_COLLECTION);
+  // Excluir `color` antes de persistir en la base de datos
+  const noteWithoutColor = Object.fromEntries(
+    Object.entries(note).filter(([k]) => k !== "color")
+  ) as Omit<NewNoteInput, "color">;
+
   await addDoc(notesRef, {
-    ...note,
+    ...noteWithoutColor,
     userId,
     createdAt: Timestamp.now(),
   });
@@ -79,5 +83,13 @@ export const updateNote = async (
   updates: Partial<Omit<Note, "id" | "userId" | "createdAt">>
 ) => {
   const noteRef = doc(db, NOTES_COLLECTION, noteId);
-  await updateDoc(noteRef, updates);
+  // Sanitizar actualizaciones para no guardar el campo `color`
+  const sanitizedUpdates = Object.fromEntries(
+    Object.entries(updates || {}).filter(([k]) => k !== "color")
+  ) as Partial<Omit<Note, "id" | "userId" | "createdAt">>;
+
+  // Si no hay cambios restantes (por ejemplo solo se pidió cambiar color), no hacemos la llamada a la DB
+  if (Object.keys(sanitizedUpdates).length === 0) return;
+
+  await updateDoc(noteRef, sanitizedUpdates);
 };
