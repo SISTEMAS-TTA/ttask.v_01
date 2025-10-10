@@ -10,8 +10,6 @@ import {
   updateDoc,
   where,
   getDoc,
-  DocumentData,
-  QuerySnapshot,
 } from "firebase/firestore";
 
 export type TaskDoc = {

@@ -29,14 +29,26 @@ service cloud.firestore {
       // Usuarios autenticados pueden leer todas las tareas
       allow read: if request.auth != null;
       
-      // Usuarios autenticados pueden crear tareas
-      allow create: if request.auth != null && 
-        request.resource.data.createdBy == request.auth.uid;
-      
-      // Solo el creador o el asignado pueden actualizar/eliminar
-      allow update, delete: if request.auth != null && 
-        (resource.data.createdBy == request.auth.uid || 
+      // Usuarios autenticados pueden crear tareas (validamos assignedBy usado por el frontend)
+      allow create: if request.auth != null &&
+        request.resource.data.assignedBy == request.auth.uid;
+
+      // Solo el creador (assignedBy) o el asignado (assigneeId) pueden actualizar/eliminar
+      allow update, delete: if request.auth != null &&
+        (resource.data.assignedBy == request.auth.uid ||
          resource.data.assigneeId == request.auth.uid);
+    }
+
+    // Reglas para notas
+    match /notes/{noteId} {
+      // Solo usuario autenticado puede leer sus propias notas
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Crear: solo si el campo userId coincide con el usuario autenticado
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      // Actualizar/Borrar: solo el propietario de la nota
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
     // Denegar todo lo demás por defecto
