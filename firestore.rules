@@ -14,12 +14,18 @@ service cloud.firestore {
       // Cualquier usuario autenticado puede leer todos los usuarios
       allow read: if request.auth != null;
       
-      // Solo administradores pueden crear nuevos usuarios
-      allow create: if isAdmin();
-      
-      // Solo administradores pueden actualizar perfiles
-      allow update: if isAdmin();
-      
+      // Permitir crear perfil por self-signup o por administrador
+      allow create: if request.auth != null && (isAdmin() || request.auth.uid == userId);
+
+      // Permitir actualizar propio perfil o admin; evitar que usuarios normales cambien su role
+      allow update: if request.auth != null && (
+        isAdmin()
+        || (
+          request.auth.uid == userId
+          && request.resource.data.role == resource.data.role
+        )
+      );
+
       // Solo administradores pueden eliminar perfiles
       allow delete: if isAdmin();
     }
