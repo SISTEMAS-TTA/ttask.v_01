@@ -99,13 +99,12 @@ export function AddTaskModal({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="content">Contenido</Label>
+            <Label htmlFor="content">Contenido (opcional)</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Ingresa el contenido de la tarea..."
-              required
             />
           </div>
 

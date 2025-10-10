@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddTaskModal } from "@/modules/tasks/components/AddTaskModal";
 import { TaskFilterModal } from "@/modules/tasks/components/TaskFilterModal";
+import { TaskViewModal } from "@/modules/tasks/components/TaskViewModal";
 import useUser from "@/modules/auth/hooks/useUser";
 import {
   createTask,
@@ -23,6 +24,7 @@ interface UITask {
   viewed: boolean;
   completed: boolean;
   favorite: boolean;
+  description?: string;
   createdAt: Date;
 }
 
@@ -37,6 +39,8 @@ export function TasksColumn() {
   const [tasks, setTasks] = useState<UITask[]>(initialTasks);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [activeTask, setActiveTask] = useState<UITask | null>(null);
   const [filter, setFilter] = useState<{
     user?: string;
     project?: string;
@@ -58,6 +62,7 @@ export function TasksColumn() {
           title: d.title,
           project: d.project,
           assigneeId: d.assigneeId,
+          description: d.description ?? "",
           viewed: d.viewed,
           completed: d.completed,
           favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
@@ -74,6 +79,13 @@ export function TasksColumn() {
 
     return () => unsubscribe();
   }, [user, userLoading]);
+
+  // Mantener activeTask en sync con la lista de tasks para reflejar cambios guardados
+  useEffect(() => {
+    if (!activeTask) return;
+    const latest = tasks.find((t) => t.id === activeTask.id);
+    if (latest) setActiveTask(latest);
+  }, [tasks, activeTask]);
 
   const toggleFavorite = async (id: string) => {
     const current = tasks.find((t) => t.id === id);
@@ -169,7 +181,14 @@ export function TasksColumn() {
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Active Tasks */}
         {visibleTasks.map((task) => (
-          <Card key={task.id} className="p-3 bg-blue-200 border-none shadow-sm">
+          <Card
+            key={task.id}
+            className="p-3 bg-blue-200 border-none shadow-sm"
+            onClick={() => {
+              setActiveTask(task);
+              setIsViewModalOpen(true);
+            }}
+          >
             <div className="flex items-start justify-between mb-2">
               <h3
                 className={`font-semibold text-sm text-gray-800 ${
@@ -186,7 +205,10 @@ export function TasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleFavorite(task.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(task.id);
+                  }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Star
@@ -211,6 +233,30 @@ export function TasksColumn() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAddTask={addTask}
+      />
+
+      <TaskViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        task={activeTask}
+        onSave={(updates) => {
+          if (!activeTask) return;
+          const upd = updates as Partial<UITask & { description?: string }>;
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === activeTask.id
+                ? {
+                    ...t,
+                    title: upd.title ?? t.title,
+                    description:
+                      upd.description ??
+                      (t as unknown as { description?: string }).description,
+                    completed: (upd.completed ?? t.completed) as boolean,
+                  }
+                : t
+            )
+          );
+        }}
       />
 
       <TaskFilterModal
