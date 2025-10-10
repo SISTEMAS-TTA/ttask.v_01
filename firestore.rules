@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función helper para verificar si el usuario es administrador
+    function isAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador';
+    }
+    
+    // Reglas para usuarios
+    match /users/{userId} {
+      // Cualquier usuario autenticado puede leer todos los usuarios
+      allow read: if request.auth != null;
+      
+      // Solo administradores pueden crear nuevos usuarios
+      allow create: if isAdmin();
+      
+      // Solo administradores pueden actualizar perfiles
+      allow update: if isAdmin();
+      
+      // Solo administradores pueden eliminar perfiles
+      allow delete: if isAdmin();
+    }
+    
+    // Reglas para tareas
+    match /tasks/{taskId} {
+      // Usuarios autenticados pueden leer todas las tareas
+      allow read: if request.auth != null;
+      
+      // Usuarios autenticados pueden crear tareas
+      allow create: if request.auth != null && 
+        request.resource.data.createdBy == request.auth.uid;
+      
+      // Solo el creador o el asignado pueden actualizar/eliminar
+      allow update, delete: if request.auth != null && 
+        (resource.data.createdBy == request.auth.uid || 
+         resource.data.assigneeId == request.auth.uid);
+    }
+    
+    // Denegar todo lo demás por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
