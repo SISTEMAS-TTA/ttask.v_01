@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, Star, Filter, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { TaskViewModal } from "@/modules/tasks/components/TaskViewModal";
 import useUser from "@/modules/auth/hooks/useUser";
 import {
   subscribeToTasksAssignedTo,
@@ -11,16 +12,17 @@ import {
   updateTaskFavorite,
 } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
-import { TaskFilterModal } from "@/modules/tasks/components/TaskFilterModal";
 
 interface ReceivedTask {
   id: string;
   title: string;
   project: string;
+  assigneeId?: string;
   assignedBy: string;
   viewed: boolean;
   completed: boolean;
   favorite: boolean;
+  description?: string;
   createdAt: Date;
 }
 
@@ -31,6 +33,8 @@ export function ReceivedTasksColumn() {
   const { getUserName } = useUsersMap();
   const [tasks, setTasks] = useState<ReceivedTask[]>(initialReceivedTasks);
   const [, setIsFilterModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [activeTask, setActiveTask] = useState<ReceivedTask | null>(null);
   const [filter] = useState<{
     assignedBy?: string;
     view?: "all" | "viewed" | "pending";
@@ -50,6 +54,8 @@ export function ReceivedTasksColumn() {
           title: d.title,
           project: d.project,
           assignedBy: d.assignedBy,
+          assigneeId: d.assigneeId,
+          description: d.description ?? "",
           viewed: d.viewed,
           completed: d.completed,
           favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
@@ -159,7 +165,15 @@ export function ReceivedTasksColumn() {
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Active Tasks */}
         {activeTasks.map((task) => (
-          <Card key={task.id} className="p-3 bg-red-300 border-none shadow-sm">
+          <Card
+            key={task.id}
+            className="p-3 bg-red-300 border-none shadow-sm"
+            onClick={() => {
+              setActiveTask(task);
+              setIsViewModalOpen(true);
+              if (!task.viewed) onToggleViewed(task.id, true);
+            }}
+          >
             <div className="flex items-start justify-between mb-2">
               <h3
                 className={`font-semibold text-sm text-gray-800 ${
@@ -172,7 +186,10 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => onToggleViewed(task.id, !task.viewed)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleViewed(task.id, !task.viewed);
+                  }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Check
@@ -184,7 +201,10 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => onToggleCompleted(task.id, !task.completed)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCompleted(task.id, !task.completed);
+                  }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <CheckCheck
@@ -196,7 +216,10 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleFavorite(task.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(task.id);
+                  }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Star
@@ -221,6 +244,10 @@ export function ReceivedTasksColumn() {
           <Card
             key={task.id}
             className="p-3 bg-pink-200 border-none shadow-sm opacity-70"
+            onClick={() => {
+              setActiveTask(task);
+              setIsViewModalOpen(true);
+            }}
           >
             <div className="flex items-start justify-between mb-2">
               <h3 className="font-semibold text-sm text-gray-800">
@@ -230,7 +257,10 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => onToggleViewed(task.id, !task.viewed)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleViewed(task.id, !task.viewed);
+                  }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Check className="h-5 w-5 text-blue-600" />
@@ -238,7 +268,10 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => onToggleCompleted(task.id, !task.completed)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleCompleted(task.id, !task.completed);
+                  }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <CheckCheck
@@ -250,7 +283,10 @@ export function ReceivedTasksColumn() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => toggleFavorite(task.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(task.id);
+                  }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
                   <Star
@@ -270,6 +306,46 @@ export function ReceivedTasksColumn() {
           </Card>
         ))}
       </div>
+
+      <TaskViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setActiveTask(null);
+        }}
+        task={
+          activeTask
+            ? {
+                id: activeTask.id,
+                title: activeTask.title,
+                project: activeTask.project,
+                assigneeId: activeTask.assigneeId ?? user?.uid ?? "",
+                viewed: activeTask.viewed,
+                completed: activeTask.completed,
+                favorite: activeTask.favorite,
+                description: activeTask.description ?? undefined,
+              }
+            : null
+        }
+        readOnly={true}
+        onSave={(updates) => {
+          if (!activeTask) return;
+          const upd = updates as Partial<
+            ReceivedTask & { description?: string }
+          >;
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === activeTask.id
+                ? {
+                    ...t,
+                    title: upd.title ?? t.title,
+                    completed: (upd.completed ?? t.completed) as boolean,
+                  }
+                : t
+            )
+          );
+        }}
+      />
     </div>
   );
 }

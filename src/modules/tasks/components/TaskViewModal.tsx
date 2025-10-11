@@ -36,6 +36,8 @@ interface TaskViewModalProps {
       updatedAt: unknown;
     }>
   ) => void;
+  /** When true the modal is read-only and Save is hidden/disabled */
+  readOnly?: boolean;
 }
 
 export function TaskViewModal({
@@ -43,6 +45,7 @@ export function TaskViewModal({
   onClose,
   task,
   onSave,
+  readOnly = false,
 }: TaskViewModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -62,6 +65,7 @@ export function TaskViewModal({
 
   const handleSave = async () => {
     if (!task) return;
+    if (readOnly) return;
     const ref = doc(db, "tasks", task.id);
     const updates: Partial<{
       title: string;
@@ -103,7 +107,7 @@ export function TaskViewModal({
             <Button variant="outline" onClick={onClose}>
               Cerrar
             </Button>
-            <Button onClick={handleSave}>Guardar</Button>
+            {!readOnly && <Button onClick={handleSave}>Guardar</Button>}
           </div>
         </DialogFooter>
       </DialogContent>
