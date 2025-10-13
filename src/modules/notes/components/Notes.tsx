@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, Plus, Star, Trash2, Edit } from "lucide-react";
+import { Check, Loader2, Plus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddNoteModal } from "@/modules/notes/components/AddNoteModal";
@@ -22,6 +22,7 @@ export function NotesColumn() {
   const [notesLoading, setNotesLoading] = useState(true);
   const [filterCompleted] = useState(false);
   const [filterFavorites] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
 
   useEffect(() => {
     if (userLoading) {
@@ -137,23 +138,6 @@ export function NotesColumn() {
       await updateNoteFavorite(note.id, user.uid, !note.favorite);
     } catch (error) {
       console.error("Error al actualizar la nota", error);
-    }
-  };
-
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-
-  const handleDelete = async (noteId: string) => {
-    // optimista: remover del estado local inmediatamente
-    setNotes((prev) => prev.filter((n) => n.id !== noteId));
-
-    try {
-      await (await import("@/lib/firebase/notes")).deleteNote(noteId);
-    } catch (err) {
-      console.error("Error al eliminar la nota", err);
-      // Revertir: recargar las notas (simple) -- la suscripción los recuperará pronto
-      if (user) {
-        // no forzamos una recarga aquí; la suscripción onSnapshot se encargará
-      }
     }
   };
 

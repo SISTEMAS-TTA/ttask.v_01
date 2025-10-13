@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { Note } from "@/modules/types";
 import type { NewNoteInput } from "@/lib/firebase/notes";
+import { Trash2 } from "lucide-react";
+import useUser from "@/modules/auth/hooks/useUser";
 
 interface EditNoteModalProps {
   isOpen: boolean;
@@ -43,6 +45,8 @@ export function EditNoteModal({
   const [content, setContent] = useState("");
   const [selectedColor, setSelectedColor] = useState(pastelColors[0].value);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const { user, loading: userLoading } = useUser();
 
   useEffect(() => {
     if (note) {
@@ -73,6 +77,21 @@ export function EditNoteModal({
       console.error("Error al guardar cambios de la nota", err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (noteId: string) => {
+    // optimista: remover del estado local inmediatamente
+    setNotes((prev) => prev.filter((n) => n.id !== noteId));
+
+    try {
+      await (await import("@/lib/firebase/notes")).deleteNote(noteId);
+    } catch (err) {
+      console.error("Error al eliminar la nota", err);
+      // Revertir: recargar las notas (simple) -- la suscripción los recuperará pronto
+      if (user) {
+        // no forzamos una recarga aquí; la suscripción onSnapshot se encargará
+      }
     }
   };
 
@@ -136,6 +155,23 @@ export function EditNoteModal({
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Guardando..." : "Guardar cambios"}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (!note) return;
+                // Confirmación simple
+                if (confirm("¿Eliminar nota?")) {
+                  void handleDelete(note.id);
+                  onClose();
+                }
+              }}
+              disabled={!note || isSubmitting}
+              className="flex items-center space-x-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="text-sm">Eliminar</span>
             </Button>
           </div>
         </form>
