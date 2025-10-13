@@ -309,7 +309,16 @@ export function NotesColumn() {
             {activeNotes.map((note) => (
               <Card
                 key={note.id}
-                className={`p-3 ${note.color} border-none shadow-sm`}
+                className={`p-3 ${note.color} border-none shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
+                onClick={() => setEditingNote(note)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setEditingNote(note);
+                  }
+                }}
               >
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold text-sm text-gray-800">
@@ -341,25 +350,6 @@ export function NotesColumn() {
                             : "text-gray-400"
                         }`}
                       />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setEditingNote(note)}
-                      className="h-8 w-8 p-0 hover:bg-black/10"
-                    >
-                      <Edit className="h-5 w-5 text-gray-600" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        if (confirm("¿Eliminar nota?"))
-                          void handleDelete(note.id);
-                      }}
-                      className="h-8 w-8 p-0 hover:bg-black/10"
-                    >
-                      <Trash2 className="h-5 w-5 text-red-500" />
                     </Button>
                   </div>
                 </div>
