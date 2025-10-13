@@ -312,7 +312,10 @@ export function NotesColumn() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => void toggleComplete(note)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void toggleComplete(note);
+                      }}
                       className="h-8 w-8 p-0 hover:bg-black/10"
                     >
                       <Check
@@ -324,7 +327,10 @@ export function NotesColumn() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => void toggleFavorite(note)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void toggleFavorite(note);
+                      }}
                       className="h-8 w-8 p-0 hover:bg-black/10"
                     >
                       <Star
@@ -345,7 +351,16 @@ export function NotesColumn() {
             {completedNotes.map((note) => (
               <Card
                 key={note.id}
-                className={`p-3 ${note.color} border-none shadow-sm opacity-60`}
+                className={`p-3 ${note.color} border-none shadow-sm opacity-60 cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
+                onClick={() => setEditingNote(note)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setEditingNote(note);
+                  }
+                }}
               >
                 <div className="flex items-start justify-between mb-2">
                   <h3 className="font-semibold text-sm text-gray-800 line-through">
@@ -355,7 +370,10 @@ export function NotesColumn() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => void toggleComplete(note)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void toggleComplete(note);
+                      }}
                       className="h-8 w-8 p-0 hover:bg-black/10"
                     >
                       <Check className="h-5 w-5 text-green-600" />
@@ -363,7 +381,10 @@ export function NotesColumn() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => void toggleFavorite(note)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void toggleFavorite(note);
+                      }}
                       className="h-8 w-8 p-0 hover:bg-black/10"
                     >
                       <Star
