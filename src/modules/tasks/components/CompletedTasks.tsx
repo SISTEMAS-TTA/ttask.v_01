@@ -21,6 +21,7 @@ interface CompletedTask {
   completedAt: Date;
   favorite: boolean;
   type: "assigned" | "received";
+  description?: string;
 }
 
 const initialCompletedTasks: CompletedTask[] = [];
@@ -54,6 +55,7 @@ export function CompletedTasksColumn() {
           type: (d.assignedBy === user.uid ? "assigned" : "received") as
             | "assigned"
             | "received",
+          description: d.description ?? "",
         }));
         console.debug(
           "subscribeToCompletedTasks -> received docs:",
@@ -169,6 +171,11 @@ export function CompletedTasksColumn() {
                 </Button>
               </div>
             </div>
+            {task.description && (
+              <p className="text-xs text-gray-600 line-through mb-2">
+                {task.description}
+              </p>
+            )}
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
               {task.type === "assigned"
