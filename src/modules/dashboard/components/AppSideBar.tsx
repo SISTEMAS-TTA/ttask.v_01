@@ -159,9 +159,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, [profile, user]);
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader />
-      <SidebarContent>
+    <Sidebar
+      collapsible="icon"
+      className="border-r border-gray-200 bg-white"
+      {...props}
+    >
+      {/* Header del sidebar más limpio */}
+      <SidebarHeader className="border-b border-gray-200 p-4"></SidebarHeader>
+      <SidebarContent className="bg-white">
         <NavMain
           items={navMain
             .map((item) => ({
@@ -173,7 +178,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             .filter((item) => !item.adminOnly || isAdmin)}
         />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-gray-200 bg-white">
         <NavUser user={sidebarUser} />
       </SidebarFooter>
       <SidebarRail />
