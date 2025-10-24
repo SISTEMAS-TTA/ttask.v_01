@@ -158,7 +158,9 @@ export function TasksColumn() {
         {visibleTasks.map((task) => (
           <Card
             key={task.id}
-            className="p-3 bg-blue-200 border-none shadow-sm"
+            className={`p-3 border-none shadow-sm ${
+              task.viewed ? "bg-gray-300" : "bg-blue-200"
+            }`}
             onClick={() => {
               setActiveTask(task);
               setIsViewModalOpen(true);
