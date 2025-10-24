@@ -6,11 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TaskViewModal } from "@/modules/tasks/components/TaskViewModal";
 import useUser from "@/modules/auth/hooks/useUser";
-import {
-  subscribeToTasksAssignedTo,
-  updateTask,
-  updateTaskFavorite,
-} from "@/lib/firebase/tasks";
+import { subscribeToTasksAssignedTo, updateTask } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
 
 interface ReceivedTask {
@@ -84,34 +80,36 @@ export function ReceivedTasksColumn() {
     const current = tasks.find((t) => t.id === id);
     if (!current || !user?.uid) return;
 
-    console.debug("toggleFavorite requested", {
+    console.debug("toggleFavorite (completar tarea) requested", {
       id,
-      currentFavorite: current.favorite,
+      currentCompleted: current.completed,
       user: user.uid,
     });
-    // Optimista: actualizar UI inmediatamente
+
+    // Optimista: actualizar UI inmediatamente marcando como completada
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, favorite: !t.favorite } : t))
+      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
     );
 
     try {
-      await updateTaskFavorite(id, user.uid, !current.favorite);
-      console.debug("updateTaskFavorite succeeded", {
+      // Marcar la tarea como completada en lugar de favorita
+      await updateTask(id, { completed: !current.completed }, user.uid);
+      console.debug("updateTask completed succeeded", {
         id,
-        newValue: !current.favorite,
+        newValue: !current.completed,
       });
     } catch (err) {
-      console.error("Error al actualizar favorito", err);
+      console.error("Error al actualizar tarea completada", err);
       // Revertir en caso de error
       setTasks((prev) =>
         prev.map((t) =>
-          t.id === id ? { ...t, favorite: current.favorite } : t
+          t.id === id ? { ...t, completed: current.completed } : t
         )
       );
     }
   };
 
-  // Apply filters
+  // Apply filters - INCLUIR tareas completadas
   const filteredTasks = tasks.filter((task) => {
     if (filter.assignedBy && task.assignedBy !== filter.assignedBy)
       return false;
@@ -122,18 +120,18 @@ export function ReceivedTasksColumn() {
         case "pending":
           return !task.viewed && !task.completed;
         default:
-          return !task.completed;
+          return true; // Mostrar todas incluyendo completadas
       }
     }
-    return !task.completed;
+    return true; // Mostrar todas incluyendo completadas
   });
 
-  // Orden: no vistas primero, luego favoritas arriba
+  // Orden: completadas al final, luego no vistas primero
   const orderedTasks = filteredTasks.slice().sort((a, b) => {
-    // Primero ordenar por viewed (no vistas primero)
+    // Primero ordenar por completadas (completadas al final)
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    // Luego ordenar por viewed (no vistas primero)
     if (a.viewed !== b.viewed) return a.viewed ? 1 : -1;
-    // Luego por favoritas
-    if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
     return 0;
   });
 
@@ -143,6 +141,7 @@ export function ReceivedTasksColumn() {
   const viewedTasks = orderedTasks.filter(
     (task) => task.viewed && !task.completed
   );
+  const completedTasks = orderedTasks.filter((task) => task.completed);
 
   return (
     <div className="w-full bg-red-200 flex flex-col h-full">
@@ -260,6 +259,55 @@ export function ReceivedTasksColumn() {
                         : "text-gray-400"
                     }`}
                   />
+                </Button>
+              </div>
+            </div>
+            {task.description && (
+              <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+            )}
+            <p className="text-xs text-gray-600">{task.project}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Asignado por: {getUserName(task.assignedBy)}
+            </p>
+          </Card>
+        ))}
+
+        {/* Completed Tasks */}
+        {completedTasks.map((task) => (
+          <Card
+            key={task.id}
+            className="p-3 bg-gray-300 border-none shadow-sm opacity-60"
+            onClick={() => {
+              setActiveTask(task);
+              setIsViewModalOpen(true);
+            }}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="font-semibold text-sm text-gray-800 line-through">
+                {task.title}
+              </h3>
+              <div className="flex space-x-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleViewed(task.id, !task.viewed);
+                  }}
+                  className="h-8 w-8 p-0 hover:bg-black/10"
+                >
+                  <CheckCheck className="h-5 w-5 text-blue-600" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(task.id);
+                  }}
+                  className="h-8 w-8 p-0 hover:bg-black/10"
+                >
+                  <Star className="h-5 w-5 text-green-600 fill-current" />
                 </Button>
               </div>
             </div>
