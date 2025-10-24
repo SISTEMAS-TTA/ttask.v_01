@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Filter, Check, Star, CheckCheck } from "lucide-react";
+import { Filter, Star, CircleCheckBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CompletedTaskFilterModal } from "@/modules/tasks/components/CompletedTaskFilterModal";
 import useUser from "@/modules/auth/hooks/useUser";
-import {
-  subscribeToCompletedTasks,
-  updateTaskFavorite,
-} from "@/lib/firebase/tasks";
+import { subscribeToCompletedTasks } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
 
 interface CompletedTask {
@@ -69,35 +66,6 @@ export function CompletedTasksColumn() {
     return () => unsubscribe();
   }, [user, userLoading]);
 
-  const toggleFavorite = async (id: string) => {
-    if (!user?.uid) return;
-    const current = tasks.find((t) => t.id === id);
-    if (!current) return;
-
-    console.debug("toggleFavorite requested", {
-      id,
-      currentFavorite: current.favorite,
-      user: user.uid,
-    });
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, favorite: !t.favorite } : t))
-    );
-    try {
-      await updateTaskFavorite(id, user.uid, !current.favorite);
-      console.debug("updateTaskFavorite succeeded", {
-        id,
-        newValue: !current.favorite,
-      });
-    } catch (err) {
-      console.error("Error al actualizar favorito", err);
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === id ? { ...t, favorite: current.favorite } : t
-        )
-      );
-    }
-  };
-
   const filteredTasks = tasks.filter((task) => {
     if (filter.user) {
       const taskUser = task.assigneeId || task.assignedBy;
@@ -153,28 +121,18 @@ export function CompletedTasksColumn() {
                 {task.title}
               </h3>
               <div className="flex space-x-1">
-                <Check className="h-5 w-5 text-green-600" />
-                <CheckCheck className="h-5 w-5 text-green-600" />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => toggleFavorite(task.id)}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Star
-                    className={`h-5 w-5 ${
-                      task.favorite
-                        ? "text-yellow-600 fill-current"
-                        : "text-gray-400"
-                    }`}
-                  />
-                </Button>
+                <Star
+                  className="h-5 w-5 text-yellow-600 fill-current"
+                  aria-hidden
+                />
+                <CircleCheckBig
+                  className="h-5 w-5 text-green-600"
+                  aria-hidden
+                />
               </div>
             </div>
             {task.description && (
-              <p className="text-xs text-gray-600 line-through mb-2">
-                {task.description}
-              </p>
+              <p className="text-xs text-gray-600 mb-2">{task.description}</p>
             )}
             <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">

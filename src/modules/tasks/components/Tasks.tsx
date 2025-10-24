@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Filter, Star, Check, CheckCheck } from "lucide-react";
+import { Plus, Filter, Star, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddTaskModal } from "@/modules/tasks/components/AddTaskModal";
@@ -167,20 +167,19 @@ export function TasksColumn() {
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3
-                className={`font-semibold text-sm text-gray-800 ${
-                  task.viewed ? "line-through" : ""
-                }`}
-              >
+              <h3 className="font-semibold text-sm text-gray-800">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
-                {task.viewed ? (
-                  <CheckCheck className="h-5 w-5 text-blue-600" aria-hidden />
-                ) : (
-                  <Check className="h-5 w-5 text-gray-400" aria-hidden />
-                )}
-                <Star className="h-5 w-5 text-gray-400" aria-hidden />
+                <Star
+                  className={`h-5 w-5 ${
+                    task.viewed
+                      ? "text-yellow-600 fill-current"
+                      : "text-gray-400"
+                  }`}
+                  aria-hidden
+                />
+                <Circle className="h-5 w-5 text-gray-400" aria-hidden />
               </div>
             </div>
             {task.description && (

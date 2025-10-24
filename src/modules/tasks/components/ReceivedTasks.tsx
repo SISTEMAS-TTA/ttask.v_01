@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Star, Filter, CheckCheck } from "lucide-react";
+import { Circle, Star, Filter, CircleCheckBig } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TaskViewModal } from "@/modules/tasks/components/TaskViewModal";
@@ -68,19 +68,24 @@ export function ReceivedTasksColumn() {
     return () => unsub();
   }, [user, userLoading]);
 
-  const onToggleViewed = async (taskId: string, next: boolean) => {
+  // Estrella marca como vista
+  const toggleViewed = async (id: string) => {
+    const current = tasks.find((t) => t.id === id);
+    if (!current || !user?.uid) return;
+
     try {
-      await updateTask(taskId, { viewed: next }, user?.uid);
+      await updateTask(id, { viewed: !current.viewed }, user?.uid);
     } catch (e) {
       console.warn("No autorizado para marcar viewed", e);
     }
   };
 
-  const toggleFavorite = async (id: string) => {
+  // Círculo marca como completada
+  const toggleCompleted = async (id: string) => {
     const current = tasks.find((t) => t.id === id);
     if (!current || !user?.uid) return;
 
-    console.debug("toggleFavorite (completar tarea) requested", {
+    console.debug("toggleCompleted requested", {
       id,
       currentCompleted: current.completed,
       user: user.uid,
@@ -92,7 +97,7 @@ export function ReceivedTasksColumn() {
     );
 
     try {
-      // Marcar la tarea como completada en lugar de favorita
+      // Marcar la tarea como completada
       await updateTask(id, { completed: !current.completed }, user.uid);
       console.debug("updateTask completed succeeded", {
         id,
@@ -178,32 +183,28 @@ export function ReceivedTasksColumn() {
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onToggleViewed(task.id, !task.viewed);
+                    toggleViewed(task.id);
                   }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  {task.viewed ? (
-                    <CheckCheck className="h-5 w-5 text-blue-600" />
-                  ) : (
-                    <Check className="h-5 w-5 text-gray-400" />
-                  )}
+                  <Star
+                    className={`h-5 w-5 ${
+                      task.viewed
+                        ? "text-yellow-600 fill-current"
+                        : "text-gray-400"
+                    }`}
+                  />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleFavorite(task.id);
+                    toggleCompleted(task.id);
                   }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <Star
-                    className={`h-5 w-5 ${
-                      task.favorite
-                        ? "text-yellow-600 fill-current"
-                        : "text-gray-400"
-                    }`}
-                  />
+                  <Circle className="h-5 w-5 text-gray-400" />
                 </Button>
               </div>
             </div>
@@ -237,28 +238,22 @@ export function ReceivedTasksColumn() {
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onToggleViewed(task.id, !task.viewed);
+                    toggleViewed(task.id);
                   }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <CheckCheck className="h-5 w-5 text-blue-600" />
+                  <Star className="h-5 w-5 text-yellow-600 fill-current" />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleFavorite(task.id);
+                    toggleCompleted(task.id);
                   }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <Star
-                    className={`h-5 w-5 ${
-                      task.favorite
-                        ? "text-yellow-600 fill-current"
-                        : "text-gray-400"
-                    }`}
-                  />
+                  <Circle className="h-5 w-5 text-gray-400" />
                 </Button>
               </div>
             </div>
@@ -292,22 +287,22 @@ export function ReceivedTasksColumn() {
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onToggleViewed(task.id, !task.viewed);
+                    toggleViewed(task.id);
                   }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <CheckCheck className="h-5 w-5 text-blue-600" />
+                  <Star className="h-5 w-5 text-yellow-600 fill-current" />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleFavorite(task.id);
+                    toggleCompleted(task.id);
                   }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <Star className="h-5 w-5 text-green-600 fill-current" />
+                  <CircleCheckBig className="h-5 w-5 text-green-600" />
                 </Button>
               </div>
             </div>
