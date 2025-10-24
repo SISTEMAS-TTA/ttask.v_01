@@ -80,14 +80,6 @@ export function ReceivedTasksColumn() {
     }
   };
 
-  const onToggleCompleted = async (taskId: string, next: boolean) => {
-    try {
-      await updateTask(taskId, { completed: next }, user?.uid);
-    } catch (e) {
-      console.warn("No autorizado para marcar completed", e);
-    }
-  };
-
   const toggleFavorite = async (id: string) => {
     const current = tasks.find((t) => t.id === id);
     if (!current || !user?.uid) return;
@@ -136,10 +128,14 @@ export function ReceivedTasksColumn() {
     return !task.completed;
   });
 
-  // Orden: favoritas arriba
-  const orderedTasks = filteredTasks
-    .slice()
-    .sort((a, b) => (a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1));
+  // Orden: no vistas primero, luego favoritas arriba
+  const orderedTasks = filteredTasks.slice().sort((a, b) => {
+    // Primero ordenar por viewed (no vistas primero)
+    if (a.viewed !== b.viewed) return a.viewed ? 1 : -1;
+    // Luego por favoritas
+    if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+    return 0;
+  });
 
   const activeTasks = orderedTasks.filter(
     (task) => !task.completed && !task.viewed
@@ -171,15 +167,10 @@ export function ReceivedTasksColumn() {
             onClick={() => {
               setActiveTask(task);
               setIsViewModalOpen(true);
-              if (!task.viewed) onToggleViewed(task.id, true);
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3
-                className={`font-semibold text-sm text-gray-800 ${
-                  task.viewed ? "line-through opacity-70" : ""
-                }`}
-              >
+              <h3 className="font-semibold text-sm text-gray-800">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -192,26 +183,11 @@ export function ReceivedTasksColumn() {
                   }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <Check
-                    className={`h-5 w-5 ${
-                      task.viewed ? "text-blue-600" : "text-gray-400"
-                    }`}
-                  />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleCompleted(task.id, !task.completed);
-                  }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <CheckCheck
-                    className={`h-5 w-5 ${
-                      task.completed ? "text-green-600" : "text-gray-400"
-                    }`}
-                  />
+                  {task.viewed ? (
+                    <CheckCheck className="h-5 w-5 text-blue-600" />
+                  ) : (
+                    <Check className="h-5 w-5 text-gray-400" />
+                  )}
                 </Button>
                 <Button
                   size="sm"
@@ -246,14 +222,14 @@ export function ReceivedTasksColumn() {
         {viewedTasks.map((task) => (
           <Card
             key={task.id}
-            className="p-3 bg-pink-200 border-none shadow-sm opacity-70"
+            className="p-3 bg-pink-200 border-none shadow-sm"
             onClick={() => {
               setActiveTask(task);
               setIsViewModalOpen(true);
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800">
+              <h3 className="font-semibold text-sm text-gray-800 line-through">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -266,22 +242,7 @@ export function ReceivedTasksColumn() {
                   }}
                   className="h-8 w-8 p-0 hover:bg-black/10"
                 >
-                  <Check className="h-5 w-5 text-blue-600" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleCompleted(task.id, !task.completed);
-                  }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <CheckCheck
-                    className={`h-5 w-5 ${
-                      task.completed ? "text-green-600" : "text-gray-400"
-                    }`}
-                  />
+                  <CheckCheck className="h-5 w-5 text-blue-600" />
                 </Button>
                 <Button
                   size="sm"

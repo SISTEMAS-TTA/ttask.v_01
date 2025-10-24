@@ -61,11 +61,11 @@ export default function Login() {
           <CardTitle className="text-xl sm:text-2xl md:text-3xl">
             {saludo || "Hola"}
           </CardTitle>
-          <CardAction className="mt-2">
+          {/* <CardAction className="mt-2">
             <Button variant="link" className="text-sm sm:text-base">
               Sign Up
             </Button>
-          </CardAction>
+          </CardAction> */}
         </CardHeader>
         <CardContent>
           <form

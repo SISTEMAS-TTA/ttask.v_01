@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Filter, Check, Star, CheckCheck } from "lucide-react";
+import { Plus, Filter, Star, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddTaskModal } from "@/modules/tasks/components/AddTaskModal";
@@ -144,12 +144,16 @@ export function TasksColumn() {
   });
   // (nota: descomentaba vistas separadas si se necesitan más adelante)
 
-  // Orden: favoritas arriba
-  const orderedTasks = filteredTasks
-    .slice()
-    .sort((a, b) => (a.favorite === b.favorite ? 0 : a.favorite ? -1 : 1));
+  // Orden: no vistas primero, luego favoritas arriba
+  const orderedTasks = filteredTasks.slice().sort((a, b) => {
+    // Primero ordenar por viewed (no vistas primero)
+    if (a.viewed !== b.viewed) return a.viewed ? 1 : -1;
+    // Luego por favoritas
+    if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+    return 0;
+  });
 
-  // Visibles en asignadas: excluir las completadas (segundo check)
+  // Visibles en asignadas: excluir las completadas
   const visibleTasks = orderedTasks.filter((t) => !t.completed);
 
   return (
@@ -192,16 +196,17 @@ export function TasksColumn() {
             <div className="flex items-start justify-between mb-2">
               <h3
                 className={`font-semibold text-sm text-gray-800 ${
-                  task.viewed ? "line-through opacity-70" : ""
+                  task.viewed ? "line-through" : ""
                 }`}
               >
                 {task.title}
               </h3>
               <div className="flex space-x-1">
-                {/* Checks deshabilitados para el asignador */}
-                <Check className="h-5 w-5 text-gray-400" aria-hidden />
-                <CheckCheck className="h-5 w-5 text-gray-400" aria-hidden />
-                {/* Mantener estrella/favorito como esté implementado */}
+                {task.viewed ? (
+                  <CheckCheck className="h-5 w-5 text-blue-600" aria-hidden />
+                ) : (
+                  <Check className="h-5 w-5 text-gray-400" aria-hidden />
+                )}
                 <Button
                   size="sm"
                   variant="ghost"
