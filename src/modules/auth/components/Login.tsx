@@ -1,9 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardFooter,
   CardHeader,
@@ -11,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSaludo } from "@/lib/greeting";
 import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
@@ -21,13 +19,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saludo, setSaludo] = useState("");
   const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
   const router = useRouter();
-
-  useEffect(() => {
-    setSaludo(getSaludo());
-  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -58,14 +51,9 @@ export default function Login() {
     <div className="flex min-h-screen w-full items-center justify-center p-4 md:p-8">
       <Card className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl">
         <CardHeader className="space-y-1 sm:space-y-2">
-          <CardTitle className="text-xl sm:text-2xl md:text-3xl">
-            {saludo || "Hola"}
+          <CardTitle className="text-xl sm:text-2xl md:text-3xl text-center">
+            Iniciar Sesion
           </CardTitle>
-          {/* <CardAction className="mt-2">
-            <Button variant="link" className="text-sm sm:text-base">
-              Sign Up
-            </Button>
-          </CardAction> */}
         </CardHeader>
         <CardContent>
           <form
