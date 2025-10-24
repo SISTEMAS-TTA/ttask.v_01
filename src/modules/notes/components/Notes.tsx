@@ -173,38 +173,28 @@ export function NotesColumn() {
                     {note.title}
                   </h3>
                   <div className="flex space-x-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                    <Check
+                      className={`h-5 w-5 ${
+                        note.completed ? "text-green-600" : "text-gray-400"
+                      }`}
                       onClick={(e) => {
                         e.stopPropagation();
                         void toggleComplete(note);
                       }}
-                      className="h-8 w-8 p-0 hover:bg-black/10"
-                    >
-                      <Check
-                        className={`h-5 w-5 ${
-                          note.completed ? "text-green-600" : "text-gray-400"
-                        }`}
-                      />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                      style={{ cursor: "pointer" }}
+                    />
+                    <Star
+                      className={`h-5 w-5 ${
+                        note.favorite
+                          ? "text-yellow-600 fill-current"
+                          : "text-gray-400"
+                      }`}
                       onClick={(e) => {
                         e.stopPropagation();
                         void toggleFavorite(note);
                       }}
-                      className="h-8 w-8 p-0 hover:bg-black/10"
-                    >
-                      <Star
-                        className={`h-5 w-5 ${
-                          note.favorite
-                            ? "text-yellow-600 fill-current"
-                            : "text-gray-400"
-                        }`}
-                      />
-                    </Button>
+                      style={{ cursor: "pointer" }}
+                    />
                   </div>
                 </div>
                 {note.content && (
@@ -233,34 +223,26 @@ export function NotesColumn() {
                     {note.title}
                   </h3>
                   <div className="flex space-x-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                    <Check
+                      className="h-5 w-5 text-green-600"
                       onClick={(e) => {
                         e.stopPropagation();
                         void toggleComplete(note);
                       }}
-                      className="h-8 w-8 p-0 hover:bg-black/10"
-                    >
-                      <Check className="h-5 w-5 text-green-600" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                      style={{ cursor: "pointer" }}
+                    />
+                    <Star
+                      className={`h-5 w-5 ${
+                        note.favorite
+                          ? "text-yellow-600 fill-current"
+                          : "text-gray-400"
+                      }`}
                       onClick={(e) => {
                         e.stopPropagation();
                         void toggleFavorite(note);
                       }}
-                      className="h-8 w-8 p-0 hover:bg-black/10"
-                    >
-                      <Star
-                        className={`h-5 w-5 ${
-                          note.favorite
-                            ? "text-yellow-600 fill-current"
-                            : "text-gray-400"
-                        }`}
-                      />
-                    </Button>
+                      style={{ cursor: "pointer" }}
+                    />
                   </div>
                 </div>
                 {note.content && (

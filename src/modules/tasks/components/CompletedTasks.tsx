@@ -134,7 +134,6 @@ export function CompletedTasksColumn() {
             {task.description && (
               <p className="text-xs text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
               {task.type === "assigned"
                 ? `Asignado a: ${getUserName(task.assigneeId!)}`

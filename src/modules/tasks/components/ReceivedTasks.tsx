@@ -178,40 +178,31 @@ export function ReceivedTasksColumn() {
                 {task.title}
               </h3>
               <div className="flex space-x-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
+                <Star
+                  className={`h-5 w-5 ${
+                    task.viewed
+                      ? "text-yellow-600 fill-current"
+                      : "text-gray-400"
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleViewed(task.id);
                   }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Star
-                    className={`h-5 w-5 ${
-                      task.viewed
-                        ? "text-yellow-600 fill-current"
-                        : "text-gray-400"
-                    }`}
-                  />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
+                  style={{ cursor: "pointer" }}
+                />
+                <Circle
+                  className="h-5 w-5 text-gray-400"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleCompleted(task.id);
                   }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Circle className="h-5 w-5 text-gray-400" />
-                </Button>
+                  style={{ cursor: "pointer" }}
+                />
               </div>
             </div>
             {task.description && (
               <p className="text-xs text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>
@@ -229,38 +220,31 @@ export function ReceivedTasksColumn() {
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800 line-through">
+              <h3 className="font-semibold text-sm text-gray-800">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
+                <Star
+                  className="h-5 w-5 text-yellow-600 fill-current"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleViewed(task.id);
                   }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Star className="h-5 w-5 text-yellow-600 fill-current" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
+                  style={{ cursor: "pointer" }}
+                />
+                <Circle
+                  className="h-5 w-5 text-gray-400"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleCompleted(task.id);
                   }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Circle className="h-5 w-5 text-gray-400" />
-                </Button>
+                  style={{ cursor: "pointer" }}
+                />
               </div>
             </div>
             {task.description && (
               <p className="text-xs text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>
@@ -282,34 +266,27 @@ export function ReceivedTasksColumn() {
                 {task.title}
               </h3>
               <div className="flex space-x-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
+                <Star
+                  className="h-5 w-5 text-yellow-600 fill-current"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleViewed(task.id);
                   }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Star className="h-5 w-5 text-yellow-600 fill-current" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
+                  style={{ cursor: "pointer" }}
+                />
+                <CircleCheckBig
+                  className="h-5 w-5 text-green-600"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleCompleted(task.id);
                   }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <CircleCheckBig className="h-5 w-5 text-green-600" />
-                </Button>
+                  style={{ cursor: "pointer" }}
+                />
               </div>
             </div>
             {task.description && (
               <p className="text-xs text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>

@@ -185,7 +185,6 @@ export function TasksColumn() {
             {task.description && (
               <p className="text-xs text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-600">{task.project}</p>
             <p className="text-xs text-gray-500 mt-1">
               Asignado a: {getUserName(task.assigneeId)}
             </p>
