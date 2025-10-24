@@ -202,7 +202,9 @@ export function NotesColumn() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-xs text-gray-600">{note.content}</p>
+                {note.content && (
+                  <p className="text-xs text-gray-600">{note.content}</p>
+                )}
               </Card>
             ))}
 
@@ -256,7 +258,9 @@ export function NotesColumn() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-xs text-gray-600">{note.content}</p>
+                {note.content && (
+                  <p className="text-xs text-gray-600">{note.content}</p>
+                )}
               </Card>
             ))}
 

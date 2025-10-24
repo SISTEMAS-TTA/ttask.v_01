@@ -50,7 +50,7 @@ export function AddNoteModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || isSubmitting) {
+    if (!title.trim() || isSubmitting) {
       return;
     }
 
@@ -92,14 +92,13 @@ export function AddNoteModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Contenido</Label>
+            <Label htmlFor="content">Contenido (opcional)</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Ingresa el contenido de la nota..."
               rows={3}
-              required
             />
           </div>
 

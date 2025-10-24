@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import type { Note } from "@/modules/types";
 import type { NewNoteInput } from "@/lib/firebase/notes";
 import { Trash2 } from "lucide-react";
-import useUser from "@/modules/auth/hooks/useUser";
 
 interface EditNoteModalProps {
   isOpen: boolean;
@@ -45,8 +44,6 @@ export function EditNoteModal({
   const [content, setContent] = useState("");
   const [selectedColor, setSelectedColor] = useState(pastelColors[0].value);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const { user, loading: userLoading } = useUser();
 
   useEffect(() => {
     if (note) {
@@ -63,7 +60,7 @@ export function EditNoteModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!note) return;
-    if (!title.trim() || !content.trim() || isSubmitting) return;
+    if (!title.trim() || isSubmitting) return;
 
     try {
       setIsSubmitting(true);
@@ -81,17 +78,10 @@ export function EditNoteModal({
   };
 
   const handleDelete = async (noteId: string) => {
-    // optimista: remover del estado local inmediatamente
-    setNotes((prev) => prev.filter((n) => n.id !== noteId));
-
     try {
       await (await import("@/lib/firebase/notes")).deleteNote(noteId);
     } catch (err) {
       console.error("Error al eliminar la nota", err);
-      // Revertir: recargar las notas (simple) -- la suscripción los recuperará pronto
-      if (user) {
-        // no forzamos una recarga aquí; la suscripción onSnapshot se encargará
-      }
     }
   };
 
@@ -113,13 +103,12 @@ export function EditNoteModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Contenido</Label>
+            <Label htmlFor="content">Contenido (opcional)</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={3}
-              required
             />
           </div>
 
