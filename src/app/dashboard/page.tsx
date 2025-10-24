@@ -40,36 +40,40 @@ export default function DashboardPage() {
       <div className="flex flex-1 overflow-hidden">
         <SidebarProvider>
           <AppSidebar />
-          <SidebarInset className="flex-1 overflow-auto">
+          <SidebarInset className="flex-1 overflow-hidden">
             {/* Área de contenido principal */}
-            <div className="p-4 md:p-6 bg-gray-50 min-h-full">
-              {/* Grid principal - diseño responsivo similar al ERP */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
+            <div className="h-full flex flex-col p-4 md:p-6 pb-6 md:pb-8 bg-gray-50">
+              {/* Grid principal - diseño responsivo con altura dinámica */}
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 overflow-hidden mb-4 md:mb-6">
                 {/* Columna de Gráficos del Proyecto (Inicio) */}
-                <div className="md:col-span-2 lg:col-span-1 xl:col-span-1 bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
-                  <h2 className="text-lg font-semibold mb-4 text-gray-900 border-b border-gray-100 pb-2">
-                    Inicio
-                  </h2>
-                  <ProjectCharts />
+                <div className="flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-[calc(100vh-140px)] sm:h-auto">
+                  <div className="p-4 md:p-6 border-b border-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Inicio
+                    </h2>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                    <ProjectCharts />
+                  </div>
                 </div>
 
                 {/* Columna de Notas */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-[calc(100vh-140px)] sm:h-auto">
                   <NotesColumn />
                 </div>
 
                 {/* Columna de Tareas Asignadas */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-[calc(100vh-140px)] sm:h-auto">
                   <TasksColumn />
                 </div>
 
                 {/* Columna de Tareas Recibidas */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-[calc(100vh-140px)] sm:h-auto">
                   <ReceivedTasksColumn />
                 </div>
 
                 {/* Columna de Tareas Completadas */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-[calc(100vh-140px)] sm:h-auto">
                   <CompletedTasksColumn />
                 </div>
               </div>
