@@ -102,9 +102,14 @@ export function NotesColumn() {
     setEditingNote(null);
   };
 
-  // Ordenar por fecha (más recientes primero)
+  // Ordenar por favoritas primero, luego por fecha (más recientes primero)
   const sortedNotes = useMemo(() => {
     return filteredNotes.slice().sort((a, b) => {
+      // Primero ordenar por favoritas (favoritas primero)
+      if (a.favorite !== b.favorite) {
+        return a.favorite ? -1 : 1;
+      }
+      // Luego por fecha (más recientes primero)
       const at =
         a.createdAt instanceof Date
           ? a.createdAt.getTime()
