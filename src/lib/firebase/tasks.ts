@@ -197,7 +197,7 @@ export async function updateTask(
   });
 }
 
-// Suscripción a tareas completadas (tanto las asignadas por el usuario como las recibidas por él)
+// Suscripción a tareas completadas (SOLO las asignadas POR el usuario, no las recibidas)
 export const subscribeToCompletedTasks = (
   userId: string,
   onTasks: (tasks: TaskDoc[]) => void,
@@ -205,16 +205,10 @@ export const subscribeToCompletedTasks = (
 ) => {
   const ref = collection(db, TASKS_COLLECTION);
 
-  // Crear consultas para tareas completadas asignadas POR el usuario y AL usuario
+  // Solo consultar tareas completadas asignadas POR el usuario
   const assignedByQuery = query(
     ref,
     where("assignedBy", "==", userId),
-    where("completed", "==", true)
-  );
-
-  const assignedToQuery = query(
-    ref,
-    where("assigneeId", "==", userId),
     where("completed", "==", true)
   );
 
@@ -224,6 +218,8 @@ export const subscribeToCompletedTasks = (
   const handleSnapshot = (snapshot: {
     docs: Array<{ data: () => Record<string, unknown>; id: string }>;
   }) => {
+    // Limpiar el mapa y agregar las tareas actualizadas
+    allTasks.clear();
     snapshot.docs.forEach((d) => {
       const data = d.data() as Record<string, unknown>;
       const favoritesMap =
@@ -279,22 +275,9 @@ export const subscribeToCompletedTasks = (
     }
   );
 
-  // Suscripción a tareas asignadas al usuario
-  const unsubAssignedTo = onSnapshot(
-    assignedToQuery,
-    (snapshot) => handleSnapshot(snapshot),
-    (err) => {
-      console.error(
-        "Error al suscribirse a tareas completadas asignadas al usuario",
-        err
-      );
-      onError?.(err);
-    }
-  );
+  unsubscribers.push(unsubAssignedBy);
 
-  unsubscribers.push(unsubAssignedBy, unsubAssignedTo);
-
-  // Retornar función para cancelar ambas suscripciones
+  // Retornar función para cancelar la suscripción
   return () => {
     unsubscribers.forEach((unsub) => unsub());
   };

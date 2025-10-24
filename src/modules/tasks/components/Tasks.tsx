@@ -12,7 +12,6 @@ import {
   createTask,
   NewTaskInput,
   subscribeToTasksAssignedBy,
-  updateTaskFavorite,
 } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
 
@@ -86,34 +85,6 @@ export function TasksColumn() {
     const latest = tasks.find((t) => t.id === activeTask.id);
     if (latest) setActiveTask(latest);
   }, [tasks, activeTask]);
-
-  const toggleFavorite = async (id: string) => {
-    const current = tasks.find((t) => t.id === id);
-    if (!current || !user?.uid) return;
-
-    console.debug("toggleFavorite requested", {
-      id,
-      currentFavorite: current.favorite,
-      user: user.uid,
-    });
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, favorite: !t.favorite } : t))
-    );
-    try {
-      await updateTaskFavorite(id, user.uid, !current.favorite);
-      console.debug("updateTaskFavorite succeeded", {
-        id,
-        newValue: !current.favorite,
-      });
-    } catch (err) {
-      console.error("Error al actualizar favorito", err);
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === id ? { ...t, favorite: current.favorite } : t
-        )
-      );
-    }
-  };
 
   const addTask = async (task: {
     title: string;
@@ -207,23 +178,7 @@ export function TasksColumn() {
                 ) : (
                   <Check className="h-5 w-5 text-gray-400" aria-hidden />
                 )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(task.id);
-                  }}
-                  className="h-8 w-8 p-0 hover:bg-black/10"
-                >
-                  <Star
-                    className={`h-5 w-5 ${
-                      task.favorite
-                        ? "text-yellow-600 fill-current"
-                        : "text-gray-400"
-                    }`}
-                  />
-                </Button>
+                <Star className="h-5 w-5 text-gray-400" aria-hidden />
               </div>
             </div>
             {task.description && (
