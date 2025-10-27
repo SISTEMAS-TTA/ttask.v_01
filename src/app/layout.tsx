@@ -3,13 +3,36 @@ import "./globals.css";
 import NavigationGuard from "@/components/NavigationGuard";
 
 export const metadata: Metadata = {
-  title: "ERP",
-  description: "Sistema de gestión de indicaciones empresariales",
+  title: "TTask - Sistema de Gestión",
+  description: "Sistema de gestión de tareas y proyectos empresariales",
+  keywords: ["gestión", "tareas", "proyectos", "productividad", "empresa"],
+  authors: [{ name: "TT Arquitectos" }],
+  creator: "TT Arquitectos",
+  publisher: "TT Arquitectos",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: [
-    { rel: "icon", url: "/icono_tt.svg", sizes: "32x32", type: "image/png" },
-    { rel: "apple-touch-icon", url: "/icono_tt.svg" },
+    { rel: "icon", url: "/icono_tt.svg", sizes: "any", type: "image/svg+xml" },
+    { rel: "apple-touch-icon", url: "/icono_tt.svg", sizes: "180x180" },
+    { rel: "apple-touch-icon", url: "/icono_tt.svg", sizes: "192x192" },
+    { rel: "mask-icon", url: "/icono_tt.svg", color: "#ffffff" },
   ],
   manifest: "/manifest.json",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: "#ffffff",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TTask",
+  },
 };
 
 export default function RootLayout({
@@ -20,7 +43,12 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <meta name="theme-color" content="#ffff"/>  
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="TTask" />
+        <link rel="apple-touch-startup-image" href="/icono_tt.svg" />
       </head>
       <body className="min-h-screen bg-gray-50">
         <NavigationGuard />
