@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, Plus, Star } from "lucide-react";
+import { Circle, CircleCheck, Loader2, Plus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddNoteModal } from "@/modules/notes/components/AddNoteModal";
@@ -173,16 +173,6 @@ export function NotesColumn() {
                     {note.title}
                   </h3>
                   <div className="flex space-x-1">
-                    <Check
-                      className={`h-5 w-5 ${
-                        note.completed ? "text-green-600" : "text-gray-400"
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void toggleComplete(note);
-                      }}
-                      style={{ cursor: "pointer" }}
-                    />
                     <Star
                       className={`h-5 w-5 ${
                         note.favorite
@@ -195,6 +185,25 @@ export function NotesColumn() {
                       }}
                       style={{ cursor: "pointer" }}
                     />
+                    {note.completed ? (
+                      <CircleCheck
+                        className="h-5 w-5 text-green-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void toggleComplete(note);
+                        }}
+                        style={{ cursor: "pointer" }}
+                      />
+                    ) : (
+                      <Circle
+                        className="h-5 w-5 text-gray-400"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void toggleComplete(note);
+                        }}
+                        style={{ cursor: "pointer" }}
+                      />
+                    )}
                   </div>
                 </div>
                 {note.content && (
@@ -223,14 +232,6 @@ export function NotesColumn() {
                     {note.title}
                   </h3>
                   <div className="flex space-x-1">
-                    <Check
-                      className="h-5 w-5 text-green-600"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void toggleComplete(note);
-                      }}
-                      style={{ cursor: "pointer" }}
-                    />
                     <Star
                       className={`h-5 w-5 ${
                         note.favorite
@@ -240,6 +241,14 @@ export function NotesColumn() {
                       onClick={(e) => {
                         e.stopPropagation();
                         void toggleFavorite(note);
+                      }}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <CircleCheck
+                      className="h-5 w-5 text-green-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void toggleComplete(note);
                       }}
                       style={{ cursor: "pointer" }}
                     />
