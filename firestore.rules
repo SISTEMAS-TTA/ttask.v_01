@@ -56,6 +56,23 @@ service cloud.firestore {
       // Actualizar/Borrar: solo el propietario de la nota
       allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
+
+    // Reglas para proyectos
+    function isDirector() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Director';
+    }
+    match /projects/{projectId} {
+      allow create: if isDirector();
+      allow read: if request.auth != null && (
+        isDirector() ||
+        (request.auth.uid in resource.data.members) ||
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in resource.data.rolesAllowed)
+      );
+      allow update: if request.auth != null && (
+        isDirector() || (request.auth.uid in resource.data.members)
+      );
+      allow delete: if isDirector();
+    }
     
     // Denegar todo lo demás por defecto
     match /{document=**} {

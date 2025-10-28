@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "dlx": "pnpm dlx",
+    "deploy-rules": "firebase deploy --only firestore:rules",
     "postinstall": "echo 'Recuerda usar pnpm en lugar de npm o npx. Usa: pnpm dlx en lugar de npx.'"
   },
   "dependencies": {
