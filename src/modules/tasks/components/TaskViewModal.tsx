@@ -12,10 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { updateDoc, doc, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { updateDoc, doc, serverTimestamp, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import useUser from "@/modules/auth/hooks/useUser";
-import { addTaskComment, markTaskCommentsSeenByAssigner } from "@/lib/firebase/tasks";
+import { addTaskComment, markTaskCommentsSeenByAssigner, TaskDoc } from "@/lib/firebase/tasks";
 
 interface TaskViewModalProps {
   isOpen: boolean;
@@ -77,17 +77,20 @@ export function TaskViewModal({
     if (!task?.id) return;
     const ref = doc(db, "tasks", task.id);
     const unsub = onSnapshot(ref, (snap) => {
-      const data = snap.data() as any;
-      const raw = (data?.comments as any[]) || [];
-      const mapped = raw.map((c) => ({
-        id: String(c.id || ""),
-        authorId: String(c.authorId || ""),
-        text: String(c.text || ""),
-        createdAt: c.createdAt?.toDate ? c.createdAt.toDate() : undefined,
-      }));
+      const data = snap.data() as Partial<TaskDoc> | undefined;
+      const raw = (data?.comments as TaskDoc["comments"]) || [];
+      const mapped = raw.map((c) => {
+        const createdTs = (c as { createdAt?: Timestamp | undefined }).createdAt;
+        return {
+          id: String((c as { id?: string }).id || ""),
+          authorId: String((c as { authorId?: string }).authorId || ""),
+          text: String((c as { text?: string }).text || ""),
+          createdAt: createdTs instanceof Timestamp ? createdTs.toDate() : undefined,
+        };
+      });
       setComments(mapped);
-      setAssignedBy(data?.assignedBy || null);
-      setAssigneeId(data?.assigneeId || null);
+      setAssignedBy((data?.assignedBy as string) || null);
+      setAssigneeId((data?.assigneeId as string) || null);
     });
     return () => unsub();
   }, [task?.id]);

@@ -15,7 +15,7 @@ import {
   updateNote,
   updateNoteFavorite,
 } from "@/lib/firebase/notes";
-import { initializeNotesOrder, updateNoteOrder, updateNotesOrder } from "@/lib/firebase/notes";
+import { initializeNotesOrder, updateNoteOrder } from "@/lib/firebase/notes";
 
 export function NotesColumn() {
   const { user, loading: userLoading } = useUser();
@@ -247,7 +247,7 @@ export function NotesColumn() {
                   void handleReorder("active", note.id);
                   onDragEnd();
                 }}
-                onTouchStart={(e) => {
+                onTouchStart={() => {
                   setDraggingId(note.id);
                   setDraggingListType("active");
                   setIsTouchDragging(true);
@@ -350,7 +350,7 @@ export function NotesColumn() {
                   void handleReorder("completed", note.id);
                   onDragEnd();
                 }}
-                onTouchStart={(e) => {
+                onTouchStart={() => {
                   setDraggingId(note.id);
                   setDraggingListType("completed");
                   setIsTouchDragging(true);
