@@ -43,18 +43,6 @@ export type UserRole =
   | "Practicante"
   | "Usuario";
 
-// export interface UserProfile {
-//   id?: string;
-//   email: string;
-//   firstName: string;
-//   lastName: string;
-//   fullName?: string;
-//   role: UserRole;
-//   createdAt: Timestamp;
-//   lastLogin?: Date;
-//   active?: boolean;
-// }
-
 export interface Note {
   id: string;
   userId: string;
@@ -68,4 +56,37 @@ export interface Note {
   createdAt: Timestamp;
   // Posición manual para drag & drop (opcional)
   order?: number;
+}
+
+// Projects (frontend-only for now)
+export type ProjectRole = UserRole;
+
+export interface ProjectTask {
+  id: string;
+  sectionId: string;
+  title: string;
+  completed: boolean;
+  favorite?: boolean;
+  na?: boolean; // No aplica
+  order?: number; // para drag & drop
+  // weight?: number; // futuro: ponderación personalizada
+}
+
+export interface ProjectSection {
+  id: string;
+  title: string;
+  order?: number;
+}
+
+export interface ProjectDoc {
+  id: string;
+  title: string;
+  description?: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  members: string[]; // userIds
+  rolesAllowed: ProjectRole[]; // de momento ["Diseno"]
+  sections: ProjectSection[];
+  tasks: ProjectTask[];
+  progress?: number; // calculado en cliente por ahora
 }

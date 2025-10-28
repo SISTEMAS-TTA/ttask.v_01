@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import NavigationGuard from "@/components/NavigationGuard";
+import { AuthHeader } from "@/modules/auth/components/AuthHeader";
 
 export const metadata: Metadata = {
   title: "TTask - Sistema de Gestión",
@@ -52,7 +53,10 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-gray-50">
         <NavigationGuard />
+        <AuthHeader />
+        <div className="pt-16">
         {children}
+        </div>
       </body>
     </html>
   );
