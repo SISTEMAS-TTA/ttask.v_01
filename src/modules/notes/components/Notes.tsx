@@ -15,6 +15,7 @@ import {
   updateNote,
   updateNoteFavorite,
 } from "@/lib/firebase/notes";
+import { initializeNotesOrder, updateNoteOrder, updateNotesOrder } from "@/lib/firebase/notes";
 
 export function NotesColumn() {
   const { user, loading: userLoading } = useUser();
@@ -102,22 +103,17 @@ export function NotesColumn() {
     setEditingNote(null);
   };
 
-  // Ordenar por favoritas primero, luego por fecha (más recientes primero)
+  // Respetar orden manual (order) si existe; si no, favoritas primero y luego fecha desc
   const sortedNotes = useMemo(() => {
     return filteredNotes.slice().sort((a, b) => {
-      // Primero ordenar por favoritas (favoritas primero)
-      if (a.favorite !== b.favorite) {
-        return a.favorite ? -1 : 1;
-      }
-      // Luego por fecha (más recientes primero)
-      const at =
-        a.createdAt instanceof Date
-          ? a.createdAt.getTime()
-          : a.createdAt.toDate().getTime();
-      const bt =
-        b.createdAt instanceof Date
-          ? b.createdAt.getTime()
-          : b.createdAt.toDate().getTime();
+      const ao = typeof a.order === "number";
+      const bo = typeof b.order === "number";
+      if (ao && bo && a.order !== b.order) return (a.order as number) - (b.order as number);
+      if (ao && !bo) return -1;
+      if (!ao && bo) return 1;
+      if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+      const at = a.createdAt instanceof Date ? a.createdAt.getTime() : a.createdAt.toDate().getTime();
+      const bt = b.createdAt instanceof Date ? b.createdAt.getTime() : b.createdAt.toDate().getTime();
       return bt - at;
     });
   }, [filteredNotes]);
@@ -128,6 +124,79 @@ export function NotesColumn() {
     const completed = sortedNotes.filter((note) => note.completed);
     return { activeNotes: active, completedNotes: completed };
   }, [sortedNotes]);
+
+  // Drag & Drop state
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  const onDragStart = (id: string) => setDraggingId(id);
+  const onDragEnd = () => setDraggingId(null);
+
+  const handleReorder = async (
+    listType: "active" | "completed",
+    overId: string | null
+  ) => {
+    if (!draggingId || !overId) return;
+    const sourceList = listType === "active" ? activeNotes : completedNotes;
+    const ids = sourceList.map((n) => n.id);
+    const fromIndex = ids.indexOf(draggingId);
+    const toIndex = ids.indexOf(overId);
+    if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return;
+
+    // Determinar orders base: si falta alguno, inicializar con huecos
+    const hasMissingOrder = sourceList.some((n) => typeof n.order !== "number");
+
+    try {
+      if (hasMissingOrder) {
+        await initializeNotesOrder(ids);
+      }
+
+      // Construir un mapa de order actual (usando valores existentes o el plan de inicialización)
+      const step = 1024;
+      const baseOrderById = new Map<string, number>();
+      sourceList.forEach((n, i) => {
+        const val = typeof n.order === "number" ? (n.order as number) : (i + 1) * step;
+        baseOrderById.set(n.id, val);
+      });
+
+      // Reordenar localmente ids
+      const newIds = ids.slice();
+      const [moved] = newIds.splice(fromIndex, 1);
+      newIds.splice(toIndex, 0, moved);
+
+      // Calcular nuevo order para la nota movida usando vecinos
+      const prevId = newIds[toIndex - 1] ?? null;
+      const nextId = newIds[toIndex + 1] ?? null;
+      const prevOrder = prevId ? baseOrderById.get(prevId) ?? null : null;
+      const nextOrder = nextId ? baseOrderById.get(nextId) ?? null : null;
+
+      let newOrder: number;
+      if (prevOrder != null && nextOrder != null) {
+        // Si no hay espacio entre vecinos, re-normalizar la lista con huecos
+        if (Math.floor(nextOrder) - Math.floor(prevOrder) <= 1) {
+          await initializeNotesOrder(newIds);
+          return;
+        }
+        newOrder = Math.floor((prevOrder + nextOrder) / 2);
+      } else if (prevOrder == null && nextOrder != null) {
+        // Insertar al inicio: crear espacio antes del primero
+        newOrder = Math.floor(nextOrder / 2);
+        if (newOrder === nextOrder) {
+          await initializeNotesOrder(newIds);
+          return;
+        }
+      } else if (prevOrder != null && nextOrder == null) {
+        // Insertar al final: empujar más allá del último
+        newOrder = Math.floor(prevOrder + step);
+      } else {
+        // Lista de un solo elemento
+        newOrder = step;
+      }
+
+      await updateNoteOrder(draggingId, newOrder);
+    } catch (e) {
+      console.error("Error al reordenar notas", e);
+    }
+  };
 
   return (
     <div className="w-full bg-yellow-100 flex flex-col h-full">
@@ -157,6 +226,20 @@ export function NotesColumn() {
             {activeNotes.map((note) => (
               <Card
                 key={note.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = "move";
+                  onDragStart(note.id);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  void handleReorder("active", note.id);
+                  onDragEnd();
+                }}
                 className={`p-3 ${note.color} border-none shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
                 onClick={() => setEditingNote(note)}
                 role="button"
@@ -216,6 +299,20 @@ export function NotesColumn() {
             {completedNotes.map((note) => (
               <Card
                 key={note.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = "move";
+                  onDragStart(note.id);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  void handleReorder("completed", note.id);
+                  onDragEnd();
+                }}
                 className={`p-3 ${note.color} border-none shadow-sm opacity-60 cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
                 onClick={() => setEditingNote(note)}
                 role="button"

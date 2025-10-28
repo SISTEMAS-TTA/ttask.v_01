@@ -43,17 +43,17 @@ export type UserRole =
   | "Practicante"
   | "Usuario";
 
-export interface UserProfile {
-  id?: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  fullName?: string;
-  role: UserRole;
-  createdAt: Timestamp;
-  lastLogin?: Date;
-  active?: boolean;
-}
+// export interface UserProfile {
+//   id?: string;
+//   email: string;
+//   firstName: string;
+//   lastName: string;
+//   fullName?: string;
+//   role: UserRole;
+//   createdAt: Timestamp;
+//   lastLogin?: Date;
+//   active?: boolean;
+// }
 
 export interface Note {
   id: string;
@@ -66,4 +66,6 @@ export interface Note {
   favorites?: Record<string, boolean>; // favoritos por usuario: { userId: true }
   project: string;
   createdAt: Timestamp;
+  // Posición manual para drag & drop (opcional)
+  order?: number;
 }

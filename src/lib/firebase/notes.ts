@@ -13,6 +13,7 @@ import {
   updateDoc,
   where,
   limit as fsLimit,
+  writeBatch,
 } from "firebase/firestore";
 import type { QueryDocumentSnapshot } from "firebase/firestore";
 
@@ -53,6 +54,7 @@ export const subscribeToUserNotes = (
           favorite: Boolean(favoritesMap?.[userId]) || Boolean(data.favorite),
           favorites: favoritesMap,
           project: (data.project as string) ?? "General",
+          order: typeof data.order === "number" ? (data.order as number) : undefined,
           createdAt:
             data.createdAt instanceof Timestamp
               ? data.createdAt
@@ -61,12 +63,16 @@ export const subscribeToUserNotes = (
         return note;
       });
 
-      // Ordenamos: primero las favoritas del usuario, luego por createdAt desc
+      // Ordenar por `order` si está definido (drag & drop),
+      // si no, mantener comportamiento previo: favoritas primero y luego por fecha desc
       const sortedNotes = notes.sort((a: Note, b: Note) => {
-        if (a.favorite === b.favorite) {
-          return b.createdAt.toMillis() - a.createdAt.toMillis();
-        }
-        return a.favorite ? -1 : 1;
+        const ao = typeof a.order === "number";
+        const bo = typeof b.order === "number";
+        if (ao && bo && a.order !== b.order) return (a.order as number) - (b.order as number);
+        if (ao && !bo) return -1; // los que tienen order van primero
+        if (!ao && bo) return 1;
+        if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+        return b.createdAt.toMillis() - a.createdAt.toMillis();
       });
 
       onNotes(sortedNotes);
@@ -79,75 +85,6 @@ export const subscribeToUserNotes = (
 };
 
 // Server-side paginated subscription: solo escucha una página (limit) de notas ordenadas por createdAt desc
-export const subscribeToUserNotesPage = (
-  userId: string,
-  pageSize: number,
-  startAfterDoc: QueryDocumentSnapshot | null,
-  onNotesPage: (notes: Note[], lastDoc: QueryDocumentSnapshot | null) => void,
-  onError?: (error: unknown) => void
-) => {
-  const notesRef = collection(db, NOTES_COLLECTION);
-  let notesQuery;
-  if (startAfterDoc) {
-    notesQuery = query(
-      notesRef,
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc"),
-      startAfter(startAfterDoc),
-      fsLimit(pageSize)
-    );
-  } else {
-    notesQuery = query(
-      notesRef,
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc"),
-      fsLimit(pageSize)
-    );
-  }
-
-  return onSnapshot(
-    notesQuery,
-    (snapshot) => {
-      const notes = snapshot.docs.map((docSnap: QueryDocumentSnapshot) => {
-        const data = docSnap.data() as Record<string, unknown>;
-        const favoritesMap: Record<string, boolean> | undefined =
-          (data.favorites as Record<string, boolean> | undefined) ?? undefined;
-
-        const note: Note = {
-          id: docSnap.id,
-          userId: (data.userId as string) ?? userId,
-          title: (data.title as string) ?? "",
-          content: (data.content as string) ?? "",
-          color: (data.color as string) ?? "bg-yellow-200",
-          completed: Boolean(data.completed),
-          favorite: Boolean(favoritesMap?.[userId]) || Boolean(data.favorite),
-          favorites: favoritesMap,
-          project: (data.project as string) ?? "General",
-          createdAt:
-            data.createdAt instanceof Timestamp
-              ? data.createdAt
-              : Timestamp.now(),
-        } as Note;
-        return note;
-      });
-
-      const lastDoc = snapshot.docs.length
-        ? snapshot.docs[snapshot.docs.length - 1]
-        : null;
-      // ordenar localmente para tener favoritas arriba dentro de la página
-      const sorted = notes.sort((a: Note, b: Note) => {
-        if (a.favorite === b.favorite)
-          return b.createdAt.toMillis() - a.createdAt.toMillis();
-        return a.favorite ? -1 : 1;
-      });
-      onNotesPage(sorted, lastDoc);
-    },
-    (error) => {
-      console.error("Error al suscribirse a la página de notas", error);
-      onError?.(error);
-    }
-  );
-};
 
 // Lectura puntual de una página (getDocs) — útil si prefieres no realtime
 export const getNotesPage = async (
@@ -229,6 +166,8 @@ export const createNote = async (userId: string, note: NewNoteInput) => {
   await addDoc(notesRef, {
     ...noteWithoutColor,
     userId,
+    // Por defecto colocamos la nota arriba: números menores aparecen primero
+    order: -Date.now(),
     createdAt: Timestamp.now(),
   });
 };
@@ -248,3 +187,35 @@ export const updateNote = async (
 
   await updateDoc(noteRef, sanitizedUpdates);
 };
+
+// Reordenar un subconjunto de notas (batch): aplica order = índice basado en el array recibido
+export async function updateNotesOrder(noteIdsInDesiredOrder: string[]) {
+  if (!noteIdsInDesiredOrder?.length) return;
+  const batch = writeBatch(db);
+  noteIdsInDesiredOrder.forEach((id, index) => {
+    const ref = doc(db, NOTES_COLLECTION, id);
+    batch.update(ref, { order: index });
+  });
+  await batch.commit();
+}
+
+// Inicializa `order` para una lista de notas con espacios (step) para reducir reordenamientos masivos
+export async function initializeNotesOrder(
+  noteIdsInOrder: string[],
+  step = 1024,
+) {
+  if (!noteIdsInOrder?.length) return;
+  const batch = writeBatch(db);
+  noteIdsInOrder.forEach((id, index) => {
+    const ref = doc(db, NOTES_COLLECTION, id);
+    const order = (index + 1) * step;
+    batch.update(ref, { order });
+  });
+  await batch.commit();
+}
+
+// Actualiza el `order` de una sola nota
+export async function updateNoteOrder(noteId: string, order: number) {
+  const ref = doc(db, NOTES_COLLECTION, noteId);
+  await updateDoc(ref, { order });
+}

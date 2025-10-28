@@ -678,3 +678,28 @@ Desarrollado por **TT Arquitectos**
 ## 📄 Licencia
 
 Este proyecto es privado y confidencial.
+
+---
+
+## Auditoría de Notas y Drag & Drop
+
+- Código no utilizado
+  - `src/modules/notes/components/DraggableNoteCard.tsx`: componente basado en `@dnd-kit` no está referenciado. Además, `@dnd-kit/*` no figura en `package.json`.
+  - `src/app/migrate-notes/page.tsx`: página de migración completamente comentada; no interviene en el flujo.
+  - `src/lib/firebase/migrateNotesOrder.ts`: utilidad invocada por la página anterior; sin uso actual.
+  - `subscribeToUserNotesPage` y `getNotesPage` en `src/lib/firebase/notes.ts`: funciones de paginación no referenciadas por la UI.
+  - Tipos duplicados: `UserProfile` aparece definido dos veces en `src/modules/types/index.tsx`.
+
+- Oportunidades de mejora
+  - Unificar el ordenamiento: hoy se ordena en cliente en la suscripción (`src/lib/firebase/notes.ts`) y nuevamente en la UI (`src/modules/notes/components/Notes.tsx`). Centralizar para evitar inconsistencias y trabajo duplicado.
+  - Definir precedencia entre `order` y favoritos: si se desea que favoritas siempre queden arriba, aplicar `order` dentro de cada grupo (favoritas/no favoritas) en vez de que `order` las sobrepase.
+  - Optimizar reordenamiento: `updateNotesOrder` reescribe el `order` de todo el subconjunto. Actualizar sólo los documentos que cambian de posición para reducir escrituras.
+  - UX de arrastre: añadir placeholder/línea de inserción y zonas de drop al inicio/fin de lista. Ahora sólo se puede soltar sobre otra tarjeta.
+  - Accesibilidad: incluir manija de arrastre accesible y soporte por teclado/ARIA. Librerías como `@dnd-kit` facilitan esto.
+  - Modelo de favoritos: migrar completamente a `favorites: Record<userId, boolean>` y limpiar el booleano legacy `favorite` tras backfill.
+  - Migración `order`: exponer la utilidad de migración como script/acción admin y remover la página comentada cuando no se use.
+  - Reglas/Índices: actual no requiere índices extra. Si se usa `orderBy('order')` con `where('userId','==', uid)`, crear índice compuesto correspondiente.
+  - Tipos: consolidar una única definición de `UserProfile` en `src/modules/types/index.tsx`.
+
+- Alternativa técnica recomendada (opcional)
+  - Adoptar `@dnd-kit` con `SortableContext` y un `DraggableNoteCard` reutilizable para mejorar accesibilidad, placeholders e inserción al inicio/fin, reduciendo lógica ad-hoc en la lista.
