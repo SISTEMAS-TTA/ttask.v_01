@@ -336,7 +336,7 @@ export async function addTaskComment(
     text,
     // No se puede usar serverTimestamp() dentro de arrayUnion; usar hora del cliente
     createdAt: Timestamp.now(),
-  } as unknown as TaskDoc["comments"][number];
+  };
   await updateDoc(ref, {
     comments: arrayUnion(newComment),
     lastCommentAt: serverTimestamp(),
