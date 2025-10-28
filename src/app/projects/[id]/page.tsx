@@ -5,37 +5,47 @@ import { useParams, useRouter } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { ProjectDoc, ProjectSection, ProjectTask } from "@/modules/types";
+import type { ProjectDoc, ProjectTask } from "@/modules/types";
 import { Star } from "lucide-react";
-
-const LS_KEY = "ttask.projects.v1";
+import { db } from "@/lib/firebase/config";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 
 export default function ProjectDetailPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string | string[] }>();
   const router = useRouter();
   const [project, setProject] = useState<ProjectDoc | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      const arr = raw ? (JSON.parse(raw) as ProjectDoc[]) : [];
-      const match = arr.find((p) => p.id === params.id) || null;
-      setProject(match);
-    } catch {
-      setProject(null);
-    }
+    const id = Array.isArray(params.id) ? params.id[0] : params.id;
+    if (!id) return;
+    const ref = doc(db, "projects", id);
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (!snap.exists()) {
+          setProject(null);
+          return;
+        }
+        const data = snap.data() as any;
+        const proj: ProjectDoc = {
+          id: snap.id,
+          title: String(data.title || ""),
+          description: data.description || undefined,
+          createdBy: String(data.createdBy || ""),
+          createdAt: data.createdAt,
+          members: Array.isArray(data.members) ? (data.members as string[]) : [],
+          rolesAllowed: Array.isArray(data.rolesAllowed)
+            ? (data.rolesAllowed as any)
+            : [],
+          sections: Array.isArray(data.sections) ? data.sections : [],
+          tasks: Array.isArray(data.tasks) ? data.tasks : [],
+        };
+        setProject(proj);
+      },
+      () => setProject(null)
+    );
+    return () => unsub();
   }, [params.id]);
-
-  const persist = (next: ProjectDoc) => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      const arr = raw ? (JSON.parse(raw) as ProjectDoc[]) : [];
-      const idx = arr.findIndex((p) => p.id === next.id);
-      if (idx >= 0) arr[idx] = next; else arr.unshift(next);
-      localStorage.setItem(LS_KEY, JSON.stringify(arr));
-      setProject(next);
-    } catch {}
-  };
 
   const sections = useMemo(() => project?.sections?.slice().sort((a,b)=> (a.order??0)-(b.order??0))||[], [project]);
   const tasksBySection = useMemo(() => {
@@ -56,37 +66,33 @@ export default function ProjectDetailPage() {
     return Math.round((done / effective.length) * 100);
   }, [project]);
 
-  const toggleCompleted = (taskId: string) => {
+  const toggleCompleted = async (taskId: string) => {
     if (!project) return;
-    const next: ProjectDoc = {
-      ...project,
-      tasks: project.tasks.map((t) =>
-        t.id === taskId ? { ...t, completed: !t.completed } : t
-      ),
-    };
-    persist(next);
+    const updated = project.tasks.map((t) =>
+      t.id === taskId ? { ...t, completed: !t.completed } : t
+    );
+    setProject({ ...project, tasks: updated });
+    await updateDoc(doc(db, "projects", project.id), { tasks: updated });
   };
 
-  const toggleNA = (taskId: string) => {
+  const toggleNA = async (taskId: string) => {
     if (!project) return;
-    const next: ProjectDoc = {
-      ...project,
-      tasks: project.tasks.map((t) =>
-        t.id === taskId ? { ...t, na: !t.na, completed: t.na ? t.completed : false } : t
-      ),
-    };
-    persist(next);
+    const updated = project.tasks.map((t) =>
+      t.id === taskId
+        ? { ...t, na: !t.na, completed: t.na ? t.completed : false }
+        : t
+    );
+    setProject({ ...project, tasks: updated });
+    await updateDoc(doc(db, "projects", project.id), { tasks: updated });
   };
 
-  const toggleFavorite = (taskId: string) => {
+  const toggleFavorite = async (taskId: string) => {
     if (!project) return;
-    const next: ProjectDoc = {
-      ...project,
-      tasks: project.tasks.map((t) =>
-        t.id === taskId ? { ...t, favorite: !t.favorite } : t
-      ),
-    };
-    persist(next);
+    const updated = project.tasks.map((t) =>
+      t.id === taskId ? { ...t, favorite: !t.favorite } : t
+    );
+    setProject({ ...project, tasks: updated });
+    await updateDoc(doc(db, "projects", project.id), { tasks: updated });
   };
 
   if (!project) {
