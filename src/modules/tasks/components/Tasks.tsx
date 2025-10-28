@@ -25,6 +25,8 @@ interface UITask {
   favorite: boolean;
   description?: string;
   createdAt: Date;
+  lastCommentAt?: Date;
+  lastSeenByAssignerAt?: Date;
 }
 
 const initialTasks: UITask[] = [];
@@ -66,6 +68,10 @@ export function TasksColumn() {
           completed: d.completed,
           favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
           createdAt: d.createdAt.toDate(),
+          lastCommentAt: d.lastCommentAt ? d.lastCommentAt.toDate() : undefined,
+          lastSeenByAssignerAt: d.lastSeenByAssignerAt
+            ? d.lastSeenByAssignerAt.toDate()
+            : undefined,
         }));
         console.debug(
           "subscribeToTasksAssignedBy -> received docs:",
@@ -170,7 +176,12 @@ export function TasksColumn() {
               <h3 className="font-semibold text-sm text-gray-800">
                 {task.title}
               </h3>
-              <div className="flex space-x-1">
+              <div className="flex items-center space-x-1 relative">
+                {task.lastCommentAt &&
+                  (!task.lastSeenByAssignerAt ||
+                    task.lastCommentAt > task.lastSeenByAssignerAt) && (
+                    <span className="absolute -top-1 -right-1 inline-block w-2 h-2 rounded-full bg-red-600" />
+                  )}
                 <Star
                   className={`h-5 w-5 ${
                     task.viewed

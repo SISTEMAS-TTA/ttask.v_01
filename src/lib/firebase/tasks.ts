@@ -10,6 +10,7 @@ import {
   updateDoc,
   where,
   getDoc,
+  arrayUnion,
 } from "firebase/firestore";
 
 export type TaskDoc = {
@@ -26,6 +27,14 @@ export type TaskDoc = {
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   favorites?: Record<string, boolean>; // favoritos por usuario
+  comments?: Array<{
+    id: string;
+    authorId: string;
+    text: string;
+    createdAt: Timestamp;
+  }>;
+  lastCommentAt?: Timestamp;
+  lastSeenByAssignerAt?: Timestamp;
 };
 export type NewTaskInput = Omit<
   TaskDoc,
@@ -69,6 +78,15 @@ export const subscribeToTasksAssignedBy = (
           updatedAt:
             data.updatedAt instanceof Timestamp
               ? (data.updatedAt as Timestamp)
+              : undefined,
+          comments: (data.comments as TaskDoc["comments"]) ?? [],
+          lastCommentAt:
+            data.lastCommentAt instanceof Timestamp
+              ? (data.lastCommentAt as Timestamp)
+              : undefined,
+          lastSeenByAssignerAt:
+            data.lastSeenByAssignerAt instanceof Timestamp
+              ? (data.lastSeenByAssignerAt as Timestamp)
               : undefined,
         };
         return task;
@@ -124,6 +142,15 @@ export const subscribeToTasksAssignedTo = (
           updatedAt:
             data.updatedAt instanceof Timestamp
               ? (data.updatedAt as Timestamp)
+              : undefined,
+          comments: (data.comments as TaskDoc["comments"]) ?? [],
+          lastCommentAt:
+            data.lastCommentAt instanceof Timestamp
+              ? (data.lastCommentAt as Timestamp)
+              : undefined,
+          lastSeenByAssignerAt:
+            data.lastSeenByAssignerAt instanceof Timestamp
+              ? (data.lastSeenByAssignerAt as Timestamp)
               : undefined,
         };
         return task;
@@ -292,5 +319,35 @@ export async function updateTaskFavorite(
   await updateDoc(ref, {
     [`favorites.${userId}`]: value,
     updatedAt: serverTimestamp(),
+  });
+}
+
+// Agregar comentario (solo activa en UI para el asignado)
+export async function addTaskComment(
+  taskId: string,
+  authorId: string,
+  text: string
+) {
+  const ref = doc(db, "tasks", taskId);
+  const commentId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const newComment = {
+    id: commentId,
+    authorId,
+    text,
+    // No se puede usar serverTimestamp() dentro de arrayUnion; usar hora del cliente
+    createdAt: Timestamp.now(),
+  } as unknown as TaskDoc["comments"][number];
+  await updateDoc(ref, {
+    comments: arrayUnion(newComment),
+    lastCommentAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// Marcar comentarios como vistos por el asignador
+export async function markTaskCommentsSeenByAssigner(taskId: string) {
+  const ref = doc(db, "tasks", taskId);
+  await updateDoc(ref, {
+    lastSeenByAssignerAt: serverTimestamp(),
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { updateDoc, doc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
+import useUser from "@/modules/auth/hooks/useUser";
+import { addTaskComment, markTaskCommentsSeenByAssigner } from "@/lib/firebase/tasks";
 
 interface TaskViewModalProps {
   isOpen: boolean;
@@ -47,9 +49,16 @@ export function TaskViewModal({
   onSave,
   readOnly = false,
 }: TaskViewModalProps) {
+  const { user } = useUser();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [completed, setCompleted] = useState(false);
+  const [comments, setComments] = useState<
+    Array<{ id: string; authorId: string; text: string; createdAt?: Date }>
+  >([]);
+  const [assignedBy, setAssignedBy] = useState<string | null>(null);
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
 
   useEffect(() => {
     if (task) {
@@ -62,6 +71,47 @@ export function TaskViewModal({
       setCompleted(false);
     }
   }, [task]);
+
+  // Subscribe to comments and basic fields of this task
+  useEffect(() => {
+    if (!task?.id) return;
+    const ref = doc(db, "tasks", task.id);
+    const unsub = onSnapshot(ref, (snap) => {
+      const data = snap.data() as any;
+      const raw = (data?.comments as any[]) || [];
+      const mapped = raw.map((c) => ({
+        id: String(c.id || ""),
+        authorId: String(c.authorId || ""),
+        text: String(c.text || ""),
+        createdAt: c.createdAt?.toDate ? c.createdAt.toDate() : undefined,
+      }));
+      setComments(mapped);
+      setAssignedBy(data?.assignedBy || null);
+      setAssigneeId(data?.assigneeId || null);
+    });
+    return () => unsub();
+  }, [task?.id]);
+
+  // If the current user is the assigner, mark comments as seen when opened
+  useEffect(() => {
+    if (!task?.id || !user?.uid) return;
+    if (assignedBy && user.uid === assignedBy) {
+      void markTaskCommentsSeenByAssigner(task.id);
+    }
+  }, [assignedBy, task?.id, user?.uid]);
+
+  const canComment = useMemo(() => {
+    if (!user?.uid) return false;
+    return assigneeId === user.uid; // Solo el asignado puede comentar
+  }, [assigneeId, user?.uid]);
+
+  const handleAddComment = async () => {
+    if (!task?.id || !user?.uid) return;
+    const text = newComment.trim();
+    if (!text) return;
+    await addTaskComment(task.id, user.uid, text);
+    setNewComment("");
+  };
 
   const handleSave = async () => {
     if (!task) return;
@@ -100,6 +150,45 @@ export function TaskViewModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
+          </div>
+
+          {/* Comments */}
+          <div className="space-y-2">
+            <Label>Comentarios</Label>
+            <div className="max-h-56 overflow-y-auto space-y-2 rounded-md border p-2 bg-gray-50">
+              {comments.length === 0 && (
+                <p className="text-xs text-gray-500">Aún no hay comentarios.</p>
+              )}
+              {comments.map((c) => (
+                <div key={c.id} className="text-xs">
+                  <span className="font-medium">
+                    {c.authorId === user?.uid ? "Tú" : c.authorId}
+                  </span>
+                  : {c.text}
+                  {c.createdAt && (
+                    <span className="text-gray-400 ml-2">
+                      {c.createdAt.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {canComment && (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Escribe un comentario"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleAddComment();
+                    }
+                  }}
+                />
+                <Button onClick={handleAddComment}>Enviar</Button>
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>
