@@ -127,9 +127,15 @@ export function NotesColumn() {
 
   // Drag & Drop state
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draggingListType, setDraggingListType] = useState<"active" | "completed" | null>(null);
+  const [isTouchDragging, setIsTouchDragging] = useState(false);
 
   const onDragStart = (id: string) => setDraggingId(id);
-  const onDragEnd = () => setDraggingId(null);
+  const onDragEnd = () => {
+    setDraggingId(null);
+    setDraggingListType(null);
+    setIsTouchDragging(false);
+  };
 
   const handleReorder = async (
     listType: "active" | "completed",
@@ -226,6 +232,7 @@ export function NotesColumn() {
             {activeNotes.map((note) => (
               <Card
                 key={note.id}
+                data-note-id={note.id}
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = "move";
@@ -238,6 +245,35 @@ export function NotesColumn() {
                 onDrop={(e) => {
                   e.preventDefault();
                   void handleReorder("active", note.id);
+                  onDragEnd();
+                }}
+                onTouchStart={(e) => {
+                  setDraggingId(note.id);
+                  setDraggingListType("active");
+                  setIsTouchDragging(true);
+                }}
+                onTouchMove={(e) => {
+                  // Evitar scroll mientras se arrastra con touch
+                  if (isTouchDragging) {
+                    e.preventDefault();
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  const t = e.changedTouches?.[0];
+                  if (t && draggingId && draggingListType === "active") {
+                    const el = document.elementFromPoint(t.clientX, t.clientY) as HTMLElement | null;
+                    let cursor: HTMLElement | null = el;
+                    let overId: string | null = null;
+                    while (cursor) {
+                      const id = cursor.getAttribute?.("data-note-id");
+                      if (id) {
+                        overId = id;
+                        break;
+                      }
+                      cursor = cursor.parentElement;
+                    }
+                    if (overId) void handleReorder("active", overId);
+                  }
                   onDragEnd();
                 }}
                 className={`p-3 ${note.color} border-none shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
@@ -299,6 +335,7 @@ export function NotesColumn() {
             {completedNotes.map((note) => (
               <Card
                 key={note.id}
+                data-note-id={note.id}
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.effectAllowed = "move";
@@ -311,6 +348,34 @@ export function NotesColumn() {
                 onDrop={(e) => {
                   e.preventDefault();
                   void handleReorder("completed", note.id);
+                  onDragEnd();
+                }}
+                onTouchStart={(e) => {
+                  setDraggingId(note.id);
+                  setDraggingListType("completed");
+                  setIsTouchDragging(true);
+                }}
+                onTouchMove={(e) => {
+                  if (isTouchDragging) {
+                    e.preventDefault();
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  const t = e.changedTouches?.[0];
+                  if (t && draggingId && draggingListType === "completed") {
+                    const el = document.elementFromPoint(t.clientX, t.clientY) as HTMLElement | null;
+                    let cursor: HTMLElement | null = el;
+                    let overId: string | null = null;
+                    while (cursor) {
+                      const id = cursor.getAttribute?.("data-note-id");
+                      if (id) {
+                        overId = id;
+                        break;
+                      }
+                      cursor = cursor.parentElement;
+                    }
+                    if (overId) void handleReorder("completed", overId);
+                  }
                   onDragEnd();
                 }}
                 className={`p-3 ${note.color} border-none shadow-sm opacity-60 cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
