@@ -2,13 +2,19 @@ import { db } from "./config";
 import {
   addDoc,
   collection,
-  doc,
   onSnapshot,
   query,
   serverTimestamp,
   where,
+  QuerySnapshot,
+  DocumentData,
 } from "firebase/firestore";
-import type { ProjectDoc, ProjectSection, ProjectTask, ProjectRole } from "@/modules/types";
+import type {
+  ProjectDoc,
+  ProjectSection,
+  ProjectTask,
+  ProjectRole,
+} from "@/modules/types";
 
 const PROJECTS_COLLECTION = "projects";
 
@@ -50,8 +56,8 @@ export function subscribeToProjectsForUser(
   const map = new Map<string, ProjectDoc>();
   const emit = () => onProjects(Array.from(map.values()));
 
-  const handle = (snap: any) => {
-    snap.docs.forEach((d: any) => {
+  const handle = (snap: QuerySnapshot<DocumentData>) => {
+    snap.docs.forEach((d) => {
       const data = d.data();
       const proj: ProjectDoc = {
         id: d.id,
@@ -76,4 +82,3 @@ export function subscribeToProjectsForUser(
   ];
   return () => unsubs.forEach((u) => u());
 }
-
