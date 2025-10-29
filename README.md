@@ -10,7 +10,8 @@ TTask es una aplicación web progresiva (PWA) que permite a equipos de trabajo g
 
 - ✅ **Gestión de Tareas**: Crear, asignar, completar y filtrar tareas
 - 📝 **Sistema de Notas**: Notas con colores personalizables y favoritos
-- 👥 **Roles de Usuario**: Sistema de roles (Administrador/Usuario)
+- 🏗️ **Gestión de Proyectos**: Sistema completo de proyectos arquitectónicos con plantillas predefinidas
+- 👥 **Roles de Usuario**: Sistema de roles multidisciplinario (Director, Administrador, Proyectos, Diseño, etc.)
 - 📊 **Dashboards**: Visualización de métricas y gráficos por proyecto
 - 🔄 **Tiempo Real**: Sincronización en tiempo real con Firebase
 - 📱 **PWA**: Instalable como aplicación móvil/escritorio
@@ -82,7 +83,11 @@ ttask.v_01/
 │   │   ├── dashboard/         # Dashboard principal
 │   │   ├── login/             # Página de login
 │   │   ├── register/          # Registro de usuarios
-│   │   └── notes/             # Vista de notas (standalone)
+│   │   ├── notes/             # Vista de notas (standalone)
+│   │   └── projects/          # Sistema de gestión de proyectos
+│   │       ├── page.tsx       # Lista de proyectos y creación
+│   │       └── [id]/          # Vista detallada de proyecto individual
+│   │           └── page.tsx   # Detalles y checklist del proyecto
 │   ├── components/            # Componentes compartidos
 │   │   ├── core/              # Componentes core (Header, DatePicker)
 │   │   └── ui/                # Componentes UI (shadcn/ui)
@@ -92,11 +97,17 @@ ttask.v_01/
 │   │   ├── notes/             # Gestión de notas
 │   │   ├── dashboard/         # Componentes del dashboard
 │   │   ├── charts/            # Gráficos y métricas
-│   │   └── admin/             # Panel de administración
+│   │   ├── admin/             # Panel de administración
+│   │   └── types/             # Definiciones de tipos TypeScript
 │   ├── hooks/                 # Custom hooks
 │   ├── lib/                   # Utilidades y configuraciones
 │   │   └── firebase/          # Servicios de Firebase
-│   └── types/                 # Definiciones de TypeScript
+│   │       ├── config.ts      # Configuración de Firebase
+│   │       ├── firestore.ts   # Operaciones generales de Firestore
+│   │       ├── tasks.ts       # Servicios de tareas
+│   │       ├── notes.ts       # Servicios de notas
+│   │       └── projects.ts    # Servicios de proyectos (NUEVO)
+│   └── hooks/                 # Custom hooks personalizados
 ├── public/                    # Recursos estáticos
 └── firebase.json              # Configuración de Firebase
 ```
@@ -284,7 +295,146 @@ type Note = {
 
 ---
 
-### 4. Dashboard Principal
+### 4. Sistema de Gestión de Proyectos
+
+#### `src/lib/firebase/projects.ts`
+
+**Servicio de gestión de proyectos arquitectónicos**
+
+**Tipo de datos:**
+
+```typescript
+export interface ProjectDoc {
+  id: string;
+  title: string;
+  description?: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  members: string[]; // userIds de integrantes
+  rolesAllowed: ProjectRole[]; // roles que pueden acceder al proyecto
+  sections: ProjectSection[]; // secciones del proyecto (ej: "Proyecto Arquitectónico")
+  tasks: ProjectTask[]; // tareas/elementos del checklist
+  progress?: number; // porcentaje de avance calculado en cliente
+}
+
+export interface ProjectSection {
+  id: string;
+  title: string; // ej: "Proyecto Arquitectónico", "Diseño Estructural"
+  order?: number; // orden de visualización
+}
+
+export interface ProjectTask {
+  id: string;
+  sectionId: string; // referencia a la sección padre
+  title: string; // ej: "Plantas arquitectónicas", "Fachadas"
+  completed: boolean; // tarea completada
+  favorite?: boolean; // marcada como favorita
+  na?: boolean; // marcada como "No Aplica"
+  order?: number; // orden dentro de la sección
+}
+```
+
+**Funciones principales:**
+
+1. **createProject**: Crear nuevo proyecto con plantilla predefinida
+
+   ```typescript
+   await createProject(userId, {
+     title: "Casa Gómez",
+     description: "Proyecto residencial unifamiliar",
+     members: ["userId1", "userId2"],
+     rolesAllowed: ["Diseno"],
+     sections: templateSections,
+     tasks: templateTasks,
+   });
+   ```
+
+2. **subscribeToProjectsForUser**: Suscripción en tiempo real a proyectos del usuario
+
+   - **Triple filtrado**: Combina 3 queries de Firestore:
+     - `createdBy == userId` (proyectos creados por el usuario)
+     - `members array-contains userId` (proyectos donde es miembro)
+     - `rolesAllowed array-contains userRole` (proyectos permitidos por rol)
+   - **Deduplicación**: Usa Map para evitar duplicados entre queries
+   - **Tiempo real**: Suscripción automática a cambios
+
+#### `src/app/projects/page.tsx`
+
+**Página principal de proyectos**
+
+**Características:**
+
+- **Lista de proyectos**: Grid responsivo con tarjetas de proyecto
+- **Control de acceso**: Solo usuarios con rol "Director" pueden crear proyectos
+- **Modal de creación**: Formulario para nuevos proyectos con:
+  - Título y descripción
+  - Selector de integrantes (filtrado por rol "Diseno")
+  - Aplicación automática de plantilla arquitectónica
+- **Plantilla predefinida**: Sistema de checklist arquitectónico con 6 secciones:
+  1. **Proyecto Arquitectónico**: Plantas, fachadas, cortes
+  2. **Proyecto Ejecutivo**: Detalles de carpintería, herrería
+  3. **Diseño Estructural**: Especificaciones generales, cálculos
+  4. **Ingenierías**: Hidráulica, sanitaria, eléctrica
+  5. **Instalaciones Especiales**: Domótica, seguridad
+  6. **Tablaroca**: Plafones, detalles constructivos
+
+**Lógica de permisos:**
+
+```typescript
+const canCreate = profile?.role === "Director";
+const { projects } = useProjects(user?.uid, profile?.role);
+```
+
+#### `src/app/projects/[id]/page.tsx`
+
+**Vista detallada de proyecto individual**
+
+**Características:**
+
+- **Información del proyecto**: Título, descripción, progreso general
+- **Barra de progreso**: Cálculo automático basado en tareas completadas
+- **Checklist por secciones**: Organizado en tarjetas expandibles
+- **Estados de tareas**:
+  - ✅ **Completada**: Checkbox marcado
+  - ⭐ **Favorita**: Marcada con estrella amarilla
+  - 🚫 **No Aplica**: Excluida del cálculo de progreso
+- **Interacciones en tiempo real**:
+  - Toggle de completado (actualiza progreso)
+  - Toggle de favoritos (marcado personal)
+  - Toggle de "No Aplica" (excluye de progreso y deshabilita)
+
+**Cálculo de progreso:**
+
+```typescript
+const progress = useMemo(() => {
+  const tasks = project?.tasks || [];
+  const effective = tasks.filter((t) => !t.na); // Excluye "No Aplica"
+  if (!effective.length) return 0;
+  const done = effective.filter((t) => t.completed).length;
+  return Math.round((done / effective.length) * 100);
+}, [project]);
+```
+
+**Casos de uso del sistema:**
+
+1. **Director crea proyecto**: Define título, descripción e integrantes del equipo de diseño
+2. **Aplicación de plantilla**: Se genera automáticamente checklist de 40+ elementos arquitectónicos
+3. **Seguimiento de avance**: Equipo marca elementos completados en tiempo real
+4. **Gestión de favoritos**: Cada usuario puede marcar elementos importantes
+5. **Manejo de excepciones**: Elementos "No Aplica" se excluyen del cálculo de progreso
+6. **Visualización de progreso**: Barra de progreso se actualiza automáticamente
+
+**Ventajas del sistema:**
+
+- ✅ **Estandarización**: Plantilla consistente para todos los proyectos arquitectónicos
+- ✅ **Colaboración**: Múltiples usuarios trabajando en tiempo real
+- ✅ **Trazabilidad**: Historial de cambios y estados
+- ✅ **Flexibilidad**: Sistema de "No Aplica" para elementos no requeridos
+- ✅ **Escalabilidad**: Estructura preparada para múltiples tipos de proyecto
+
+---
+
+### 5. Dashboard Principal
 
 #### `src/app/dashboard/page.tsx`
 
@@ -345,7 +495,7 @@ const navMain: NavItem[] = [
 
 ---
 
-### 5. Sistema de Roles y Permisos
+### 6. Sistema de Roles y Permisos
 
 #### `src/hooks/useAdmin.tsx`
 
@@ -390,7 +540,7 @@ Usuario válido → Renderiza contenido
 
 ---
 
-### 6. Hooks Personalizados
+### 7. Hooks Personalizados
 
 #### `src/hooks/useUsersMap.tsx`
 
@@ -428,7 +578,7 @@ const { user, loading } = useRequireAuth();
 
 ---
 
-### 7. Componentes de UI (shadcn/ui)
+### 8. Componentes de UI (shadcn/ui)
 
 La aplicación utiliza componentes de **shadcn/ui** basados en **Radix UI**:
 
@@ -464,7 +614,7 @@ export function cn(...inputs: ClassValue[]) {
 
 ---
 
-### 8. Gráficos y Métricas
+### 9. Gráficos y Métricas
 
 #### `src/modules/charts/components/ProjectCharts.tsx`
 
@@ -486,7 +636,7 @@ export function cn(...inputs: ClassValue[]) {
 
 ---
 
-### 9. Gestión de Estados
+### 10. Gestión de Estados
 
 #### Estado Local (useState)
 
@@ -512,31 +662,105 @@ useEffect(() => {
 
 ---
 
-### 10. Tipos TypeScript
+### 11. Tipos TypeScript
 
 #### `src/modules/types/index.tsx`
 
 **Definiciones centralizadas**
 
 ```typescript
-export type UserProfile = {
-  uid: string;
+// Roles de usuario del sistema
+export type UserRole =
+  | "Director" // Puede crear proyectos y gestionar equipos
+  | "Administrador" // Acceso completo al sistema
+  | "Proyectos" // Gestión de proyectos y coordinación
+  | "Diseno" // Miembro del equipo de diseño
+  | "Gerencia" // Gestión y supervisión
+  | "Obra" // Supervisión de construcción
+  | "Sistemas" // Administración técnica
+  | "Practicante" // Usuario en formación
+  | "Usuario"; // Usuario básico
+
+export interface UserProfile {
+  id?: string;
   email: string;
-  fullName: string;
-  role: "Administrador" | "Usuario";
-  active: boolean;
+  firstName: string;
+  lastName: string;
+  fullName?: string;
+  role: UserRole;
   createdAt: Timestamp;
+  lastLogin?: Date;
+  active?: boolean;
 }
 
-export type Note = { ... }
-export type Task = { ... }
+// Tipos del sistema de proyectos
+export type ProjectRole = UserRole;
+
+export interface ProjectTask {
+  id: string;
+  sectionId: string;
+  title: string;
+  completed: boolean;
+  favorite?: boolean;
+  na?: boolean; // "No aplica" - excluido del cálculo de progreso
+  order?: number;
+}
+
+export interface ProjectSection {
+  id: string;
+  title: string;
+  order?: number;
+}
+
+export interface ProjectDoc {
+  id: string;
+  title: string;
+  description?: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  members: string[]; // IDs de usuarios miembros
+  rolesAllowed: ProjectRole[];
+  sections: ProjectSection[];
+  tasks: ProjectTask[];
+  progress?: number; // Calculado en cliente
+}
+
+// Tipos del sistema de tareas
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  assigneeId: string;
+  deleted: boolean;
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+  status?: "pending" | "in-progress" | "completed";
+}
+
+// Tipos del sistema de notas
+export interface Note {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  color: string;
+  completed: boolean;
+  favorite: boolean;
+  favorites?: Record<string, boolean>; // Favoritos por usuario
+  project: string;
+  createdAt: Timestamp;
+  order?: number; // Para drag & drop
+}
 ```
 
 **Beneficios:**
 
-- Type safety en toda la app
-- Autocompletado en IDE
-- Detección temprana de errores
+- **Type safety** completo en toda la aplicación
+- **Autocompletado** inteligente en IDE
+- **Detección temprana** de errores de tipo
+- **Documentación implícita** del modelo de datos
+- **Refactoring seguro** y escalable
+- **Integración perfecta** con TypeScript y Firebase
 
 ---
 
@@ -558,11 +782,28 @@ match /notes/{noteId} {
   allow read, write: if request.auth.uid == resource.data.userId;
 }
 
+// Proyectos: acceso basado en creador, miembros y roles
+match /projects/{projectId} {
+  allow read: if request.auth.uid == resource.data.createdBy
+              || request.auth.uid in resource.data.members
+              || getUserRole(request.auth.uid) in resource.data.rolesAllowed;
+  allow create: if request.auth.uid == request.resource.data.createdBy
+                && getUserRole(request.auth.uid) == "Director";
+  allow update: if request.auth.uid == resource.data.createdBy
+                || request.auth.uid in resource.data.members;
+  allow delete: if request.auth.uid == resource.data.createdBy;
+}
+
 // Usuarios: lectura para autenticados, escritura solo admin
 match /users/{userId} {
   allow read: if request.auth != null;
   allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid))
                   .data.role == "Administrador";
+}
+
+// Función auxiliar para obtener rol del usuario
+function getUserRole(uid) {
+  return get(/databases/$(database)/documents/users/$(uid)).data.role;
 }
 ```
 
@@ -684,6 +925,7 @@ Este proyecto es privado y confidencial.
 ## Auditoría de Notas y Drag & Drop
 
 - Código no utilizado
+
   - `src/modules/notes/components/DraggableNoteCard.tsx`: componente basado en `@dnd-kit` no está referenciado. Además, `@dnd-kit/*` no figura en `package.json`.
   - `src/app/migrate-notes/page.tsx`: página de migración completamente comentada; no interviene en el flujo.
   - `src/lib/firebase/migrateNotesOrder.ts`: utilidad invocada por la página anterior; sin uso actual.
@@ -691,6 +933,7 @@ Este proyecto es privado y confidencial.
   - Tipos duplicados: `UserProfile` aparece definido dos veces en `src/modules/types/index.tsx`.
 
 - Oportunidades de mejora
+
   - Unificar el ordenamiento: hoy se ordena en cliente en la suscripción (`src/lib/firebase/notes.ts`) y nuevamente en la UI (`src/modules/notes/components/Notes.tsx`). Centralizar para evitar inconsistencias y trabajo duplicado.
   - Definir precedencia entre `order` y favoritos: si se desea que favoritas siempre queden arriba, aplicar `order` dentro de cada grupo (favoritas/no favoritas) en vez de que `order` las sobrepase.
   - Optimizar reordenamiento: `updateNotesOrder` reescribe el `order` de todo el subconjunto. Actualizar sólo los documentos que cambian de posición para reducir escrituras.
