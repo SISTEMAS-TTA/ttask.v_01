@@ -153,7 +153,15 @@ export default function ProjectDetailPage() {
               {(tasksBySection[sec.id] || []).map((t) => (
                 <li
                   key={t.id}
-                  className="flex items-center justify-between rounded-md border p-2 bg-white"
+                  className={`flex items-center justify-between rounded-md border p-2 transition-colors ${
+                    t.na
+                      ? "bg-red-100 border-red-300 text-red-700 opacity-60"
+                      : t.completed
+                      ? "bg-green-100 border-green-300 text-green-700"
+                      : t.favorite
+                      ? "bg-yellow-100 border-yellow-300 text-yellow-800"
+                      : "bg-white border-gray-200"
+                  }`}
                 >
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -172,10 +180,10 @@ export default function ProjectDetailPage() {
                   </label>
                   <div className="flex items-center gap-2">
                     <Star
-                      className={`h-4 w-4 ${
+                      className={`h-4 w-4 transition-colors ${
                         t.favorite
-                          ? "text-yellow-600 fill-current"
-                          : "text-gray-400"
+                          ? "text-yellow-200 fill-yellow-200"
+                          : "text-gray-400 fill-transparent"
                       }`}
                       onClick={() => toggleFavorite(t.id)}
                       style={{ cursor: "pointer" }}
