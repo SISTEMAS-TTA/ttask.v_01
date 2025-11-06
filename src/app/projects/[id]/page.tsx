@@ -194,7 +194,7 @@ export default function ProjectDetailPage() {
                       }`}
                       onClick={() => toggleNA(t.id)}
                     >
-                      {t.na ? "N/A" : "Marcar N/A"}
+                      {"N/A"}
                     </button>
                   </div>
                 </li>
