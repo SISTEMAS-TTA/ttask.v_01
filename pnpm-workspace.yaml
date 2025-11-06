@@ -1,0 +1,7 @@
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - '@tailwindcss/oxide'
+  - msw
+  - protobufjs
+  - sharp
+  - unrs-resolver
