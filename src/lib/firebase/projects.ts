@@ -18,28 +18,44 @@ import type {
 
 const PROJECTS_COLLECTION = "projects";
 
-export type NewProjectInput = {
+// --- PEGA ESTE NUEVO BLOQUE ---
+
+// Definimos el tipo de Asignacion aquí para poder usarlo
+type Asignacion =
+  | { tipo: "area"; id: string }
+  | { tipo: "usuario"; id: string };
+
+export type NewProjectINput = {
   title: string;
   description?: string;
-  members: string[]; // userIds
-  rolesAllowed: ProjectRole[]; // e.g., ["Diseno"]
+  // members: string[]; // BORRADO
+  // rolesAllowed: string[]; // BORRADO
+
+  asignaciones: Asignacion[]; // NUEVO: Nuestra propiedad ya es válida
+
   sections: ProjectSection[];
   tasks: ProjectTask[];
 };
 
-export async function createProject(createdBy: string, input: NewProjectInput) {
+// --- INICIO Bloque Corregido ---
+export async function createProject(createdBy: string, input: NewProjectINput) {
+  // <-- Arreglo 1: "INput" con 'N'
   const ref = collection(db, PROJECTS_COLLECTION);
   await addDoc(ref, {
     title: input.title,
     description: input.description ?? null,
     createdBy,
     createdAt: serverTimestamp(),
-    members: input.members ?? [],
-    rolesAllowed: input.rolesAllowed ?? [],
+
+    // members: input.members ?? [], // BORRADO
+    // rolesAllowed: input.rolesAllowed ?? [], // BORRADO
+    asignaciones: input.asignaciones ?? [], // <-- Arreglo 2: Guardamos la nueva propiedad
+
     sections: input.sections,
     tasks: input.tasks,
   });
 }
+// --- FIN Bloque Corregido ---
 
 // Merge three queries: createdBy, members contains uid, rolesAllowed contains role
 export function subscribeToProjectsForUser(
