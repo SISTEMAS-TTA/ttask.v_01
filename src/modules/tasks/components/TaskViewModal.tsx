@@ -15,7 +15,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { updateDoc, doc, serverTimestamp, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import useUser from "@/modules/auth/hooks/useUser";
+import { useUsersMap } from "@/hooks/useUsersMap";
 import { addTaskComment, markTaskCommentsSeenByAssigner, TaskDoc } from "@/lib/firebase/tasks";
+import { getAllUserProfiles } from "@/lib/firebase/users";
 
 interface TaskViewModalProps {
   isOpen: boolean;
@@ -50,6 +52,7 @@ export function TaskViewModal({
   readOnly = false,
 }: TaskViewModalProps) {
   const { user } = useUser();
+  const { getUserName } = useUsersMap();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [completed, setCompleted] = useState(false);
@@ -59,6 +62,7 @@ export function TaskViewModal({
   const [assignedBy, setAssignedBy] = useState<string | null>(null);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (task) {
@@ -95,6 +99,31 @@ export function TaskViewModal({
     return () => unsub();
   }, [task?.id]);
 
+  // Load user profiles to resolve authorId -> display name
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const profiles = await getAllUserProfiles();
+        if (!mounted) return;
+        const map: Record<string, string> = {};
+        for (const u of profiles) {
+          const name = (u.fullName && u.fullName.trim())
+            || [u.firstName, u.lastName].filter(Boolean).join(" ")
+            || u.email
+            || u.id
+            || "Usuario";
+          if (u.id) map[u.id] = name;
+        }
+        setUserNames(map);
+      } catch {
+        // ignore and fallback to UID
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+
   // If the current user is the assigner, mark comments as seen when opened
   useEffect(() => {
     if (!task?.id || !user?.uid) return;
@@ -115,6 +144,20 @@ export function TaskViewModal({
     await addTaskComment(task.id, user.uid, text);
     setNewComment("");
   };
+
+  // Replace authorId with display name for non-self comments when names are loaded
+  useEffect(() => {
+    if (!comments.length) return;
+    if (!userNames || Object.keys(userNames).length === 0) return;
+    setComments((prev) =>
+      prev.map((c) => {
+        if (!c.authorId) return c;
+        if (user?.uid && c.authorId === user.uid) return c; // keep self UID to show "Tú"
+        const name = userNames[c.authorId];
+        return name ? { ...c, authorId: name } : c;
+      })
+    );
+  }, [userNames, user?.uid, comments.length]);
 
   const handleSave = async () => {
     if (!task) return;
@@ -164,9 +207,7 @@ export function TaskViewModal({
               )}
               {comments.map((c) => (
                 <div key={c.id} className="text-xs">
-                  <span className="font-medium">
-                    {c.authorId === user?.uid ? "Tú" : c.authorId}
-                  </span>
+                  <span className="font-medium">{c.authorId === user?.uid ? "Tú" : getUserName(c.authorId)}</span>
                   : {c.text}
                   {c.createdAt && (
                     <span className="text-gray-400 ml-2">
