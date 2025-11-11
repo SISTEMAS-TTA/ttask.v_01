@@ -54,6 +54,30 @@ export function AuthHeader() {
       console.error("Error al cerrar sesión", e);
     }
   };
+  
+  // Si no hay usuario autenticado, mostrar solo el logo sin navegación ni menú de usuario
+  if (!user) {
+    return (
+      <header className="fixed left-0 top-0 z-50 w-full bg-white/90 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
+        <div className="mx-auto px-3 py-2 sm:px-4 sm:py-3 lg:px-6 xl:px-8 2xl:px-12">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-shrink-0">
+              <Link href="/" aria-label="ttArquitectos" className="block transition-opacity hover:opacity-80">
+                <Image
+                  src="/LogoTT.png"
+                  alt="Logo de ttArquitectos"
+                  width={220}
+                  height={35}
+                  priority
+                  className="h-auto w-28 xs:w-32 sm:w-36 md:w-44 lg:w-52 xl:w-56 2xl:w-60"
+                />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
   return (
     <header className="fixed left-0 top-0 z-50 w-full bg-white/90 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
       <div className="mx-auto px-3 py-2 sm:px-4 sm:py-3 lg:px-6 xl:px-8 2xl:px-12">
@@ -100,7 +124,47 @@ export function AuthHeader() {
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
-                {/* {profile?.role === "Director" && (
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/pagos-presupuestos"
+                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                    >
+                      Pagos y presupuestos
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/obra"
+                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                    >
+                      Obra
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/logistica-compras"
+                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                    >
+                      Logística y Compras
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/admon"
+                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                    >
+                      Admon
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              {/* {profile?.role === "Director" && (
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
                       <Link
@@ -293,7 +357,35 @@ export function AuthHeader() {
                   >
                     Proyectos
                   </Link>
-                  {/* {profile?.role === "Director" && (
+                  <Link
+                    href="/pagos-presupuestos"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Pagos y presupuestos
+                  </Link>
+                  <Link
+                    href="/obra"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Obra
+                  </Link>
+                  <Link
+                    href="/logistica-compras"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Logística y Compras
+                  </Link>
+                  <Link
+                    href="/admon"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Admon
+                  </Link>
+                {/* {profile?.role === "Director" && (
                     <Link
                       href="/projects/new"
                       className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"

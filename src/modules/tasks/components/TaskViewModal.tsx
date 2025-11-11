@@ -16,7 +16,7 @@ import { updateDoc, doc, serverTimestamp, onSnapshot, Timestamp } from "firebase
 import { db } from "@/lib/firebase/config";
 import useUser from "@/modules/auth/hooks/useUser";
 import { useUsersMap } from "@/hooks/useUsersMap";
-import { addTaskComment, markTaskCommentsSeenByAssigner, TaskDoc } from "@/lib/firebase/tasks";
+import { addTaskComment, deleteTaskComment, markTaskCommentsSeenByAssigner, TaskDoc } from "@/lib/firebase/tasks";
 import { getAllUserProfiles } from "@/lib/firebase/users";
 
 interface TaskViewModalProps {
@@ -145,19 +145,7 @@ export function TaskViewModal({
     setNewComment("");
   };
 
-  // Replace authorId with display name for non-self comments when names are loaded
-  useEffect(() => {
-    if (!comments.length) return;
-    if (!userNames || Object.keys(userNames).length === 0) return;
-    setComments((prev) =>
-      prev.map((c) => {
-        if (!c.authorId) return c;
-        if (user?.uid && c.authorId === user.uid) return c; // keep self UID to show "Tú"
-        const name = userNames[c.authorId];
-        return name ? { ...c, authorId: name } : c;
-      })
-    );
-  }, [userNames, user?.uid, comments.length]);
+  // Nota: mantenemos authorId como UID para validar permisos de borrado
 
   const handleSave = async () => {
     if (!task) return;
@@ -213,6 +201,22 @@ export function TaskViewModal({
                     <span className="text-gray-400 ml-2">
                       {c.createdAt.toLocaleString()}
                     </span>
+                  )}
+                  {c.authorId === user?.uid && (
+                    <button
+                      className="ml-2 text-red-600 hover:underline"
+                      onClick={async () => {
+                        if (!task?.id || !user?.uid) return;
+                        try {
+                          await deleteTaskComment(task.id, user.uid, c.id);
+                        } catch (e) {
+                          console.warn("No se pudo borrar el comentario", e);
+                        }
+                      }}
+                      title="Borrar comentario"
+                    >
+                      Borrar
+                    </button>
                   )}
                 </div>
               ))}

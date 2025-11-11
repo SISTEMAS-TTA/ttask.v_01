@@ -98,7 +98,7 @@ export function CompletedTasksColumn() {
     <div className="w-full bg-green-100 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-green-200 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-800">T. Finalizadas</h2>
+        <h2 className="text-base sm:text-lg font-semibold text-gray-800">T. Finalizadas</h2>
         <Button
           size="sm"
           variant="ghost"
@@ -110,14 +110,14 @@ export function CompletedTasksColumn() {
       </div>
 
       {/* Tasks List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
         {orderedTasks.map((task) => (
           <Card
             key={task.id}
             className="p-3 bg-green-200 border-none shadow-sm"
           >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800 line-through">
+              <h3 className="font-semibold text-base sm:text-lg text-gray-800 line-through">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -132,14 +132,14 @@ export function CompletedTasksColumn() {
               </div>
             </div>
             {task.description && (
-              <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               {task.type === "assigned"
                 ? `Asignado a: ${getUserName(task.assigneeId!)}`
                 : `Asignado por: ${getUserName(task.assignedBy!)}`}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-sm text-gray-400 mt-1">
               Completado:{" "}
               {task.completedAt.toLocaleDateString("es-ES", {
                 day: "2-digit",
