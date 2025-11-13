@@ -1,9 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Circle, CircleCheck, Loader2, Plus, Star } from "lucide-react";
+import {
+  Circle,
+  CircleCheck,
+  Loader2,
+  Plus,
+  Star,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { AddNoteModal } from "@/modules/notes/components/AddNoteModal";
 import { EditNoteModal } from "@/modules/notes/components/EditNoteModal";
 import useUser from "@/modules/auth/hooks/useUser";
@@ -189,6 +202,233 @@ export function NotesColumn() {
     return { activeNotes: active, completedNotes: completed };
   }, [sortedNotes]);
 
+  // Función para formatear la fecha como "Mes Año"
+  const formatMonthYear = (date: Date): string => {
+    return date
+      .toLocaleDateString("es-ES", {
+        month: "long",
+        year: "numeric",
+      })
+      .replace(/^\w/, (c) => c.toUpperCase());
+  };
+
+  // Función para obtener la fecha de una nota
+  const getNoteDate = (note: Note): Date => {
+    return note.createdAt instanceof Date
+      ? note.createdAt
+      : note.createdAt.toDate();
+  };
+
+  // Agrupar notas activas por mes
+  const groupedActiveNotes = useMemo(() => {
+    const groups = new Map<string, Note[]>();
+
+    activeNotes.forEach((note) => {
+      const date = getNoteDate(note);
+      const monthYear = formatMonthYear(date);
+
+      if (!groups.has(monthYear)) {
+        groups.set(monthYear, []);
+      }
+      groups.get(monthYear)!.push(note);
+    });
+
+    // Convertir a array y ordenar por fecha (más reciente primero)
+    return Array.from(groups.entries())
+      .map(([monthYear, notes]) => ({
+        monthYear,
+        notes,
+        // Usar la fecha más reciente del grupo para ordenar
+        sortDate: Math.max(...notes.map((note) => getNoteDate(note).getTime())),
+      }))
+      .sort((a, b) => b.sortDate - a.sortDate);
+  }, [activeNotes]);
+
+  // Agrupar notas completadas por mes
+  const groupedCompletedNotes = useMemo(() => {
+    const groups = new Map<string, Note[]>();
+
+    completedNotes.forEach((note) => {
+      const date = getNoteDate(note);
+      const monthYear = formatMonthYear(date);
+
+      if (!groups.has(monthYear)) {
+        groups.set(monthYear, []);
+      }
+      groups.get(monthYear)!.push(note);
+    });
+
+    // Convertir a array y ordenar por fecha (más reciente primero)
+    return Array.from(groups.entries())
+      .map(([monthYear, notes]) => ({
+        monthYear,
+        notes,
+        sortDate: Math.max(...notes.map((note) => getNoteDate(note).getTime())),
+      }))
+      .sort((a, b) => b.sortDate - a.sortDate);
+  }, [completedNotes]);
+
+  // Estados para controlar qué grupos están abiertos
+  const [openActiveGroups, setOpenActiveGroups] = useState<Set<string>>(
+    new Set()
+  );
+  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Al cargar, abrir el mes más reciente por defecto
+  useEffect(() => {
+    if (groupedActiveNotes.length > 0) {
+      setOpenActiveGroups(new Set([groupedActiveNotes[0].monthYear]));
+    }
+    if (groupedCompletedNotes.length > 0) {
+      setOpenCompletedGroups(new Set([groupedCompletedNotes[0].monthYear]));
+    }
+  }, [groupedActiveNotes, groupedCompletedNotes]);
+
+  const toggleActiveGroup = (monthYear: string) => {
+    setOpenActiveGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(monthYear)) {
+        newSet.delete(monthYear);
+      } else {
+        newSet.add(monthYear);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleCompletedGroup = (monthYear: string) => {
+    setOpenCompletedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(monthYear)) {
+        newSet.delete(monthYear);
+      } else {
+        newSet.add(monthYear);
+      }
+      return newSet;
+    });
+  };
+
+  // Componente para renderizar una nota individual
+  const NoteCard = ({
+    note,
+    isCompleted = false,
+  }: {
+    note: Note;
+    isCompleted?: boolean;
+  }) => {
+    const currentNoteColor = localNoteColors[note.id] || note.color;
+
+    return (
+      <Card
+        key={note.id}
+        data-note-id={note.id}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.effectAllowed = "move";
+          onDragStart(note.id);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          void handleReorder(isCompleted ? "completed" : "active", note.id);
+          onDragEnd();
+        }}
+        onTouchStart={() => {
+          setDraggingId(note.id);
+          setDraggingListType(isCompleted ? "completed" : "active");
+          setIsTouchDragging(true);
+        }}
+        onTouchMove={(e) => {
+          if (isTouchDragging) {
+            e.preventDefault();
+          }
+        }}
+        onTouchEnd={(e) => {
+          const t = e.changedTouches?.[0];
+          if (t && draggingId && draggingListType) {
+            const el = document.elementFromPoint(
+              t.clientX,
+              t.clientY
+            ) as HTMLElement | null;
+            let cursor: HTMLElement | null = el;
+            let overId: string | null = null;
+            while (cursor) {
+              const id = cursor.getAttribute?.("data-note-id");
+              if (id) {
+                overId = id;
+                break;
+              }
+              cursor = cursor.parentElement;
+            }
+            if (overId) void handleReorder(draggingListType, overId);
+          }
+          onDragEnd();
+        }}
+        className={`p-3 ${currentNoteColor} border-none shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
+          isCompleted ? "opacity-60" : ""
+        }`}
+        onClick={() => setEditingNote(note)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setEditingNote(note);
+          }
+        }}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <h3
+            className={`font-semibold text-base sm:text-lg text-gray-800 ${
+              isCompleted ? "line-through" : ""
+            }`}
+          >
+            {note.title}
+          </h3>
+          <div className="flex space-x-1">
+            <Star
+              className={`h-5 w-5 ${
+                note.favorite ? "text-yellow-600 fill-current" : "text-gray-400"
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                void toggleFavorite(note);
+              }}
+              style={{ cursor: "pointer" }}
+            />
+            {isCompleted ? (
+              <CircleCheck
+                className="h-5 w-5 text-green-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void toggleComplete(note);
+                }}
+                style={{ cursor: "pointer" }}
+              />
+            ) : (
+              <Circle
+                className="h-5 w-5 text-gray-400"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void toggleComplete(note);
+                }}
+                style={{ cursor: "pointer" }}
+              />
+            )}
+          </div>
+        </div>
+        {note.content && (
+          <p className="text-sm text-gray-600">{note.content}</p>
+        )}
+      </Card>
+    );
+  };
+
   // Drag & Drop state
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggingListType, setDraggingListType] = useState<
@@ -297,218 +537,82 @@ export function NotesColumn() {
           </div>
         ) : (
           <>
-            {/* Active Notes */}
-            {activeNotes.map((note) => {
-              // [CORRECCIÓN CLAVE]: Usa el color de sessionStorage si existe, si no, usa el color de Firebase (que es el color guardado en la creación).
-              const currentNoteColor = localNoteColors[note.id] || note.color;
-              return (
-                <Card
-                  key={note.id}
-                  data-note-id={note.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = "move";
-                    onDragStart(note.id);
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    void handleReorder("active", note.id);
-                    onDragEnd();
-                  }}
-                  onTouchStart={() => {
-                    setDraggingId(note.id);
-                    setDraggingListType("active");
-                    setIsTouchDragging(true);
-                  }}
-                  onTouchMove={(e) => {
-                    // Evitar scroll mientras se arrastra con touch
-                    if (isTouchDragging) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onTouchEnd={(e) => {
-                    const t = e.changedTouches?.[0];
-                    if (t && draggingId && draggingListType === "active") {
-                      const el = document.elementFromPoint(
-                        t.clientX,
-                        t.clientY
-                      ) as HTMLElement | null;
-                      let cursor: HTMLElement | null = el;
-                      let overId: string | null = null;
-                      while (cursor) {
-                        const id = cursor.getAttribute?.("data-note-id");
-                        if (id) {
-                          overId = id;
-                          break;
-                        }
-                        cursor = cursor.parentElement;
-                      }
-                      if (overId) void handleReorder("active", overId);
-                    }
-                    onDragEnd();
-                  }}
-                  className={`p-3 ${currentNoteColor} border-none shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
-                  onClick={() => setEditingNote(note)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setEditingNote(note);
-                    }
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-base sm:text-lg text-gray-800">
-                      {note.title}
-                    </h3>
-                    <div className="flex space-x-1">
-                      <Star
-                        className={`h-5 w-5 ${
-                          note.favorite
-                            ? "text-yellow-600 fill-current"
-                            : "text-gray-400"
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void toggleFavorite(note);
-                        }}
-                        style={{ cursor: "pointer" }}
-                      />
-                      {note.completed ? (
-                        <CircleCheck
-                          className="h-5 w-5 text-green-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void toggleComplete(note);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        />
-                      ) : (
-                        <Circle
-                          className="h-5 w-5 text-gray-400"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void toggleComplete(note);
-                          }}
-                          style={{ cursor: "pointer" }}
-                        />
-                      )}
-                    </div>
+            {/* Active Notes Grouped by Month */}
+            {groupedActiveNotes.map(({ monthYear, notes }) => (
+              <Collapsible
+                key={`active-${monthYear}`}
+                open={openActiveGroups.has(monthYear)}
+                onOpenChange={() => toggleActiveGroup(monthYear)}
+              >
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between px-2 py-3 mb-3 bg-blue-50/50 border-b border-blue-100 hover:bg-blue-50 hover:border-blue-200 transition-colors group rounded-sm">
+                    <h4 className="text-sm font-semibold text-gray-800 text-left group-hover:text-gray-900 transition-colors">
+                      {monthYear} · {notes.length}{" "}
+                      {notes.length === 1 ? "nota" : "notas"}
+                    </h4>
+                    {openActiveGroups.has(monthYear) ? (
+                      <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    )}
                   </div>
-                  {note.content && (
-                    <p className="text-sm text-gray-600">{note.content}</p>
-                  )}
-                </Card>
-              );
-            })}
-            {/* Completed Notes */}
-            {completedNotes.map((note) => {
-              // [CORRECCIÓN CLAVE]: Usa el color de sessionStorage si existe, si no, usa el color de Firebase.
-              const currentNoteColor = localNoteColors[note.id] || note.color;
-              return (
-                <Card
-                  key={note.id}
-                  data-note-id={note.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = "move";
-                    onDragStart(note.id);
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    void handleReorder("completed", note.id);
-                    onDragEnd();
-                  }}
-                  onTouchStart={() => {
-                    setDraggingId(note.id);
-                    setDraggingListType("completed");
-                    setIsTouchDragging(true);
-                  }}
-                  onTouchMove={(e) => {
-                    if (isTouchDragging) {
-                      e.preventDefault();
-                    }
-                  }}
-                  onTouchEnd={(e) => {
-                    const t = e.changedTouches?.[0];
-                    if (t && draggingId && draggingListType === "completed") {
-                      const el = document.elementFromPoint(
-                        t.clientX,
-                        t.clientY
-                      ) as HTMLElement | null;
-                      let cursor: HTMLElement | null = el;
-                      let overId: string | null = null;
-                      while (cursor) {
-                        const id = cursor.getAttribute?.("data-note-id");
-                        if (id) {
-                          overId = id;
-                          break;
-                        }
-                        cursor = cursor.parentElement;
-                      }
-                      if (overId) void handleReorder("completed", overId);
-                    }
-                    onDragEnd();
-                  }}
-                  className={`p-3 ${currentNoteColor} border-none shadow-sm opacity-60 cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
-                  onClick={() => setEditingNote(note)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setEditingNote(note);
-                    }
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-base sm:text-lg text-gray-800 line-through">
-                      {note.title}
-                    </h3>
-                    <div className="flex space-x-1">
-                      <Star
-                        className={`h-5 w-5 ${
-                          note.favorite
-                            ? "text-yellow-600 fill-current"
-                            : "text-gray-400"
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void toggleFavorite(note);
-                        }}
-                        style={{ cursor: "pointer" }}
-                      />
-                      <CircleCheck
-                        className="h-5 w-5 text-green-600"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void toggleComplete(note);
-                        }}
-                        style={{ cursor: "pointer" }}
-                      />
-                    </div>
-                  </div>
-                  {note.content && (
-                    <p className="text-sm text-gray-600">{note.content}</p>
-                  )}
-                </Card>
-              );
-            })}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 mb-4">
+                  {notes.map((note) => (
+                    <NoteCard key={note.id} note={note} isCompleted={false} />
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
 
-            {!activeNotes.length && !completedNotes.length && (
-              <p className="text-sm text-gray-500 text-center">
-                Aún no tienes notas guardadas.
-              </p>
+            {/* Completed Notes Grouped by Month */}
+            {groupedCompletedNotes.length > 0 && (
+              <div className="mt-8">
+                <div className="border-t border-gray-200 pt-4 mb-4">
+                  <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                    Completadas
+                  </h3>
+                </div>
+                {groupedCompletedNotes.map(({ monthYear, notes }) => (
+                  <Collapsible
+                    key={`completed-${monthYear}`}
+                    open={openCompletedGroups.has(monthYear)}
+                    onOpenChange={() => toggleCompletedGroup(monthYear)}
+                  >
+                    <CollapsibleTrigger className="w-full">
+                      <div className="flex items-center justify-between px-2 py-2 mb-3 bg-green-50/30 border-b border-green-100 hover:bg-green-50 hover:border-green-200 transition-colors group rounded-sm">
+                        <h4 className="text-sm font-semibold text-gray-700 text-left group-hover:text-gray-900 transition-colors">
+                          {monthYear} · {notes.length}{" "}
+                          {notes.length === 1 ? "nota" : "notas"}
+                        </h4>
+                        {openCompletedGroups.has(monthYear) ? (
+                          <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                        )}
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-2 mb-4">
+                      {notes.map((note) => (
+                        <NoteCard
+                          key={note.id}
+                          note={note}
+                          isCompleted={true}
+                        />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
             )}
+
+            {/* Empty State */}
+            {groupedActiveNotes.length === 0 &&
+              groupedCompletedNotes.length === 0 && (
+                <p className="text-sm text-gray-500 text-center">
+                  Aún no tienes notas guardadas.
+                </p>
+              )}
           </>
         )}
       </div>

@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
@@ -54,22 +54,26 @@ export function AuthHeader() {
       console.error("Error al cerrar sesión", e);
     }
   };
-  
+
   // Si no hay usuario autenticado, mostrar solo el logo sin navegación ni menú de usuario
   if (!user) {
     return (
-      <header className="fixed left-0 top-0 z-50 w-full bg-white/90 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
-        <div className="mx-auto px-3 py-2 sm:px-4 sm:py-3 lg:px-6 xl:px-8 2xl:px-12">
+      <header className="fixed left-0 top-0 z-[1000] w-full bg-white/95 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
+        <div className="mx-auto px-4 py-4 sm:px-6 sm:py-4 lg:px-8 xl:px-12 2xl:px-16">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-shrink-0">
-              <Link href="/" aria-label="ttArquitectos" className="block transition-opacity hover:opacity-80">
+              <Link
+                href="/"
+                aria-label="ttArquitectos"
+                className="block transition-opacity hover:opacity-80"
+              >
                 <Image
                   src="/LogoTT.png"
                   alt="Logo de ttArquitectos"
                   width={220}
                   height={35}
                   priority
-                  className="h-auto w-28 xs:w-32 sm:w-36 md:w-44 lg:w-52 xl:w-56 2xl:w-60"
+                  className="h-auto w-32 xs:w-36 sm:w-40 md:w-48 lg:w-52 xl:w-56 2xl:w-60"
                 />
               </Link>
             </div>
@@ -79,8 +83,8 @@ export function AuthHeader() {
     );
   }
   return (
-    <header className="fixed left-0 top-0 z-50 w-full bg-white/90 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
-      <div className="mx-auto px-3 py-2 sm:px-4 sm:py-3 lg:px-6 xl:px-8 2xl:px-12">
+    <header className="fixed left-0 top-0 z-[1000] w-full bg-white/95 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
+      <div className="mx-auto px-4 py-4 sm:px-6 sm:py-4 lg:px-8 xl:px-12 2xl:px-16">
         <div className="flex items-center justify-between gap-3">
           {/* Logo - Responsive sizing */}
           <div className="flex-shrink-0">
@@ -95,7 +99,7 @@ export function AuthHeader() {
                 width={220}
                 height={35}
                 priority
-                className="h-auto w-28 xs:w-32 sm:w-36 md:w-44 lg:w-52 xl:w-56 2xl:w-60"
+                className="h-auto w-32 xs:w-36 sm:w-40 md:w-48 lg:w-52 xl:w-56 2xl:w-60"
               />
             </Link>
           </div>
@@ -164,7 +168,7 @@ export function AuthHeader() {
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
-              {/* {profile?.role === "Director" && (
+                {/* {profile?.role === "Director" && (
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
                       <Link
@@ -239,7 +243,7 @@ export function AuthHeader() {
                 </NavigationMenuItem> */}
 
                 {/* <NavigationMenuItem> */}
-                  {/* <NavigationMenuLink asChild>
+                {/* <NavigationMenuLink asChild>
                     <Link
                       href="/proyectos"
                       className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
@@ -280,10 +284,10 @@ export function AuthHeader() {
               <DropdownMenuTrigger asChild>
                 <button
                   aria-label="User menu"
-                  className="inline-flex items-center justify-center h-9 w-9 rounded-full hover:bg-gray-100"
+                  className="inline-flex items-center justify-center h-11 w-11 rounded-full hover:bg-gray-100 sm:h-12 sm:w-12"
                 >
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>
+                  <Avatar className="h-9 w-9 sm:h-10 sm:w-10">
+                    <AvatarFallback className="text-sm sm:text-base">
                       {initials(profile?.fullName, user?.email || undefined)}
                     </AvatarFallback>
                   </Avatar>
@@ -308,11 +312,11 @@ export function AuthHeader() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 text-gray-700 hover:text-gray-900 hover:bg-gray-50 sm:h-10 sm:w-10"
+                  className="h-11 w-11 text-gray-700 hover:text-gray-900 hover:bg-gray-50 sm:h-12 sm:w-12"
                 >
                   <span className="sr-only">Abrir menú principal</span>
                   <svg
-                    className="h-5 w-5 sm:h-6 sm:w-6"
+                    className="h-6 w-6 sm:h-7 sm:w-7"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth="1.5"
@@ -385,7 +389,7 @@ export function AuthHeader() {
                   >
                     Admon
                   </Link>
-                {/* {profile?.role === "Director" && (
+                  {/* {profile?.role === "Director" && (
                     <Link
                       href="/projects/new"
                       className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
@@ -457,7 +461,7 @@ export function AuthHeader() {
                   >
                     Finanzas
                   </Link>
-{/* 
+                  {/* 
                   <Link
                     href="/nosotros"
                     className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"

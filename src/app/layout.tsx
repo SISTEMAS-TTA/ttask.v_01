@@ -54,9 +54,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-gray-50">
         <NavigationGuard />
         <AuthHeader />
-        <div className="pt-16">
-        {children}
-        </div>
+        <div className="pt-20 sm:pt-20 lg:pt-20">{children}</div>
       </body>
     </html>
   );
