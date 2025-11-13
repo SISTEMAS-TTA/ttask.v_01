@@ -220,7 +220,7 @@ export function ReceivedTasksColumn() {
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800">
+              <h3 className="font-semibold text-base sm:text-lg text-gray-800">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -243,9 +243,9 @@ export function ReceivedTasksColumn() {
               </div>
             </div>
             {task.description && (
-              <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>
           </Card>
@@ -262,7 +262,7 @@ export function ReceivedTasksColumn() {
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800 line-through">
+              <h3 className="font-semibold text-base sm:text-lg text-gray-800 line-through">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -285,9 +285,9 @@ export function ReceivedTasksColumn() {
               </div>
             </div>
             {task.description && (
-              <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>
           </Card>
