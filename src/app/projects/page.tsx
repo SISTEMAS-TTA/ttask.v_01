@@ -122,50 +122,79 @@ export default function ProjectsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [members, setMembers] = useState<string[]>([]);
-  const [allDesignUsers, setAllDesignUsers] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
+  // --- INICIO Bloque 1: Nuevos Estados ---
+  // const [members, setMembers] = useState<string[]>([]); // BORRADO
+  // const [allDesignUsers, setAllDesignUsers] = useState< // BORRADO
+  //   Array<{ id: string; name: string }>
+  // >([]); // BORRADO
 
+  // Nuevos estados para manejar áreas, usuarios y la selección
+  const [allAreas, setAllAreas] = useState<string[]>([]);
+  const [allUsers, setAllUsers] = useState<
+    Array<{ id: string; name: string; role: string }>
+  >([]);
+  type Asignacion =
+    | { tipo: "area"; id: string }
+    | { tipo: "usuario"; id: string };
+  const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
+
+  // Nuevo estado para controlar qué área está expandida (el acordeón)
+  const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
+  // --- FIN Bloque 1 ---
+
+  // --- INICIO Bloque 2: Carga de Datos ---
   useEffect(() => {
-    // Load users with role Diseno for member picker
+    // Cargar TODOS los usuarios y TODAS las áreas
     (async () => {
       try {
+        // 1. listAllUsers() ya nos da todos los usuarios
         const users = await listAllUsers();
-        const disenos = users
-          .filter((u) => u.role === "Diseno")
-          .map((u) => ({
-            id: u.id,
-            name:
-              u.fullName || `${u.firstName} ${u.lastName}`.trim() || u.email,
-          }));
-        setAllDesignUsers(disenos);
+
+        // 2. Guardamos todos los usuarios formateados (no solo 'Diseno')
+        const formattedUsers = users.map((u) => ({
+          id: u.id,
+          name: u.fullName || `${u.firstName} ${u.lastName}`.trim() || u.email,
+          role: u.role, // Guardamos el rol para poder agruparlos
+        }));
+        setAllUsers(formattedUsers);
+
+        // 3. Creamos una lista única de todas las "Areas" (roles)
+        // Usamos Set para eliminar duplicados
+        const areas = [...new Set(users.map((u) => u.role))].filter(Boolean); // filter(Boolean) elimina roles vacíos
+        setAllAreas(areas);
       } catch (e) {
-        console.warn("No se pudieron cargar usuarios", e);
+        console.warn("No se pudieron cargar usuarios o areas", e);
       }
     })();
   }, []);
+  // --- FIN Bloque 2 ---
 
   const canCreate = profile?.role === "Director";
 
   const visible = projects; // ya vienen filtrados por la suscripción
 
+  // --- INICIO Bloque 3: Función de Guardar ---
   const createProjectAction = async () => {
     if (!user) return;
     const base = buildTemplate();
     await createProject(user.uid, {
       title: title.trim(),
       description: description.trim() || undefined,
-      members,
-      rolesAllowed: ["Diseno"],
+
+      // members, // BORRADO
+      // rolesAllowed: ["Diseno"], // BORRADO
+      asignaciones: asignaciones, // NUEVO: Pasamos nuestro nuevo array
+
       sections: base.sections,
       tasks: base.tasks,
     });
     setIsCreating(false);
     setTitle("");
     setDescription("");
-    setMembers([]);
+    // setMembers([]); // BORRADO
+    setAsignaciones([]); // NUEVO: Limpiamos el nuevo estado
   };
+  // --- FIN Bloque 3 ---
 
   return (
     <AuthGuard>
@@ -200,49 +229,130 @@ export default function ProjectsPage() {
                   onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
+              {/* --- INICIO Bloque 4: Interfaz de Integrantes --- */}
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Integrantes (solo rol Diseno)
+                  Integrantes y Áreas
                 </label>
-                {/* Selector simple multi-usuario (rol Diseno) */}
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {members.map((id) => {
-                    const u = allDesignUsers.find((x) => x.id === id);
-                    return (
-                      <span
-                        key={id}
-                        className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"
-                      >
-                        {u?.name || id}
-                      </span>
+
+                <div className="max-h-60 overflow-y-auto border rounded">
+                  {allAreas.map((area) => {
+                    // Comprobamos si el ÁREA ENTERA está seleccionada
+                    const areaSeleccionada = asignaciones.some(
+                      (a) => a.tipo === "area" && a.id === area
                     );
-                  })}
-                </div>
-                <div className="max-h-48 overflow-y-auto border rounded">
-                  {allDesignUsers.map((u) => {
-                    const checked = members.includes(u.id);
+
+                    // Obtenemos los usuarios que pertenecen a esta área
+                    const usuariosDelArea = allUsers.filter(
+                      (u) => u.role === area
+                    );
+
                     return (
-                      <label
-                        key={u.id}
-                        className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            setMembers((prev) =>
-                              e.target.checked
-                                ? [...prev, u.id]
-                                : prev.filter((x) => x !== u.id)
-                            );
-                          }}
-                        />
-                        {u.name}
-                      </label>
+                      <div key={area} className="border-b last:border-b-0">
+                        {/* Fila del Área (para seleccionar TODA el área) */}
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100">
+                          <label className="flex items-center gap-2 text-sm font-medium flex-grow">
+                            <input
+                              type="checkbox"
+                              checked={areaSeleccionada}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setAsignaciones((prev) => {
+                                  // Primero, quitamos esta área y todos sus usuarios individuales
+                                  const filtrados = prev.filter(
+                                    (a) =>
+                                      !(a.tipo === "area" && a.id === area) &&
+                                      !(
+                                        a.tipo === "usuario" &&
+                                        usuariosDelArea.some(
+                                          (u) => u.id === a.id
+                                        )
+                                      )
+                                  );
+                                  // Si se marcó, agregamos el área
+                                  if (checked) {
+                                    return [
+                                      ...filtrados,
+                                      { tipo: "area", id: area },
+                                    ];
+                                  }
+                                  // Si se desmarcó, solo devolvemos los filtrados
+                                  return filtrados;
+                                });
+                              }}
+                            />
+                            Toda el área: {area}
+                          </label>
+
+                          {/* Botón para expandir/colapsar y ver usuarios */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAreaAbierta(areaAbierta === area ? null : area)
+                            }
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            {areaAbierta === area ? "Ocultar" : "Ver"}
+                          </button>
+                        </div>
+
+                        {/* Lista de Usuarios (si está expandida) */}
+                        {areaAbierta === area && (
+                          <div className="pl-6 bg-white">
+                            {usuariosDelArea.map((user) => {
+                              const usuarioSeleccionado = asignaciones.some(
+                                (a) => a.tipo === "usuario" && a.id === user.id
+                              );
+
+                              return (
+                                <label
+                                  key={user.id}
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    // Deshabilitado si el área entera ya está seleccionada
+                                    disabled={areaSeleccionada}
+                                    checked={
+                                      usuarioSeleccionado || areaSeleccionada
+                                    }
+                                    onChange={(e) => {
+                                      const checked = e.target.checked;
+                                      setAsignaciones((prev) => {
+                                        const filtrados = prev.filter(
+                                          (a) =>
+                                            !(
+                                              a.tipo === "usuario" &&
+                                              a.id === user.id
+                                            )
+                                        );
+                                        if (checked) {
+                                          return [
+                                            ...filtrados,
+                                            { tipo: "usuario", id: user.id },
+                                          ];
+                                        }
+                                        return filtrados;
+                                      });
+                                    }}
+                                  />
+                                  {user.name}
+                                </label>
+                              );
+                            })}
+                            {usuariosDelArea.length === 0 && (
+                              <span className="block px-3 py-2 text-sm text-gray-500">
+                                No hay usuarios en esta área.
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
               </div>
+              {/* --- FIN Bloque 4 --- */}
               <div className="flex gap-2 justify-end pt-1">
                 <Button variant="outline" onClick={() => setIsCreating(false)}>
                   Cancelar

@@ -1,3 +1,4 @@
+import { getAllUserProfiles } from "@/lib/firebase/users";
 import { db } from "./config";
 import {
   addDoc,
@@ -18,28 +19,78 @@ import type {
 
 const PROJECTS_COLLECTION = "projects";
 
-export type NewProjectInput = {
+// --- PEGA ESTE NUEVO BLOQUE ---
+
+// Definimos el tipo de Asignacion aquí para poder usarlo
+type Asignacion =
+  | { tipo: "area"; id: string }
+  | { tipo: "usuario"; id: string };
+
+export type NewProjectINput = {
   title: string;
   description?: string;
-  members: string[]; // userIds
-  rolesAllowed: ProjectRole[]; // e.g., ["Diseno"]
+  // members: string[]; // BORRADO
+  // rolesAllowed: string[]; // BORRADO
+
+  asignaciones: Asignacion[]; // NUEVO: Nuestra propiedad ya es válida
+
   sections: ProjectSection[];
   tasks: ProjectTask[];
 };
 
-export async function createProject(createdBy: string, input: NewProjectInput) {
+// --- INICIO Bloque Corregido ---
+export async function createProject(createdBy: string, input: NewProjectINput) {
   const ref = collection(db, PROJECTS_COLLECTION);
+
+  // PASO 1: Obtener todos los usuarios del sistema
+  const allUsers = await getAllUserProfiles();
+
+  // PASO 2: Calcular miembros finales y roles permitidos a partir de asignaciones
+  const finalMembers = new Set<string>();
+  const allowedRoles = new Set<ProjectRole>();
+
+  input.asignaciones.forEach((assignment) => {
+    if (assignment.tipo === "usuario") {
+      if (assignment.id) {
+        finalMembers.add(assignment.id!);
+      }
+    } else if (assignment.tipo === "area") {
+      // 1. Agregamos el rol/área a la lista de roles permitidos (Clave para suscripción)
+      if (assignment.id) {
+        // Asumimos que assignment.id del tipo 'area' es un ProjectRole válido
+        allowedRoles.add(assignment.id as ProjectRole);
+      }
+
+      // 2.Agregamos todos los UIDs que tienen ese rol
+      // Usamos assignment.id! si ya está validado o lo validamos aquí de nuevo
+      allUsers
+        .filter((user) => user.role === assignment.id)
+        .forEach((user) => {
+          // Aplicamos aserción no nula (!) después de verificar
+          if (user.id) {
+            finalMembers.add(user.id!); // <--- Aserción de tipo
+          }
+        });
+    }
+  });
+
+  // PASO 3: Guardar el documento, incluyendo los campos calculados
   await addDoc(ref, {
     title: input.title,
     description: input.description ?? null,
     createdBy,
     createdAt: serverTimestamp(),
-    members: input.members ?? [],
-    rolesAllowed: input.rolesAllowed ?? [],
+    asignaciones: input.asignaciones,
+
+    // CAMPOS VITALES CALCULADOS:
+    members: Array.from(finalMembers),
+    rolesAllowed: Array.from(allowedRoles),
+
     sections: input.sections,
     tasks: input.tasks,
   });
 }
+// --- FIN Bloque Corregido ---
 
 // Merge three queries: createdBy, members contains uid, rolesAllowed contains role
 export function subscribeToProjectsForUser(

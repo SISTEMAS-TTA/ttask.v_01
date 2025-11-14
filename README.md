@@ -17,6 +17,7 @@ TTask es una aplicación web progresiva (PWA) que permite a equipos de trabajo g
 - 📱 **PWA**: Instalable como aplicación móvil/escritorio
 - 🔐 **Autenticación**: Sistema completo con Firebase Auth
 - 🎨 **UI Moderna**: Componentes con Radix UI y Tailwind CSS
+- 💬 **Comentarios en tareas recibidas**: Los usuarios pueden añadir comentarios en las tareas que reciben; se mantiene historial de conversaciones, autoría y timestamps.
 
 ---
 
@@ -219,6 +220,7 @@ type TaskDoc = {
 3. **createTask**: Crear nueva tarea
 4. **updateTask**: Actualizar tarea existente
 5. **toggleTaskFavorite**: Marcar/desmarcar como favorito
+6. **addCommentToTask**: Añadir comentarios a una tarea (con autor y timestamp). Los usuarios pueden comentar desde la columna "Tareas Recibidas"; los comentarios se almacenan en la tarea (subcolección `comments` o campo `comments`) y respetan permisos de lectura/escritura.
 
 #### `src/modules/tasks/components/Tasks.tsx`
 
@@ -349,6 +351,8 @@ export interface ProjectTask {
    });
    ```
 
+  > Nota: al crear el proyecto con `createProject` las tareas definidas en `templateTasks` se instancian automáticamente y son añadidas al nuevo `project.tasks`.
+
 2. **subscribeToProjectsForUser**: Suscripción en tiempo real a proyectos del usuario
 
    - **Triple filtrado**: Combina 3 queries de Firestore:
@@ -365,11 +369,12 @@ export interface ProjectTask {
 **Características:**
 
 - **Lista de proyectos**: Grid responsivo con tarjetas de proyecto
-- **Control de acceso**: Solo usuarios con rol "Director" pueden crear proyectos
+- **Lista de proyectos**: Grid responsivo con tarjetas de proyecto
+- **Control de acceso**: Solo usuarios con rol "Director" pueden crear proyectos y seleccionar a los integrantes del proyecto. El modal de creación está restringido al rol "Director".
 - **Modal de creación**: Formulario para nuevos proyectos con:
   - Título y descripción
-  - Selector de integrantes (filtrado por rol "Diseno")
-  - Aplicación automática de plantilla arquitectónica
+  - Selector de integrantes (filtrado por rol "Diseno") — permite seleccionar miembros del equipo que serán añadidos al proyecto
+  - Aplicación automática de plantilla arquitectónica (las tareas del template se instancian al crear el proyecto)
 - **Plantilla predefinida**: Sistema de checklist arquitectónico con 6 secciones:
   1. **Proyecto Arquitectónico**: Plantas, fachadas, cortes
   2. **Proyecto Ejecutivo**: Detalles de carpintería, herrería

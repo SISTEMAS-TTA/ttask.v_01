@@ -11,6 +11,7 @@ import {
   where,
   getDoc,
   arrayUnion,
+  DocumentData,
 } from "firebase/firestore";
 
 export type TaskDoc = {
@@ -340,6 +341,35 @@ export async function addTaskComment(
   await updateDoc(ref, {
     comments: arrayUnion(newComment),
     lastCommentAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// Eliminar comentario (solo el autor puede borrar)
+export async function deleteTaskComment(
+  taskId: string,
+  requesterId: string,
+  commentId: string
+) {
+  const ref = doc(db, "tasks", taskId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const data = snap.data() as DocumentData;
+  const comments = (data.comments as TaskDoc["comments"]) ?? [];
+  const target = comments.find((c) => c.id === commentId);
+  if (!target) return;
+  if (target.authorId !== requesterId) {
+    throw new Error("Solo el autor del comentario puede borrarlo");
+  }
+  const remaining = comments.filter((c) => c.id !== commentId);
+  // Recalcular lastCommentAt basado en el último comentario restante
+  const last = remaining
+    .map((c) => c.createdAt)
+    .filter(Boolean)
+    .sort((a, b) => b.toMillis() - a.toMillis())[0];
+  await updateDoc(ref, {
+    comments: remaining,
+    lastCommentAt: last || null,
     updatedAt: serverTimestamp(),
   });
 }
