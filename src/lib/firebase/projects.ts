@@ -1,4 +1,11 @@
 import { db } from "./config";
+import type {
+  QuerySnapshot,
+  DocumentData,
+  FirestoreError,
+  Query,
+  QueryDocumentSnapshot,
+} from "@firebase/firestore";
 import {
   addDoc,
   collection,
@@ -6,8 +13,6 @@ import {
   query,
   serverTimestamp,
   where,
-  QuerySnapshot,
-  DocumentData,
 } from "firebase/firestore";
 import type {
   ProjectDoc,
@@ -65,15 +70,24 @@ export function subscribeToProjectsForUser(
   onError?: (e: unknown) => void
 ) {
   const ref = collection(db, PROJECTS_COLLECTION);
-  const qByOwner = query(ref, where("createdBy", "==", userId));
-  const qByMember = query(ref, where("members", "array-contains", userId));
-  const qByRole = query(ref, where("rolesAllowed", "array-contains", role));
+  const qByOwner: Query<DocumentData> = query(
+    ref,
+    where("createdBy", "==", userId)
+  );
+  const qByMember: Query<DocumentData> = query(
+    ref,
+    where("members", "array-contains", userId)
+  );
+  const qByRole: Query<DocumentData> = query(
+    ref,
+    where("rolesAllowed", "array-contains", role)
+  );
 
   const map = new Map<string, ProjectDoc>();
   const emit = () => onProjects(Array.from(map.values()));
 
   const handle = (snap: QuerySnapshot<DocumentData>) => {
-    snap.docs.forEach((d) => {
+    snap.docs.forEach((d: QueryDocumentSnapshot<DocumentData>) => {
       const data = d.data();
       const proj: ProjectDoc = {
         id: d.id,
@@ -92,9 +106,9 @@ export function subscribeToProjectsForUser(
   };
 
   const unsubs = [
-    onSnapshot(qByOwner, handle, (e) => onError?.(e)),
-    onSnapshot(qByMember, handle, (e) => onError?.(e)),
-    onSnapshot(qByRole, handle, (e) => onError?.(e)),
+    onSnapshot(qByOwner, handle, (e: FirestoreError) => onError?.(e)),
+    onSnapshot(qByMember, handle, (e: FirestoreError) => onError?.(e)),
+    onSnapshot(qByRole, handle, (e: FirestoreError) => onError?.(e)),
   ];
   return () => unsubs.forEach((u) => u());
 }
