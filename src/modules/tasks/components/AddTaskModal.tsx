@@ -87,7 +87,10 @@ export function AddTaskModal({
         <DialogHeader>
           <DialogTitle>Agregar Nueva Tarea</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 [&_[data-slot=input]]:text-sm [&_[data-slot=textarea]]:text-sm"
+        >
           <div className="space-y-2">
             <Label htmlFor="title">Título de la tarea</Label>
             <Input
