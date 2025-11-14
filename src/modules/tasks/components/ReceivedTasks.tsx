@@ -148,11 +148,38 @@ export function ReceivedTasksColumn() {
   );
   const completedTasks = orderedTasks.filter((task) => task.completed);
 
+  // Función auxiliar para renderizar el pie de página de la tarea
+  const TaskFooter = ({ task }: { task: ReceivedTask }) => {
+    const assignedByName = getUserName(task.assignedBy);
+
+    return (
+      <div className="text-sm text-gray-500 mt-1">
+        {/* Línea 1: Quién asignó */}
+        <p>
+          Asignado por: <span className="font-semibold">{assignedByName}</span>
+        </p>
+        {/* Línea 2: Fecha y Hora de Creación */}
+        <p className="text-xs mt-1">
+          Recibida:{" "}
+          {task.createdAt.toLocaleString("es-MX", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full bg-red-200 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-red-300 flex items-center justify-between">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-800">T. Recibidas</h2>
+        <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+          T. Recibidas
+        </h2>
         <Button
           size="sm"
           variant="ghost"
@@ -206,6 +233,8 @@ export function ReceivedTasksColumn() {
             <p className="text-sm text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>
+            {/* [IMPLEMENTACIÓN]: Usar el componente TaskFooter */}
+            <TaskFooter task={task} />
           </Card>
         ))}
 
@@ -248,6 +277,8 @@ export function ReceivedTasksColumn() {
             <p className="text-sm text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>
+            {/* [IMPLEMENTACIÓN]: Usar el componente TaskFooter */}
+            <TaskFooter task={task} />
           </Card>
         ))}
 
@@ -290,6 +321,8 @@ export function ReceivedTasksColumn() {
             <p className="text-sm text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>
+            {/* [IMPLEMENTACIÓN]: Usar el componente TaskFooter */}
+            <TaskFooter task={task} />
           </Card>
         ))}
       </div>

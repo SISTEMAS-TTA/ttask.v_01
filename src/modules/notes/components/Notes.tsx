@@ -403,6 +403,16 @@ export function NotesColumn() {
                   {note.content && (
                     <p className="text-sm text-gray-600">{note.content}</p>
                   )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    Creada:{" "}
+                    {note.createdAt.toDate().toLocaleString("es-MX", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 </Card>
               );
             })}
