@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 
 import { NotesColumn } from "@/modules/notes/components/Notes";
 import { TasksColumn } from "@/modules/tasks/components/Tasks";

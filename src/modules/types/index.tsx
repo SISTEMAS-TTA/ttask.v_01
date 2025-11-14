@@ -43,6 +43,19 @@ export type UserRole =
   | "Practicante"
   | "Usuario";
 
+  export const ALL_USER_ROLES = [
+  "Director",
+  "Administrador",
+  "Proyectos",
+  "Diseno",
+  "Gerencia",
+  "Obra",
+  "Sistemas",
+  "Practicante",
+  "Usuario",
+] as const;
+// ---------------------
+
 export interface Note {
   id: string;
   userId: string;

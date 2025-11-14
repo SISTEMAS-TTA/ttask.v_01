@@ -92,24 +92,34 @@ export function TasksColumn() {
     if (latest) setActiveTask(latest);
   }, [tasks, activeTask]);
 
-  const addTask = async (task: {
+ const addTask = async (taskData: {
     title: string;
     project: string;
-    assigneeId: string;
     description?: string;
+    assigneeIds: string[]; // <-- Ahora aceptamos la lista de usuarios
+    assignedAreas: string[]; // <-- Y la lista de áreas
   }) => {
     if (!user) return;
-    const payload: NewTaskInput = {
-      title: task.title,
-      project: task.project,
-      description: task.description ?? "",
-      assigneeId: task.assigneeId,
-      viewed: false,
-      completed: false,
-      favorite: false,
-    };
-    await createTask(user.uid, payload);
+
+    // Recorremos la lista de usuarios seleccionados
+    // y creamos UNA tarea individual para cada uno.
+    for (const targetUserId of taskData.assigneeIds) {
+      const payload: NewTaskInput = {
+        title: taskData.title,
+        project: taskData.project,
+        description: taskData.description ?? "",
+        assigneeId: targetUserId, // <-- Aquí asignamos al usuario actual del ciclo
+        viewed: false,
+        completed: false,
+        favorite: false,
+      };
+      
+      // Enviamos a Firebase
+      await createTask(user.uid, payload);
+    }
   };
+
+  // ---------------------------------------------
 
   // Aplicar filtros
   const filteredTasks = tasks.filter((task) => {
