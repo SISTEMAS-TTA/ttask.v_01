@@ -9,14 +9,48 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador';
     }
     
+    //----------------NUEVO BLOQUE---------------------------------
+    // Reglas para que los usuarios jefe de area agreguen usuarios a la misma area
+
+    // Función helper para obtener el rol del usuario
+    function getUserRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    // Devuelve el perfil completo del usuario que llama
+    function getCallerProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Verifica si el Jefe que llama puede registrar el nuevo rol (NUEVA LÓGICA CLAVE)
+    function canRegisterUser(newRole) {
+      let callerProfile = getCallerProfile();
+      let callerRole = callerProfile.role;
+
+      // 1. Permiso Máximo: Administrador puede crear cualquier rol.
+      return callerRole == 'Administrador' ||
+             // 2. Si el usuario tiene el flag isAreaChief y el rol coincide
+             (callerProfile.isAreaChief == true && callerRole == newRole);
+      
+      // 3. Ningún otro usuario puede registrar (implícito en el return false)
+    }
+    
+    //---------------------------------------------------------
+    
     // Reglas para usuarios
     match /users/{userId} {
       // Cualquier usuario autenticado puede leer todos los usuarios
       allow read: if request.auth != null;
       
-      // Permitir crear perfil por self-signup o por administrador
-      allow create: if request.auth != null && (isAdmin() || request.auth.uid == userId);
-
+      // [MODIFICACIÓN CLAVE EN LA REGLA CREATE]
+      // Solo permitimos la creación si es un Jefe/Admin autorizado.
+      allow create: if request.auth != null && (
+        // 1. Auto-registro (para usuarios que ya existen en Auth y crean su perfil por primera vez).
+        request.auth.uid == userId
+        // 2. O si es un Jefe/Admin y la asignación de rol es válida.
+        || canRegisterUser(request.resource.data.role)
+      );
+      
       // Permitir actualizar propio perfil o admin; evitar que usuarios normales cambien su role
       allow update: if request.auth != null && (
         isAdmin()
@@ -59,8 +93,10 @@ service cloud.firestore {
 
     // Reglas para proyectos
     function isDirector() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Director';
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Director';
     }
+    
     match /projects/{projectId} {
       allow create: if isDirector();
       allow read: if request.auth != null && (

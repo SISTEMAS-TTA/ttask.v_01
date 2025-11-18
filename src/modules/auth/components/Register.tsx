@@ -26,10 +26,17 @@ import { auth } from "@/lib/firebase/config";
 import { Timestamp } from "firebase/firestore";
 
 import { createUserProfile } from "@/lib/firebase/firestore";
-import { UserProfile } from "@/modules/types/index";
+// [CAMBIO 1]: Importar UserRole (o asegurarnos de que el path es correcto)
+import { UserProfile, UserRole } from "@/modules/types/index";
 import { USER_PROFILE_STORAGE_KEY } from "@/modules/auth/hooks/useUser";
 
-export default function Register() {
+// [CAMBIO 2]: Definir las props para recibir el rol forzado
+interface RegisterProps {
+  forcedRole?: UserRole; // Rol que se debe asignar automáticamente (si es Jefe de Área)
+}
+
+// [CAMBIO 3]: Aceptar forcedRole como prop
+export default function Register({ forcedRole }: RegisterProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -38,17 +45,29 @@ export default function Register() {
   useEffect(() => {
     setSaludo(getSaludo());
   }, []);
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [role, setRole] = useState("");
+
+  // [CAMBIO 4]: Usar el rol forzado si existe, si no, usar el estado local
+  const initialRole = forcedRole ?? "";
+  const [role, setRole] = useState(initialRole);
+
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ [k: string]: string }>({});
   const router = useRouter();
 
   const [createUserWithEmailAndPassword, , loading, firebaseError] =
     useCreateUserWithEmailAndPassword(auth);
+
+  // [CAMBIO 5]: Sincronizar el estado del rol con la prop forzada (si cambia)
+  useEffect(() => {
+    if (forcedRole) {
+      setRole(forcedRole);
+    }
+  }, [forcedRole]);
 
   useEffect(() => {
     if (firebaseError) {
@@ -57,10 +76,12 @@ export default function Register() {
   }, [firebaseError]);
 
   const handleSignUp = async () => {
-    if (loading) return; // Prevenir envíos concurrentes
+    if (loading) return;
     setError("");
     setFieldErrors({});
     const errs: { [k: string]: string } = {};
+
+    // [AJUSTE VALIDACIÓN]: Usamos el valor del estado 'role', que ya contiene el valor forzado si aplica.
     if (!firstName.trim()) errs.firstName = "Ingresa tu nombre";
     if (!lastName.trim()) errs.lastName = "Ingresa tus apellidos";
     if (!email.trim()) errs.email = "Ingresa tu correo";
@@ -79,15 +100,18 @@ export default function Register() {
 
     try {
       const res = await createUserWithEmailAndPassword(email, password);
-      console.log({ res, role });
+      // console.log({ res, role }); // Log actualizado para usar el rol ya validado
 
       if (res?.user) {
         const userProfile: UserProfile = {
           email: res.user.email ?? email,
           firstName,
           lastName,
+          // [AJUSTE CLAVE]: Usamos el rol final del estado (incluye el valor forzado o el seleccionado).
           role: (role as UserProfile["role"]) || "Usuario",
           createdAt: Timestamp.now(),
+          // [AJUSTE]: El campo isAreaChief NO se establece aquí. Se debe establecer
+          // manualmente en Firebase para los jefes de área, ya que es un permiso.
         };
         try {
           await createUserProfile(res.user.uid, userProfile);
@@ -105,7 +129,7 @@ export default function Register() {
       setConfirmPassword("");
       setFirstName("");
       setLastName("");
-      setRole("");
+      setRole(initialRole); // Mantener el rol forzado o resetear a vacío si no está forzado
       router.push("/login");
     } catch (e) {
       console.error(e);
@@ -138,6 +162,7 @@ export default function Register() {
                 </div>
               )}
               <div className="grid gap-4 md:grid-cols-2">
+                {/* ... Campos Nombre y Apellido se mantienen ... */}
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="firstName">Nombre</Label>
                   <Input
@@ -189,6 +214,7 @@ export default function Register() {
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 mt-4">
+                {/* ... Campos Contraseña se mantienen ... */}
                 <div className="flex flex-col space-y-1.5">
                   <Label htmlFor="password">Contraseña</Label>
                   <div className="relative">
@@ -205,7 +231,9 @@ export default function Register() {
                     <button
                       type="button"
                       aria-label={
-                        showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                        showPassword
+                          ? "Ocultar contraseña"
+                          : "Mostrar contraseña"
                       }
                       onClick={() => setShowPassword((s) => !s)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center justify-center p-1 hover:bg-gray-100 rounded-md transition-colors"
@@ -263,27 +291,45 @@ export default function Register() {
 
               <div className="flex flex-col space-y-1.5 mt-4">
                 <Label htmlFor="role">Area</Label>
-                <Select onValueChange={(val) => setRole(val)} value={role}>
+                {/* [AJUSTE CLAVE 1]: Deshabilitar el selector si hay un rol forzado (Jefe de Área) */}
+                <Select
+                  onValueChange={(val) => setRole(val)}
+                  value={role}
+                  disabled={!!forcedRole}
+                >
                   <SelectTrigger
                     className="w-full"
                     aria-label="Selecciona rol"
                     aria-describedby="role-help"
                   >
+                    {/* Mostrar el rol forzado como el valor seleccionado */}
                     <SelectValue placeholder="Selecciona un Area" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Director">Director</SelectItem>
-                    <SelectItem value="Administrador">Administrador</SelectItem>
-                    <SelectItem value="Proyectos">Proyectos</SelectItem>
-                    <SelectItem value="Diseno">Diseño</SelectItem>
-                    <SelectItem value="Gerencia">Gerencia</SelectItem>
-                    <SelectItem value="Obra">Obra</SelectItem>
-                    <SelectItem value="Sistemas">Sistemas</SelectItem>
-                    <SelectItem value="Practicante">Practicante</SelectItem>
+                    {/* [AJUSTE CLAVE 2]: Si hay rol forzado, solo mostrar ese rol como opción */}
+                    {forcedRole ? (
+                      <SelectItem value={forcedRole}>{forcedRole}</SelectItem>
+                    ) : (
+                      <>
+                        <SelectItem value="Director">Director</SelectItem>
+                        <SelectItem value="Administrador">
+                          Administrador
+                        </SelectItem>
+                        <SelectItem value="Proyectos">Proyectos</SelectItem>
+                        <SelectItem value="Diseno">Diseño</SelectItem>
+                        <SelectItem value="Gerencia">Gerencia</SelectItem>
+                        <SelectItem value="Obra">Obra</SelectItem>
+                        <SelectItem value="Sistemas">Sistemas</SelectItem>
+                        <SelectItem value="Practicante">Practicante</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
                 <p id="role-help" className="text-xs text-muted-foreground">
-                  Selecciona tu area — se usará para permisos.
+                  {/* Mensaje dinámico si el rol es forzado */}
+                  {forcedRole
+                    ? `Rol asignado automáticamente por ${forcedRole}.`
+                    : "Selecciona tu area — se usará para permisos."}
                 </p>
                 {fieldErrors.role && (
                   <p className="text-xs text-red-600">{fieldErrors.role}</p>
