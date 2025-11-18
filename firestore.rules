@@ -9,7 +9,6 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador';
     }
     
-    //----------------NUEVO BLOQUE---------------------------------
     // Reglas para que los usuarios jefe de area agreguen usuarios a la misma area
 
     // Función helper para obtener el rol del usuario
@@ -34,8 +33,6 @@ service cloud.firestore {
       
       // 3. Ningún otro usuario puede registrar (implícito en el return false)
     }
-    
-    //---------------------------------------------------------
     
     // Reglas para usuarios
     match /users/{userId} {
