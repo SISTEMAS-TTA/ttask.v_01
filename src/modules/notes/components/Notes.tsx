@@ -556,55 +556,119 @@ export function NotesColumn() {
                       <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
                     )}
                   </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-2 mb-4">
-                  {notes.map((note) => (
-                    <NoteCard key={note.id} note={note} isCompleted={false} />
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-
-            {/* Completed Notes Grouped by Month */}
-            {groupedCompletedNotes.length > 0 && (
-              <div className="mt-8">
-                <div className="border-t border-gray-200 pt-4 mb-4">
-                  <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">
-                    Completadas
-                  </h3>
-                </div>
-                {groupedCompletedNotes.map(({ monthYear, notes }) => (
-                  <Collapsible
-                    key={`completed-${monthYear}`}
-                    open={openCompletedGroups.has(monthYear)}
-                    onOpenChange={() => toggleCompletedGroup(monthYear)}
-                  >
-                    <CollapsibleTrigger className="w-full">
-                      <div className="flex items-center justify-between px-2 py-2 mb-3 bg-green-50/30 border-b border-green-100 hover:bg-green-50 hover:border-green-200 transition-colors group rounded-sm">
-                        <h4 className="text-sm font-semibold text-gray-700 text-left group-hover:text-gray-900 transition-colors">
-                          {monthYear} · {notes.length}{" "}
-                          {notes.length === 1 ? "nota" : "notas"}
-                        </h4>
-                        {openCompletedGroups.has(monthYear) ? (
-                          <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                        )}
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-2 mb-4">
-                      {notes.map((note) => (
-                        <NoteCard
-                          key={note.id}
-                          note={note}
-                          isCompleted={true}
-                        />
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </div>
-            )}
+                  {note.content && (
+                    <p className="text-sm text-gray-600">{note.content}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    Creada:{" "}
+                    {note.createdAt.toDate().toLocaleString("es-MX", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </Card>
+              );
+            })}
+            {/* Completed Notes */}
+            {completedNotes.map((note) => {
+              // [CORRECCIÓN CLAVE]: Usa el color de sessionStorage si existe, si no, usa el color de Firebase.
+              const currentNoteColor = localNoteColors[note.id] || note.color;
+              return (
+                <Card
+                  key={note.id}
+                  data-note-id={note.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    onDragStart(note.id);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    void handleReorder("completed", note.id);
+                    onDragEnd();
+                  }}
+                  onTouchStart={() => {
+                    setDraggingId(note.id);
+                    setDraggingListType("completed");
+                    setIsTouchDragging(true);
+                  }}
+                  onTouchMove={(e) => {
+                    if (isTouchDragging) {
+                      e.preventDefault();
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    const t = e.changedTouches?.[0];
+                    if (t && draggingId && draggingListType === "completed") {
+                      const el = document.elementFromPoint(
+                        t.clientX,
+                        t.clientY
+                      ) as HTMLElement | null;
+                      let cursor: HTMLElement | null = el;
+                      let overId: string | null = null;
+                      while (cursor) {
+                        const id = cursor.getAttribute?.("data-note-id");
+                        if (id) {
+                          overId = id;
+                          break;
+                        }
+                        cursor = cursor.parentElement;
+                      }
+                      if (overId) void handleReorder("completed", overId);
+                    }
+                    onDragEnd();
+                  }}
+                  className={`p-3 ${currentNoteColor} border-none shadow-sm opacity-60 cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400`}
+                  onClick={() => setEditingNote(note)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setEditingNote(note);
+                    }
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-base sm:text-lg text-gray-800 line-through">
+                      {note.title}
+                    </h3>
+                    <div className="flex space-x-1">
+                      <Star
+                        className={`h-5 w-5 ${
+                          note.favorite
+                            ? "text-yellow-600 fill-current"
+                            : "text-gray-400"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void toggleFavorite(note);
+                        }}
+                        style={{ cursor: "pointer" }}
+                      />
+                      <CircleCheck
+                        className="h-5 w-5 text-green-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void toggleComplete(note);
+                        }}
+                        style={{ cursor: "pointer" }}
+                      />
+                    </div>
+                  </div>
+                  {note.content && (
+                    <p className="text-sm text-gray-600">{note.content}</p>
+                  )}
+                </Card>
+              );
+            })}
 
             {/* Empty State */}
             {groupedActiveNotes.length === 0 &&
