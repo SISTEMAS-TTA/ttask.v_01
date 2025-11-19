@@ -114,7 +114,7 @@ export function AuthHeader() {
                       href="/notes"
                       className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
                     >
-                      Notas
+                      Inicio
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
