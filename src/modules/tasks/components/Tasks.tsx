@@ -229,9 +229,6 @@ export function TasksColumn() {
             {task.description && (
               <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-sm text-gray-500 mt-1">
-              Asignado a: {getUserName(task.assigneeId)}
-            </p>
             {/* [IMPLEMENTACIÓN]: Footer con el asignado y la fecha/hora */}
             <AssignedTaskFooter task={task} getUserName={getUserName} />
           </Card>

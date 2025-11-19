@@ -230,9 +230,6 @@ export function ReceivedTasksColumn() {
             {task.description && (
               <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-sm text-gray-500 mt-1">
-              Asignado por: {getUserName(task.assignedBy)}
-            </p>
             {/* [IMPLEMENTACIÓN]: Usar el componente TaskFooter */}
             <TaskFooter task={task} />
           </Card>
@@ -274,9 +271,6 @@ export function ReceivedTasksColumn() {
             {task.description && (
               <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-sm text-gray-500 mt-1">
-              Asignado por: {getUserName(task.assignedBy)}
-            </p>
             {/* [IMPLEMENTACIÓN]: Usar el componente TaskFooter */}
             <TaskFooter task={task} />
           </Card>
