@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type React from "react";
 import {
   Circle,
   CircleCheck,
@@ -272,19 +273,13 @@ export function NotesColumn() {
   const [openActiveGroups, setOpenActiveGroups] = useState<Set<string>>(
     new Set()
   );
-  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
-    new Set()
-  );
 
   // Al cargar, abrir el mes más reciente por defecto
   useEffect(() => {
     if (groupedActiveNotes.length > 0) {
       setOpenActiveGroups(new Set([groupedActiveNotes[0].monthYear]));
     }
-    if (groupedCompletedNotes.length > 0) {
-      setOpenCompletedGroups(new Set([groupedCompletedNotes[0].monthYear]));
-    }
-  }, [groupedActiveNotes, groupedCompletedNotes]);
+  }, [groupedActiveNotes]);
 
   const toggleActiveGroup = (monthYear: string) => {
     setOpenActiveGroups((prev) => {
@@ -298,17 +293,17 @@ export function NotesColumn() {
     });
   };
 
-  const toggleCompletedGroup = (monthYear: string) => {
-    setOpenCompletedGroups((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(monthYear)) {
-        newSet.delete(monthYear);
-      } else {
-        newSet.add(monthYear);
-      }
-      return newSet;
-    });
-  };
+  // const toggleCompletedGroup = (monthYear: string) => {
+  //   setOpenCompletedGroups((prev) => {
+  //     const newSet = new Set(prev);
+  //     if (newSet.has(monthYear)) {
+  //       newSet.delete(monthYear);
+  //     } else {
+  //       newSet.add(monthYear);
+  //     }
+  //     return newSet;
+  //   });
+  // };
 
   // Componente para renderizar una nota individual
   const NoteCard = ({
@@ -321,7 +316,7 @@ export function NotesColumn() {
     const currentNoteColor = localNoteColors[note.id] || note.color;
 
     return (
-      <Card
+      <div
         key={note.id}
         data-note-id={note.id}
         draggable
@@ -369,73 +364,78 @@ export function NotesColumn() {
           }
           onDragEnd();
         }}
-        className={`p-3 ${currentNoteColor} border-none shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
-          isCompleted ? "opacity-60" : ""
-        }`}
-        onClick={() => setEditingNote(note)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setEditingNote(note);
-          }
-        }}
       >
-        <div className="flex items-start justify-between mb-2">
-          <h3
-            className={`font-semibold text-base sm:text-lg text-gray-800 ${
-              isCompleted ? "line-through" : ""
-            }`}
-          >
-            {note.title}
-          </h3>
-          <div className="flex space-x-1">
-            <Star
-              className={`h-5 w-5 ${
-                note.favorite ? "text-yellow-600 fill-current" : "text-gray-400"
+        <Card
+          className={`p-3 ${currentNoteColor} border-none shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-400 ${
+            isCompleted ? "opacity-60" : ""
+          }`}
+          onClick={() => setEditingNote(note)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setEditingNote(note);
+            }
+          }}
+        >
+          <div className="flex items-start justify-between mb-2">
+            <h3
+              className={`font-semibold text-base sm:text-lg text-gray-800 ${
+                isCompleted ? "line-through" : ""
               }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                void toggleFavorite(note);
-              }}
-              style={{ cursor: "pointer" }}
-            />
-            {isCompleted ? (
-              <CircleCheck
-                className="h-5 w-5 text-green-600"
-                onClick={(e) => {
+            >
+              {note.title}
+            </h3>
+            <div className="flex space-x-1">
+              <Star
+                className={`h-5 w-5 ${
+                  note.favorite
+                    ? "text-yellow-600 fill-current"
+                    : "text-gray-400"
+                }`}
+                onClick={(e: React.MouseEvent) => {
                   e.stopPropagation();
-                  void toggleComplete(note);
+                  void toggleFavorite(note);
                 }}
                 style={{ cursor: "pointer" }}
               />
-            ) : (
-              <Circle
-                className="h-5 w-5 text-gray-400"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void toggleComplete(note);
-                }}
-                style={{ cursor: "pointer" }}
-              />
-            )}
+              {isCompleted ? (
+                <CircleCheck
+                  className="h-5 w-5 text-green-600"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    void toggleComplete(note);
+                  }}
+                  style={{ cursor: "pointer" }}
+                />
+              ) : (
+                <Circle
+                  className="h-5 w-5 text-gray-400"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    void toggleComplete(note);
+                  }}
+                  style={{ cursor: "pointer" }}
+                />
+              )}
+            </div>
           </div>
-        </div>
-        {note.content && (
-          <p className="text-sm text-gray-600">{note.content}</p>
-        )}
-        <p className="text-xs text-gray-500 mt-2">
-          Creada:{" "}
-          {getNoteDate(note).toLocaleString("es-MX", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
-      </Card>
+          {note.content && (
+            <p className="text-sm text-gray-600">{note.content}</p>
+          )}
+          <p className="text-xs text-gray-500 mt-2">
+            Creada:{" "}
+            {getNoteDate(note).toLocaleString("es-MX", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        </Card>
+      </div>
     );
   };
 
@@ -548,35 +548,35 @@ export function NotesColumn() {
         ) : (
           <>
             {/* Active Notes Grouped by Month */}
-{groupedActiveNotes.map(({ monthYear, notes }) => (
-  <Collapsible
-    key={`active-${monthYear}`}
-    open={openActiveGroups.has(monthYear)}
-    onOpenChange={() => toggleActiveGroup(monthYear)}
-  >
-    <CollapsibleTrigger className="w-full">
-      <div className="flex items-center justify-between px-2 py-3 mb-3 bg-blue-50/50 border-b border-blue-100 hover:bg-blue-50 hover:border-blue-200 transition-colors group rounded-sm">
-        <h4 className="text-sm font-semibold text-gray-800 text-left group-hover:text-gray-900 transition-colors">
-          {monthYear} – {notes.length}{" "}
-          {notes.length === 1 ? "nota" : "notas"}
-        </h4>
-        {openActiveGroups.has(monthYear) ? (
-          <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
-        ) : (
-          <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
-        )}
-      </div>
-    </CollapsibleTrigger>
+            {groupedActiveNotes.map(({ monthYear, notes }) => (
+              <Collapsible
+                key={`active-${monthYear}`}
+                open={openActiveGroups.has(monthYear)}
+                onOpenChange={() => toggleActiveGroup(monthYear)}
+              >
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between px-2 py-3 mb-3 bg-blue-50/50 border-b border-blue-100 hover:bg-blue-50 hover:border-blue-200 transition-colors group rounded-sm">
+                    <h4 className="text-sm font-semibold text-gray-800 text-left group-hover:text-gray-900 transition-colors">
+                      {monthYear} – {notes.length}{" "}
+                      {notes.length === 1 ? "nota" : "notas"}
+                    </h4>
+                    {openActiveGroups.has(monthYear) ? (
+                      <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    )}
+                  </div>
+                </CollapsibleTrigger>
 
-    <CollapsibleContent>
-      <div className="space-y-2">
-        {notes.map((note) => (
-          <NoteCard key={note.id} note={note} />
-        ))}
-      </div>
-    </CollapsibleContent>
-  </Collapsible>
-))}
+                <CollapsibleContent>
+                  <div className="space-y-2">
+                    {notes.map((note) => (
+                      <NoteCard key={note.id} note={note} />
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
 
             {/* Completed Notes */}
             {completedNotes.map((note) => {
@@ -653,7 +653,7 @@ export function NotesColumn() {
                             ? "text-yellow-600 fill-current"
                             : "text-gray-400"
                         }`}
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           void toggleFavorite(note);
                         }}
@@ -661,7 +661,7 @@ export function NotesColumn() {
                       />
                       <CircleCheck
                         className="h-5 w-5 text-green-600"
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           void toggleComplete(note);
                         }}

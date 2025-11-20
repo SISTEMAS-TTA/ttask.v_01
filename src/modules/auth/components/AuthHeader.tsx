@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut } from "lucide-react";
-import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
 
@@ -48,7 +47,7 @@ export function AuthHeader() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await auth.signOut();
       router.push("/login");
     } catch (e) {
       console.error("Error al cerrar sesión", e);

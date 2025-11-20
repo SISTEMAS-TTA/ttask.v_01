@@ -75,7 +75,8 @@ export async function POST(request: Request) {
 
     if (result.error) {
       console.error("Resend Error:", result.error);
-      throw new Error(result.error.message);
+      // normalizar el mensaje de error (result.error puede ser string u objeto)
+      throw new Error(String((result as any).error?.message ?? result.error));
     }
 
     // 5. RESPUESTA EXITOSA
@@ -88,8 +89,9 @@ export async function POST(request: Request) {
   } catch (error) {
     // 6. MANEJO DE ERRORES INTERNOS/DE RESEND
     console.error("Error al enviar correo con Resend:", error);
+    const details = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: "Fallo en el envío", details: error.message },
+      { error: "Fallo en el envío", details },
       { status: 500 }
     );
   }
