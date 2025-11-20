@@ -17,7 +17,6 @@ import { db } from "@/lib/firebase/config";
 import useUser from "@/modules/auth/hooks/useUser";
 import { useUsersMap } from "@/hooks/useUsersMap";
 import { addTaskComment, deleteTaskComment, markTaskCommentsSeenByAssigner, TaskDoc } from "@/lib/firebase/tasks";
-import { getAllUserProfiles } from "@/lib/firebase/users";
 
 interface TaskViewModalProps {
   isOpen: boolean;
@@ -62,7 +61,6 @@ export function TaskViewModal({
   const [assignedBy, setAssignedBy] = useState<string | null>(null);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
-  const [userNames, setUserNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (task) {
@@ -98,31 +96,6 @@ export function TaskViewModal({
     });
     return () => unsub();
   }, [task?.id]);
-
-  // Load user profiles to resolve authorId -> display name
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const profiles = await getAllUserProfiles();
-        if (!mounted) return;
-        const map: Record<string, string> = {};
-        for (const u of profiles) {
-          const name = (u.fullName && u.fullName.trim())
-            || [u.firstName, u.lastName].filter(Boolean).join(" ")
-            || u.email
-            || u.id
-            || "Usuario";
-          if (u.id) map[u.id] = name;
-        }
-        setUserNames(map);
-      } catch {
-        // ignore and fallback to UID
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
-
 
   // If the current user is the assigner, mark comments as seen when opened
   useEffect(() => {

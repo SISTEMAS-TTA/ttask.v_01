@@ -71,12 +71,15 @@ export async function POST(request: Request) {
     };
 
     // 4. ENVÍO
-    const result = await resend.emails.send(emailData);
+    const result = (await resend.emails.send(emailData)) as any;
 
     if (result.error) {
       console.error("Resend Error:", result.error);
-      // normalizar el mensaje de error (result.error puede ser string u objeto)
-      throw new Error(String((result as any).error?.message ?? result.error));
+      const errorMessage =
+        typeof result.error === "string"
+          ? result.error
+          : result.error?.message ?? "Unknown Resend error";
+      throw new Error(errorMessage);
     }
 
     // 5. RESPUESTA EXITOSA

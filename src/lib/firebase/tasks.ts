@@ -186,7 +186,7 @@ export const createTask = async (
     deleted: false,
     createdAt: Timestamp.now(),
   };
-  const docRef = await addDoc(ref, newTaskData); // Usamos addDoc para obtener la referencia // 2. Notificación por Correo
+  await addDoc(ref, newTaskData); // Usamos addDoc para obtener la referencia // 2. Notificación por Correo
 
   const assigneeId = input.assigneeId; // Obtenemos el ID del asignado
 
