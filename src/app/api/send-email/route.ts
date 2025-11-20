@@ -71,7 +71,13 @@ export async function POST(request: Request) {
     };
 
     // 4. ENVÍO
-    const result = (await resend.emails.send(emailData)) as any;
+    type ResendResult = {
+      error?: { message?: string } | string;
+      data?: { id?: string } | Record<string, unknown>;
+    };
+
+    const resultRaw = await resend.emails.send(emailData);
+    const result = resultRaw as unknown as ResendResult;
 
     if (result.error) {
       console.error("Resend Error:", result.error);
@@ -83,11 +89,11 @@ export async function POST(request: Request) {
     }
 
     // 5. RESPUESTA EXITOSA
-    console.log("Correo enviado. Resend ID:", result.data.id);
+    console.log("Correo enviado. Resend ID:", result.data?.id ?? "(sin id)");
     return NextResponse.json({
       success: true,
       message: "Correo enviado",
-      resendId: result.data.id,
+      resendId: result.data?.id ?? null,
     });
   } catch (error) {
     // 6. MANEJO DE ERRORES INTERNOS/DE RESEND

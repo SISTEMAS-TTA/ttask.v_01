@@ -28,6 +28,6 @@ declare module "lucide-react" {
   export const ChevronLeftIcon: LucideIcon;
   export const ChevronRightIcon: LucideIcon;
   export const ChevronUpIcon: LucideIcon;
-  const _default: any;
+  const _default: LucideIcon;
   export default _default;
 }
