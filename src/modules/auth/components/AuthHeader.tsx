@@ -55,6 +55,8 @@ export function AuthHeader() {
     }
   };
 
+  const navLinkClassName = "h-9 px-3 py-2 text-xs md:text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap leading-tight xl:h-10 xl:px-4 xl:text-sm";
+
   // Si no hay usuario autenticado, mostrar solo el logo sin navegación ni menú de usuario
   if (!user) {
     return (
@@ -112,7 +114,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/notes"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Inicio
                     </Link>
@@ -122,7 +124,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/projects"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Proyectos
                     </Link>
@@ -132,7 +134,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/pagos-presupuestos"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Pagos y presupuestos
                     </Link>
@@ -142,7 +144,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/obra"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Obra
                     </Link>
@@ -152,7 +154,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/logistica-compras"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Logística y Compras
                     </Link>
@@ -162,7 +164,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/admon"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Admon
                     </Link>
@@ -172,7 +174,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/contacto"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Contacto
                     </Link>
@@ -182,7 +184,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/cliente"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Cliente
                     </Link>
@@ -192,7 +194,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/direccion"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Dirección
                     </Link>
@@ -276,7 +278,7 @@ export function AuthHeader() {
                     className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
                     onClick={() => setIsOpen(false)}
                   >
-                    Notas
+                    Inicio
                   </Link>
                   <Link
                     href="/projects"
@@ -312,6 +314,20 @@ export function AuthHeader() {
                     onClick={() => setIsOpen(false)}
                   >
                     Admon
+                  </Link>
+                  <Link
+                    href="/cliente"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Cliente
+                  </Link>
+                  <Link
+                    href="/direccion"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Dirección
                   </Link>
                   {/* {profile?.role === "Director" && (
                     <Link
