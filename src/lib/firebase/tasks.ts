@@ -1,4 +1,6 @@
 import { db } from "./config";
+// Importar la nueva función de usuarios
+import { getUserProfileById } from "./users";
 import {
   addDoc,
   collection,
@@ -171,17 +173,54 @@ export const subscribeToTasksAssignedTo = (
   );
 };
 
+// Modificado para enviar a email
 export const createTask = async (
   assignedByUserId: string,
   input: NewTaskInput
 ) => {
+  // 1. Crear la Tarea en Firestore (Lógica existente)
   const ref = collection(db, TASKS_COLLECTION);
-  await addDoc(ref, {
+  const newTaskData = {
     ...input,
     assignedBy: assignedByUserId,
     deleted: false,
     createdAt: Timestamp.now(),
-  });
+  };
+  const docRef = await addDoc(ref, newTaskData); // Usamos addDoc para obtener la referencia // 2. Notificación por Correo
+
+  const assigneeId = input.assigneeId; // Obtenemos el ID del asignado
+
+  if (assigneeId) {
+    try {
+      const assigneeProfile = await getUserProfileById(assigneeId);
+
+      if (assigneeProfile && assigneeProfile.email) {
+        const taskTitle = input.title; // Llamada al endpoint de Next.js API Route para enviar el correo
+
+        const response = await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipientEmail: assigneeProfile.email,
+            recipientName: assigneeProfile.fullName,
+            taskTitle: taskTitle,
+          }),
+        });
+        if (response.ok) {
+          console.log(
+            "Notificación por correo enviada exitosamente a:",
+            assigneeProfile.email
+          );
+        } else {
+          console.error("Error al notificar por API:", await response.json());
+        }
+      } else {
+        console.warn("No se pudo notificar: Perfil no encontrado o sin email.");
+      }
+    } catch (error) {
+      console.error("Fallo la notificación por email:", error);
+    }
+  }
 };
 
 // Solo el asignado puede marcar viewed/completed
