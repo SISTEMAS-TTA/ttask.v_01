@@ -1,12 +1,12 @@
-# Configuración específica de pnpm
+# # Configuración específica de pnpm
 
-# Usar siempre pnpm dlx en lugar de npx
-use-pnpm-dlx=true
+# # Usar siempre pnpm dlx en lugar de npx
+# use-pnpm-dlx=true
 
-# Configuración de caché y rendimiento
-store-dir=./.pnpm-store
-package-import-method=clone-or-copy
+# # Configuración de caché y rendimiento
+# store-dir=./.pnpm-store
+# package-import-method=clone-or-copy
 
-# Prevenir instalaciones automáticas con npm
-auto-install-peers=false
-strict-peer-dependencies=true
+# # Prevenir instalaciones automáticas con npm
+# auto-install-peers=false
+# strict-peer-dependencies=true
