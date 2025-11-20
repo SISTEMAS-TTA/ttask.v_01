@@ -28,10 +28,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut } from "lucide-react";
+// import { LogOut } from "lucide-react";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
-
+import  LogOut  from "lucide-react";
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
@@ -224,7 +224,7 @@ export function AuthHeader() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" /> Cerrar sesión
+                  <LogOut className="mr-2 h-4 w-4"/>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
