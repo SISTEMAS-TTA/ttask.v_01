@@ -28,10 +28,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-// import { LogOut } from "lucide-react";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
-import  LogOut  from "lucide-react";
+import { LogOut } from "lucide-react";
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
