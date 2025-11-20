@@ -23,16 +23,16 @@ export default function RegisterPage() {
 
 function AdminRegisterContent() {
   // Obtiene el estado de autenticación y si es Administrador
-  const { isAdmin, isAuthenticated, loading: adminLoading } = useAdmin();
-  // [CAMBIO CLAVE]: Obtiene el perfil completo, incluyendo 'role' e 'isAreaChief'
+  const { isAdmin, isAuthenticated, loading: adminLoading } = useAdmin(); // [CAMBIO CLAVE]: Obtiene el perfil completo, incluyendo 'role' e 'isAreaChief'
   const { profile, loading: userProfileLoading } = useUser();
   const router = useRouter();
 
-  const loading = adminLoading || userProfileLoading;
+  const loading = adminLoading || userProfileLoading; // Determina si el usuario actual es un Jefe o Administrador
 
-  // Determina si el usuario actual es un Jefe o Administrador
-  // Un Jefe de Área debe tener isAreaChief=true, o ser el Administrador.
   const isChief = profile?.isAreaChief === true || isAdmin;
+
+  // 🔑 DEFINIMOS SI EL USUARIO ACTUAL ES UN ADMINISTRADOR PARA PASAR EL PERMISO
+  const isCurrentUserAdmin = isAdmin; // Es más claro si lo renombramos
 
   useEffect(() => {
     if (loading) return;
@@ -43,26 +43,22 @@ function AdminRegisterContent() {
     }
 
     // [MODIFICACIÓN DE REGLA]: Si no es Administrador Y no es Jefe de Área, redirigir al dashboard.
-    // Solo Jefes/Administradores pueden acceder a esta página.
     if (!isChief) {
       router.replace("/");
     }
-  }, [isChief, isAuthenticated, loading, router, profile]);
+  }, [isChief, isAuthenticated, loading, router, profile]); // [NUEVA LÓGICA]: Determinar el rol que el jefe está "forzando" para el nuevo usuario.
 
-  // [NUEVA LÓGICA]: Determinar el rol que el jefe está "forzando" para el nuevo usuario.
   let forcedRole: UserRole | undefined = undefined;
 
   if (profile?.isAreaChief === true && !isAdmin) {
     // Si es Jefe de Área (pero no es Administrador), el nuevo usuario DEBE tener el rol del jefe.
-    // Esto asegura que el Jefe de Sistemas solo registre roles 'Sistemas'.
     forcedRole = profile.role as UserRole;
-  }
+  } // Mostrar loading si los datos no están listos o si el usuario no está autorizado
 
-  // Mostrar loading si los datos no están listos o si el usuario no está autorizado
   if (loading || !isAuthenticated || !isChief) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />     {" "}
       </div>
     );
   }
@@ -82,11 +78,18 @@ function AdminRegisterContent() {
       <div className="absolute inset-0 bg-black/20 z-10" />
       {/* Encabezado con logotipo */}
       <AuthHeader />
-      {/* Contenido */}
+      {/* Contenido */}     {" "}
       <div className="relative z-20 pt-24 sm:pt-28 md:pt-32">
-        {/* [CAMBIO CLAVE]: Pasamos el rol forzado al componente Register */}
-        <Register forcedRole={forcedRole} />
+               {" "}
+        {/* 🔑 CAMBIO CLAVE: Pasamos el rol forzado Y el permiso de administrador */}
+               {" "}
+        <Register
+          forcedRole={forcedRole}
+          isCurrentUserAdmin={isCurrentUserAdmin} // 🔑 NUEVO PROP
+        />
+             {" "}
       </div>
+         {" "}
     </div>
   );
 }
