@@ -8,10 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "dlx": "pnpm dlx",
-    "deploy-rules": "firebase deploy --only firestore:rules",
-    "postinstall": "echo 'Recuerda usar pnpm en lugar de npm o npx. Usa: pnpm dlx en lugar de npx.'"
+    "deploy-rules": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -36,6 +36,7 @@
     "react-day-picker": "^9.11.0",
     "react-dom": "19.1.0",
     "react-firebase-hooks": "^5.1.1",
+    "resend": "^6.4.2",
     "sonner": "^1.7.4",
     "tailwind-merge": "^3.3.1"
   },
@@ -57,5 +58,5 @@
   "engines": {
     "node": "20.x"
   },
-  "packageManager": "pnpm@10.17.1"
+  "packageManager": "pnpm@10.22.0"
 }

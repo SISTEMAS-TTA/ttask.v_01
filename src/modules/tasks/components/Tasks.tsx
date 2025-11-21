@@ -31,6 +31,37 @@ interface UITask {
 
 const initialTasks: UITask[] = [];
 
+// [NUEVO]: Componente de pie de página para Tareas Asignadas
+const AssignedTaskFooter = ({
+  task,
+  getUserName,
+}: {
+  task: UITask;
+  getUserName: (uid: string) => string;
+}) => {
+  const assigneeName = getUserName(task.assigneeId);
+
+  return (
+    <div className="text-sm text-gray-500 mt-1">
+      {/* Muestra quién recibió la tarea */}
+      <p>
+        Asignada a: <span className="font-semibold">{assigneeName}</span>
+      </p>
+      {/* Muestra la fecha y hora de creación */}
+      <p className="text-xs mt-1">
+        Creada:{" "}
+        {task.createdAt.toLocaleString("es-MX", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </p>
+    </div>
+  );
+};
+
 // Tipos de vista compatibles con el modal
 // type ViewValue = "all" | "viewed" | "completed" | "favorites";
 
@@ -147,7 +178,9 @@ export function TasksColumn() {
     <div className="w-full bg-blue-100 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-blue-200 flex items-center justify-between">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-800">T. Asignadas</h2>
+        <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+          T. Asignadas
+        </h2>
         <div className="flex space-x-1">
           <Button
             size="sm"
@@ -206,9 +239,8 @@ export function TasksColumn() {
             {task.description && (
               <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-sm text-gray-500 mt-1">
-              Asignado a: {getUserName(task.assigneeId)}
-            </p>
+            {/* [IMPLEMENTACIÓN]: Footer con el asignado y la fecha/hora */}
+            <AssignedTaskFooter task={task} getUserName={getUserName} />
           </Card>
         ))}
       </div>

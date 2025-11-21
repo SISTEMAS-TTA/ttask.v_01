@@ -28,11 +28,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut } from "lucide-react";
-import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
-
+// import { LogOut } from "lucide-react";
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
@@ -48,12 +46,14 @@ export function AuthHeader() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await auth.signOut();
       router.push("/login");
     } catch (e) {
       console.error("Error al cerrar sesión", e);
     }
   };
+
+  const navLinkClassName = "h-9 px-3 py-2 text-xs md:text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap leading-tight xl:h-10 xl:px-4 xl:text-sm";
 
   // Si no hay usuario autenticado, mostrar solo el logo sin navegación ni menú de usuario
   if (!user) {
@@ -112,9 +112,9 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/notes"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
-                      Notas
+                      Inicio
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -122,7 +122,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/projects"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Proyectos
                     </Link>
@@ -132,7 +132,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/pagos-presupuestos"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Pagos y presupuestos
                     </Link>
@@ -142,7 +142,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/obra"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Obra
                     </Link>
@@ -152,7 +152,7 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/logistica-compras"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Logística y Compras
                     </Link>
@@ -162,115 +162,39 @@ export function AuthHeader() {
                   <NavigationMenuLink asChild>
                     <Link
                       href="/admon"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Admon
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
-                {/* {profile?.role === "Director" && (
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href="/projects/new"
-                        className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
-                      >
-                        Nuevo Proyecto
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                )} */}
-                {/* <NavigationMenuItem>
-                  <NavigationMenuTrigger className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors xl:h-10 xl:px-4 xl:text-base">
-                    Servicios
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className="grid w-[350px] gap-3 p-4 md:w-[450px] md:grid-cols-2 lg:w-[500px] xl:w-[600px]">
-                      <NavigationMenuLink asChild>
-                        <Link
-                          href="/arquitectura"
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-50 hover:text-gray-900 focus:bg-gray-50 focus:text-gray-900"
-                        >
-                          <div className="text-sm font-medium leading-none xl:text-base">
-                            Arquitectura
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-gray-600">
-                            Diseño y planificación de espacios arquitectónicos
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                      <NavigationMenuLink asChild>
-                        <Link
-                          href="/consultoria"
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-50 hover:text-gray-900 focus:bg-gray-50 focus:text-gray-900"
-                        >
-                          <div className="text-sm font-medium leading-none xl:text-base">
-                            Consultoría
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-gray-600">
-                            Asesoramiento especializado en proyectos
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                      <NavigationMenuLink asChild>
-                        <Link
-                          href="/urbanismo"
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-50 hover:text-gray-900 focus:bg-gray-50 focus:text-gray-900"
-                        >
-                          <div className="text-sm font-medium leading-none xl:text-base">
-                            Urbanismo
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-gray-600">
-                            Planificación urbana y territorial
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                      <NavigationMenuLink asChild>
-                        <Link
-                          href="/interiorismo"
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-50 hover:text-gray-900 focus:bg-gray-50 focus:text-gray-900"
-                        >
-                          <div className="text-sm font-medium leading-none xl:text-base">
-                            Interiorismo
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-gray-600">
-                            Diseño de espacios interiores
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem> */}
-
-                {/* <NavigationMenuItem> */}
-                {/* <NavigationMenuLink asChild>
-                    <Link
-                      href="/proyectos"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
-                    >
-                      Proyectos
-                    </Link>
-                  </NavigationMenuLink> */}
-                {/* </NavigationMenuItem> */}
-
-                {/* <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/nosotros"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
-                    >
-                      Nosotros
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem> */}
-
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
                     <Link
                       href="/contacto"
-                      className="h-9 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center xl:h-10 xl:px-4 xl:text-base"
+                      className={navLinkClassName}
                     >
                       Contacto
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/cliente"
+                      className={navLinkClassName}
+                    >
+                      Cliente
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/direccion"
+                      className={navLinkClassName}
+                    >
+                      Dirección
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -299,7 +223,8 @@ export function AuthHeader() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" /> Cerrar sesión
+                  {/* <LogOut className="mr-2 h-4 w-4"/> */}
+                  Cerrar Sesion
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -352,7 +277,7 @@ export function AuthHeader() {
                     className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
                     onClick={() => setIsOpen(false)}
                   >
-                    Notas
+                    Inicio
                   </Link>
                   <Link
                     href="/projects"
@@ -388,6 +313,20 @@ export function AuthHeader() {
                     onClick={() => setIsOpen(false)}
                   >
                     Admon
+                  </Link>
+                  <Link
+                    href="/cliente"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Cliente
+                  </Link>
+                  <Link
+                    href="/direccion"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Dirección
                   </Link>
                   {/* {profile?.role === "Director" && (
                     <Link
