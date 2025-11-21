@@ -1,4 +1,6 @@
 import { db } from "./config";
+// Importar la nueva función de usuarios
+import { getUserProfileById } from "./users";
 import {
   addDoc,
   collection,
@@ -11,6 +13,7 @@ import {
   where,
   getDoc,
   arrayUnion,
+  DocumentData,
 } from "firebase/firestore";
 
 export type TaskDoc = {
@@ -170,17 +173,54 @@ export const subscribeToTasksAssignedTo = (
   );
 };
 
+// Modificado para enviar a email
 export const createTask = async (
   assignedByUserId: string,
   input: NewTaskInput
 ) => {
+  // 1. Crear la Tarea en Firestore (Lógica existente)
   const ref = collection(db, TASKS_COLLECTION);
-  await addDoc(ref, {
+  const newTaskData = {
     ...input,
     assignedBy: assignedByUserId,
     deleted: false,
     createdAt: Timestamp.now(),
-  });
+  };
+  await addDoc(ref, newTaskData); // Usamos addDoc para obtener la referencia // 2. Notificación por Correo
+
+  const assigneeId = input.assigneeId; // Obtenemos el ID del asignado
+
+  if (assigneeId) {
+    try {
+      const assigneeProfile = await getUserProfileById(assigneeId);
+
+      if (assigneeProfile && assigneeProfile.email) {
+        const taskTitle = input.title; // Llamada al endpoint de Next.js API Route para enviar el correo
+
+        const response = await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recipientEmail: assigneeProfile.email,
+            recipientName: assigneeProfile.fullName,
+            taskTitle: taskTitle,
+          }),
+        });
+        if (response.ok) {
+          console.log(
+            "Notificación por correo enviada exitosamente a:",
+            assigneeProfile.email
+          );
+        } else {
+          console.error("Error al notificar por API:", await response.json());
+        }
+      } else {
+        console.warn("No se pudo notificar: Perfil no encontrado o sin email.");
+      }
+    } catch (error) {
+      console.error("Fallo la notificación por email:", error);
+    }
+  }
 };
 
 // Solo el asignado puede marcar viewed/completed
@@ -340,6 +380,35 @@ export async function addTaskComment(
   await updateDoc(ref, {
     comments: arrayUnion(newComment),
     lastCommentAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// Eliminar comentario (solo el autor puede borrar)
+export async function deleteTaskComment(
+  taskId: string,
+  requesterId: string,
+  commentId: string
+) {
+  const ref = doc(db, "tasks", taskId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return;
+  const data = snap.data() as DocumentData;
+  const comments = (data.comments as TaskDoc["comments"]) ?? [];
+  const target = comments.find((c) => c.id === commentId);
+  if (!target) return;
+  if (target.authorId !== requesterId) {
+    throw new Error("Solo el autor del comentario puede borrarlo");
+  }
+  const remaining = comments.filter((c) => c.id !== commentId);
+  // Recalcular lastCommentAt basado en el último comentario restante
+  const last = remaining
+    .map((c) => c.createdAt)
+    .filter(Boolean)
+    .sort((a, b) => b.toMillis() - a.toMillis())[0];
+  await updateDoc(ref, {
+    comments: remaining,
+    lastCommentAt: last || null,
     updatedAt: serverTimestamp(),
   });
 }

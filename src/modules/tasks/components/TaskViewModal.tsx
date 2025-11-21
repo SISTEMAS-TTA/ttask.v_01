@@ -15,7 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { updateDoc, doc, serverTimestamp, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import useUser from "@/modules/auth/hooks/useUser";
-import { addTaskComment, markTaskCommentsSeenByAssigner, TaskDoc } from "@/lib/firebase/tasks";
+import { useUsersMap } from "@/hooks/useUsersMap";
+import { addTaskComment, deleteTaskComment, markTaskCommentsSeenByAssigner, TaskDoc } from "@/lib/firebase/tasks";
 
 interface TaskViewModalProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ export function TaskViewModal({
   readOnly = false,
 }: TaskViewModalProps) {
   const { user } = useUser();
+  const { getUserName } = useUsersMap();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [completed, setCompleted] = useState(false);
@@ -116,6 +118,8 @@ export function TaskViewModal({
     setNewComment("");
   };
 
+  // Nota: mantenemos authorId como UID para validar permisos de borrado
+
   const handleSave = async () => {
     if (!task) return;
     if (readOnly) return;
@@ -164,14 +168,28 @@ export function TaskViewModal({
               )}
               {comments.map((c) => (
                 <div key={c.id} className="text-xs">
-                  <span className="font-medium">
-                    {c.authorId === user?.uid ? "Tú" : c.authorId}
-                  </span>
+                  <span className="font-medium">{c.authorId === user?.uid ? "Tú" : getUserName(c.authorId)}</span>
                   : {c.text}
                   {c.createdAt && (
                     <span className="text-gray-400 ml-2">
                       {c.createdAt.toLocaleString()}
                     </span>
+                  )}
+                  {c.authorId === user?.uid && (
+                    <button
+                      className="ml-2 text-red-600 hover:underline"
+                      onClick={async () => {
+                        if (!task?.id || !user?.uid) return;
+                        try {
+                          await deleteTaskComment(task.id, user.uid, c.id);
+                        } catch (e) {
+                          console.warn("No se pudo borrar el comentario", e);
+                        }
+                      }}
+                      title="Borrar comentario"
+                    >
+                      Borrar
+                    </button>
                   )}
                 </div>
               ))}

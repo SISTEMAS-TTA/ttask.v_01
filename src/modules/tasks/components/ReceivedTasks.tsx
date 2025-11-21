@@ -148,11 +148,38 @@ export function ReceivedTasksColumn() {
   );
   const completedTasks = orderedTasks.filter((task) => task.completed);
 
+  // Función auxiliar para renderizar el pie de página de la tarea
+  const TaskFooter = ({ task }: { task: ReceivedTask }) => {
+    const assignedByName = getUserName(task.assignedBy);
+
+    return (
+      <div className="text-sm text-gray-500 mt-1">
+        {/* Línea 1: Quién asignó */}
+        <p>
+          Asignado por: <span className="font-semibold">{assignedByName}</span>
+        </p>
+        {/* Línea 2: Fecha y Hora de Creación */}
+        <p className="text-xs mt-1">
+          Recibida:{" "}
+          {task.createdAt.toLocaleString("es-MX", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full bg-red-200 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-red-300 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-800">T. Recibidas</h2>
+        <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+          T. Recibidas
+        </h2>
         <Button
           size="sm"
           variant="ghost"
@@ -162,7 +189,7 @@ export function ReceivedTasksColumn() {
           <Filter className="h-4 w-4" />
         </Button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
         {/* Active Tasks */}
         {activeTasks.map((task) => (
           <Card
@@ -174,7 +201,7 @@ export function ReceivedTasksColumn() {
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800">
+              <h3 className="font-semibold text-base sm:text-lg text-gray-800">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -201,11 +228,10 @@ export function ReceivedTasksColumn() {
               </div>
             </div>
             {task.description && (
-              <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
-              Asignado por: {getUserName(task.assignedBy)}
-            </p>
+            {/* [IMPLEMENTACIÓN]: Usar el componente TaskFooter */}
+            <TaskFooter task={task} />
           </Card>
         ))}
 
@@ -220,7 +246,7 @@ export function ReceivedTasksColumn() {
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800">
+              <h3 className="font-semibold text-base sm:text-lg text-gray-800">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -243,11 +269,10 @@ export function ReceivedTasksColumn() {
               </div>
             </div>
             {task.description && (
-              <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
-              Asignado por: {getUserName(task.assignedBy)}
-            </p>
+            {/* [IMPLEMENTACIÓN]: Usar el componente TaskFooter */}
+            <TaskFooter task={task} />
           </Card>
         ))}
 
@@ -262,7 +287,7 @@ export function ReceivedTasksColumn() {
             }}
           >
             <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-sm text-gray-800 line-through">
+              <h3 className="font-semibold text-base sm:text-lg text-gray-800 line-through">
                 {task.title}
               </h3>
               <div className="flex space-x-1">
@@ -285,11 +310,13 @@ export function ReceivedTasksColumn() {
               </div>
             </div>
             {task.description && (
-              <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               Asignado por: {getUserName(task.assignedBy)}
             </p>
+            {/* [IMPLEMENTACIÓN]: Usar el componente TaskFooter */}
+            <TaskFooter task={task} />
           </Card>
         ))}
       </div>

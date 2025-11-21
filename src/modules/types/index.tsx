@@ -19,6 +19,8 @@ export interface UserProfile {
   createdAt: Timestamp;
   lastLogin?: Date;
   active?: boolean;
+  // Permite que conocer si el usuario es un administrador para ciertos permisos
+  isAreaChief?: boolean; // True si este usuario es jefe de su 'role' (área).
 }
 
 export interface Task {
@@ -42,6 +44,19 @@ export type UserRole =
   | "Sistemas"
   | "Practicante"
   | "Usuario";
+
+  export const ALL_USER_ROLES = [
+  "Director",
+  "Administrador",
+  "Proyectos",
+  "Diseno",
+  "Gerencia",
+  "Obra",
+  "Sistemas",
+  "Practicante",
+  "Usuario",
+] as const;
+// ---------------------
 
 export interface Note {
   id: string;

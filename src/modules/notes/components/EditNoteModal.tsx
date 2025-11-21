@@ -20,7 +20,12 @@ interface EditNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   note?: Note | null;
+  // onSave ahora solo se usa para Title/Content. No se actualiza el color en Firebase.
   onSave: (id: string, updates: Partial<NewNoteInput>) => Promise<void> | void;
+  // [CORRECCIÓN/REINSERCIÓN]: Necesario para persistir el cambio de color en sessionStorage (en el padre).
+  onColorChange: (noteId: string, newColor: string) => void;
+  // [CAMBIO CLAVE]: Prop para recibir el color actual (sessionStorage > Firebase) del padre.
+  currentNoteColor: string;
 }
 
 const pastelColors = [
@@ -39,23 +44,28 @@ export function EditNoteModal({
   onClose,
   note,
   onSave,
+  onColorChange,
+  currentNoteColor, // Usado para inicializar y para el marcado visual
 }: EditNoteModalProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [selectedColor, setSelectedColor] = useState(pastelColors[0].value);
+  // [CORRECCIÓN CLAVE 1]: Usamos currentNoteColor para inicializar el estado seleccionado.
+  // Esto asegura que si el color cambió en sessionStorage, el selector refleje ese cambio.
+  const [selectedColor, setSelectedColor] = useState(currentNoteColor);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (note) {
       setTitle(note.title ?? "");
       setContent(note.content ?? "");
-      setSelectedColor(note.color ?? pastelColors[0].value);
+      // [CORRECCIÓN CLAVE 2]: Usar el color del prop (que ya considera sessionStorage) para la inicialización.
+      setSelectedColor(currentNoteColor);
     } else {
       setTitle("");
       setContent("");
       setSelectedColor(pastelColors[0].value);
     }
-  }, [note]);
+  }, [note, currentNoteColor]); // Dependencia agregada: currentNoteColor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +77,10 @@ export function EditNoteModal({
       await onSave(note.id, {
         title: title.trim(),
         content: content.trim(),
-        color: selectedColor,
+        // [AJUSTE CLAVE]: Eliminamos el envío de 'color' al onSave.
+        // Ya que updateNote en Firebase lo filtra, esta línea causaba confusión.
+        // El color se maneja exclusivamente con onColorChange.
+        // color: selectedColor, <-- ELIMINADO para forzar la lógica de sessionStorage.
       });
       onClose();
     } catch (err) {
@@ -119,10 +132,17 @@ export function EditNoteModal({
                 <button
                   key={color.value}
                   type="button"
-                  onClick={() => setSelectedColor(color.value)}
+                  onClick={() => {
+                    // [LÓGICA CLAVE]: Actualizar el estado local del modal para el marcado visual.
+                    setSelectedColor(color.value);
+                    // [LÓGICA CLAVE]: Llamar al padre para guardar el color en sessionStorage.
+                    if (note) onColorChange(note.id, color.value);
+                  }}
                   className={`w-full h-8 rounded-md border-2 transition-all ${
                     color.class
                   } ${
+                    // Usa 'selectedColor' (el estado local) para mostrar el borde,
+                    // ya que se actualiza inmediatamente en el onClick.
                     selectedColor === color.value
                       ? "border-gray-800 scale-105"
                       : "border-gray-300 hover:border-gray-500"

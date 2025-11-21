@@ -54,7 +54,8 @@ export const subscribeToUserNotes = (
           favorite: Boolean(favoritesMap?.[userId]) || Boolean(data.favorite),
           favorites: favoritesMap,
           project: (data.project as string) ?? "General",
-          order: typeof data.order === "number" ? (data.order as number) : undefined,
+          order:
+            typeof data.order === "number" ? (data.order as number) : undefined,
           createdAt:
             data.createdAt instanceof Timestamp
               ? data.createdAt
@@ -68,7 +69,8 @@ export const subscribeToUserNotes = (
       const sortedNotes = notes.sort((a: Note, b: Note) => {
         const ao = typeof a.order === "number";
         const bo = typeof b.order === "number";
-        if (ao && bo && a.order !== b.order) return (a.order as number) - (b.order as number);
+        if (ao && bo && a.order !== b.order)
+          return (a.order as number) - (b.order as number);
         if (ao && !bo) return -1; // los que tienen order van primero
         if (!ao && bo) return 1;
         if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
@@ -156,15 +158,16 @@ export async function deleteNote(noteId: string) {
   await deleteDoc(noteRef);
 }
 
+// [CAMBIO CLAVE EN CREACIÓN]
 export const createNote = async (userId: string, note: NewNoteInput) => {
   const notesRef = collection(db, NOTES_COLLECTION);
-  // Excluir `color` antes de persistir en la base de datos
-  const noteWithoutColor = Object.fromEntries(
-    Object.entries(note).filter(([k]) => k !== "color")
-  ) as Omit<NewNoteInput, "color">;
+  // ANTES: Se eliminaba el campo 'color', impidiendo que se guardara en Firebase.
+  // AHORA: Se utiliza '...note' directamente. Esto asegura que el color seleccionado
+  // en AddNoteModal se persista en Firestore al crear la nota, resolviendo el problema
+  // de que las notas nuevas salieran siempre amarillas.
 
   await addDoc(notesRef, {
-    ...noteWithoutColor,
+    ...note, // Incluye el campo 'color'
     userId,
     // Por defecto colocamos la nota arriba: números menores aparecen primero
     order: -Date.now(),
@@ -172,12 +175,16 @@ export const createNote = async (userId: string, note: NewNoteInput) => {
   });
 };
 
+// [LÓGICA MANTENIDA EN EDICIÓN]
 export const updateNote = async (
   noteId: string,
   updates: Partial<Omit<Note, "id" | "userId" | "createdAt">>
 ) => {
   const noteRef = doc(db, NOTES_COLLECTION, noteId);
   // Sanitizar actualizaciones para no guardar el campo `color`
+  // [IMPORTANTE]: Esta lógica se mantiene para asegurar que el cambio de color hecho
+  // en el modal de edición SÓLO se guarde en sessionStorage (en NotesColumn.tsx)
+  // y no en Firebase, respetando la regla de usar sessionStorage para la edición.
   const sanitizedUpdates = Object.fromEntries(
     Object.entries(updates || {}).filter(([k]) => k !== "color")
   ) as Partial<Omit<Note, "id" | "userId" | "createdAt">>;
@@ -202,7 +209,7 @@ export async function updateNotesOrder(noteIdsInDesiredOrder: string[]) {
 // Inicializa `order` para una lista de notas con espacios (step) para reducir reordenamientos masivos
 export async function initializeNotesOrder(
   noteIdsInOrder: string[],
-  step = 1024,
+  step = 1024
 ) {
   if (!noteIdsInOrder?.length) return;
   const batch = writeBatch(db);
