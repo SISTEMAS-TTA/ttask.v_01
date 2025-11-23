@@ -41,6 +41,7 @@ interface TaskViewModalProps {
   ) => void;
   /** When true the modal is read-only and Save is hidden/disabled */
   readOnly?: boolean;
+  onDelete: (taskId: string) => Promise<void> | void;
 }
 
 export function TaskViewModal({
@@ -49,6 +50,7 @@ export function TaskViewModal({
   task,
   onSave,
   readOnly = false,
+  onDelete,
 }: TaskViewModalProps) {
   const { user } = useUser();
   const { getUserName } = useUsersMap();
@@ -218,6 +220,17 @@ export function TaskViewModal({
               Cerrar
             </Button>
             {!readOnly && <Button onClick={handleSave}>Guardar</Button>}
+            <Button 
+            variant="destructive" 
+            type="button"
+            onClick={() => {
+              if (task && confirm("¿Estás seguro de borrar esta tarea?")) {
+                onDelete(task.id);
+              }
+            }}
+          >
+            Eliminar
+          </Button>
           </div>
         </DialogFooter>
       </DialogContent>

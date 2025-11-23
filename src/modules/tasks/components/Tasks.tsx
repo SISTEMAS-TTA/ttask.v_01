@@ -12,6 +12,7 @@ import {
   createTask,
   NewTaskInput,
   subscribeToTasksAssignedBy,
+  deleteTask
 } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
 
@@ -142,6 +143,25 @@ export function TasksColumn() {
     await createTask(user.uid, payload);
   };
 
+  // --- Funcion para elimminar la tarea ---
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      // 1. Borrar de Firebase
+      await deleteTask(taskId);
+      
+      // 2. Actualizar la lista visualmente (para que desaparezca al instante)
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      
+      // 3. Cerrar el modal y limpiar selección
+      setIsViewModalOpen(false);
+      setActiveTask(null);
+      
+    } catch (error) {
+      console.error("Error al eliminar tarea:", error);
+      alert("No se pudo eliminar la tarea");
+    }
+  };
+
   // Aplicar filtros
   const filteredTasks = tasks.filter((task) => {
     if (filter.user && task.assigneeId !== filter.user) return false;
@@ -263,6 +283,7 @@ export function TasksColumn() {
             )
           );
         }}
+        onDelete={handleDeleteTask}
       />
 
       <TaskFilterModal

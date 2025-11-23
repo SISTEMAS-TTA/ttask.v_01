@@ -5,6 +5,7 @@ import {
   addDoc,
   collection,
   doc,
+  deleteDoc,
   onSnapshot,
   query,
   serverTimestamp,
@@ -419,4 +420,11 @@ export async function markTaskCommentsSeenByAssigner(taskId: string) {
   await updateDoc(ref, {
     lastSeenByAssignerAt: serverTimestamp(),
   });
+
+}
+
+// --- Borrar una Tarea---
+export async function deleteTask(taskId: string) {
+  const ref = doc(db, TASKS_COLLECTION, taskId);
+  await deleteDoc(ref);
 }
