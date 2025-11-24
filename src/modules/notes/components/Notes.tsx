@@ -535,36 +535,23 @@ export function NotesColumn() {
           </div>
         ) : (
           <>
-            {/* Active Notes Grouped by Month */}
-            {/* {groupedActiveNotes.map(({ monthYear, notes }) => (
-              <Collapsible
-                key={`active-${monthYear}`}
-                open={openActiveGroups.has(monthYear)}
-                onOpenChange={() => toggleActiveGroup(monthYear)}
-              >
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between px-2 py-3 mb-3 bg-blue-50/50 border-b border-blue-100 hover:bg-blue-50 hover:border-blue-200 transition-colors group rounded-sm">
-                    <h4 className="text-sm font-semibold text-gray-800 text-left group-hover:text-gray-900 transition-colors">
-                      {monthYear} – {notes.length}{" "}
-                      {notes.length === 1 ? "nota" : "notas"}
-                    </h4>
-                    {openActiveGroups.has(monthYear) ? (
-                      <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                    ) : (
-                      <ChevronRight className="h-3 w-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                    )}
-                  </div>
-                </CollapsibleTrigger>
-
-                <CollapsibleContent>
-                  <div className="space-y-2">
-                    {notes.map((note) => (
-                      <NoteCard key={note.id} note={note} />
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))} */}
+            {/* Notas activas agrupadas por mes (sin dropdown, solo título y lista) */}
+            {groupedActiveNotes.map(({ monthYear, notes }) => (
+              <div key={`active-${monthYear}`}>
+                <div className="flex items-center my-4">
+                  <div className="flex-1 border-t border-blue-200" />
+                  <span className="mx-2 text-xs font-semibold text-blue-600 uppercase">
+                    {monthYear}
+                  </span>
+                  <div className="flex-1 border-t border-blue-200" />
+                </div>
+                <div className="space-y-2">
+                  {notes.map((note) => (
+                    <NoteCard key={note.id} note={note} />
+                  ))}
+                </div>
+              </div>
+            ))}
 
             {/* Completed Notes: solo línea divisoria con mes, sin dropdown */}
             {(() => {
