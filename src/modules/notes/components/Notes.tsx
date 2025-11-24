@@ -281,17 +281,17 @@ export function NotesColumn() {
     }
   }, [groupedActiveNotes]);
 
-  const toggleActiveGroup = (monthYear: string) => {
-    setOpenActiveGroups((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(monthYear)) {
-        newSet.delete(monthYear);
-      } else {
-        newSet.add(monthYear);
-      }
-      return newSet;
-    });
-  };
+  // const toggleActiveGroup = (monthYear: string) => {
+  //   setOpenActiveGroups((prev) => {
+  //     const newSet = new Set(prev);
+  //     if (newSet.has(monthYear)) {
+  //       newSet.delete(monthYear);
+  //     } else {
+  //       newSet.add(monthYear);
+  //     }
+  //     return newSet;
+  //   });
+  // };
 
   // Componente para renderizar una nota individual
   const NoteCard = ({
