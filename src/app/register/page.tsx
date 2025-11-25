@@ -22,19 +22,16 @@ export default function RegisterPage() {
 }
 
 function AdminRegisterContent() {
-  // Obtiene el estado de autenticación y si es Administrador
+  // Obtiene el estado de autenticación y si es Administrador (rol fijo "Administrador")
   const { isAdmin, isAuthenticated, loading: adminLoading } = useAdmin();
   const { profile, loading: userProfileLoading } = useUser();
   const router = useRouter();
 
-  const loading = adminLoading || userProfileLoading;
-
-  // Solo Director y Administrador pueden acceder a esta página
+  //SE MODIFICO ESTA PARTE
+  const loading = adminLoading || userProfileLoading; // 1.CONTROL DE ACCESO: Permite acceso si es Director O Administrador. (Correcto)
   const canAccessRegister =
-    profile?.role === "Director" || profile?.role === "Administrador";
-
-  // 🔑 DEFINIMOS SI EL USUARIO ACTUAL ES UN ADMINISTRADOR PARA PASAR EL PERMISO
-  const isCurrentUserAdmin = isAdmin;
+    profile?.role === "Director" || profile?.role === "Administrador"; // 2.CONTROL DE ELEVACIÓN: Define quién tiene el permiso para marcar 'isAreaChief'. // El Administrador (isAdmin) tiene este permiso por definición, pero lo extendemos al Director.
+  const canSetAreaChief = isAdmin || profile?.role === "Director";
 
   useEffect(() => {
     if (loading) return;
@@ -57,7 +54,7 @@ function AdminRegisterContent() {
   if (loading || !isAuthenticated || !canAccessRegister) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />     {" "}
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -77,18 +74,15 @@ function AdminRegisterContent() {
       <div className="absolute inset-0 bg-black/20 z-10" />
       {/* Encabezado con logotipo */}
       <AuthHeader />
-      {/* Contenido */}     {" "}
+      {/* Contenido */}
       <div className="relative z-20 pt-24 sm:pt-28 md:pt-32">
-               {" "}
-        {/* 🔑 CAMBIO CLAVE: Pasamos el rol forzado Y el permiso de administrador */}
-               {" "}
+        {/* Pasamos el rol forzado Y el permiso de administrador */}
         <Register
           forcedRole={forcedRole}
-          isCurrentUserAdmin={isCurrentUserAdmin} // 🔑 NUEVO PROP
+          //SE MODIFICO ESTA PARTE sirve para forzar el rol si es Jefe de area
+          isCurrentUserAdmin={canSetAreaChief}
         />
-             {" "}
       </div>
-         {" "}
     </div>
   );
 }

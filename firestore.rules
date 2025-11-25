@@ -9,6 +9,7 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador';
     }
     
+    //----------------NUEVO BLOQUE---------------------------------
     // Reglas para que los usuarios jefe de area agreguen usuarios a la misma area
 
     // Función helper para obtener el rol del usuario
@@ -26,20 +27,24 @@ service cloud.firestore {
       let callerProfile = getCallerProfile();
       let callerRole = callerProfile.role;
 
-            // 1. Permiso Máximo: Administrador puede crear cualquier rol.
-            // 2. Director puede crear usuarios también (permiso explícito solicitado).
-            return callerRole == 'Administrador' ||
-              callerRole == 'Director' ||
-              // 3. Si el usuario tiene el flag isAreaChief y el rol coincide
-              (callerProfile.isAreaChief == true && callerRole == newRole);
+      // 1. Permiso Máximo: Administrador puede crear cualquier rol.
+      return callerRole == 'Administrador' ||
+             // 2. Si el usuario tiene el flag isAreaChief y el rol coincide
+             (callerProfile.isAreaChief == true && callerRole == newRole);
       
       // 3. Ningún otro usuario puede registrar (implícito en el return false)
     }
+    
+    //---------------------------------------------------------
     
     // Reglas para usuarios
     match /users/{userId} {
       // Cualquier usuario autenticado puede leer todos los usuarios
       allow read: if request.auth != null;
+      
+      // SOLO SE AGREGO ESTO 24/11/25: Permite la escritura (creación/actualización) si el rol es Administrador O Director
+  		allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Administrador"
+              || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Director"; 
       
       // [MODIFICACIÓN CLAVE EN LA REGLA CREATE]
       // Solo permitimos la creación si es un Jefe/Admin autorizado.
