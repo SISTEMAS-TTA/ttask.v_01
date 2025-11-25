@@ -23,16 +23,18 @@ export default function RegisterPage() {
 
 function AdminRegisterContent() {
   // Obtiene el estado de autenticación y si es Administrador
-  const { isAdmin, isAuthenticated, loading: adminLoading } = useAdmin(); // [CAMBIO CLAVE]: Obtiene el perfil completo, incluyendo 'role' e 'isAreaChief'
+  const { isAdmin, isAuthenticated, loading: adminLoading } = useAdmin();
   const { profile, loading: userProfileLoading } = useUser();
   const router = useRouter();
 
-  const loading = adminLoading || userProfileLoading; // Determina si el usuario actual es un Jefe o Administrador
+  const loading = adminLoading || userProfileLoading;
 
-  const isChief = profile?.isAreaChief === true || isAdmin;
+  // Solo Director y Administrador pueden acceder a esta página
+  const canAccessRegister =
+    profile?.role === "Director" || profile?.role === "Administrador";
 
   // 🔑 DEFINIMOS SI EL USUARIO ACTUAL ES UN ADMINISTRADOR PARA PASAR EL PERMISO
-  const isCurrentUserAdmin = isAdmin; // Es más claro si lo renombramos
+  const isCurrentUserAdmin = isAdmin;
 
   useEffect(() => {
     if (loading) return;
@@ -42,20 +44,17 @@ function AdminRegisterContent() {
       return;
     }
 
-    // [MODIFICACIÓN DE REGLA]: Si no es Administrador Y no es Jefe de Área, redirigir al dashboard.
-    if (!isChief) {
+    // Solo Director y Administrador pueden registrar usuarios
+    if (!canAccessRegister) {
       router.replace("/");
     }
-  }, [isChief, isAuthenticated, loading, router, profile]); // [NUEVA LÓGICA]: Determinar el rol que el jefe está "forzando" para el nuevo usuario.
+  }, [canAccessRegister, isAuthenticated, loading, router]);
 
-  let forcedRole: UserRole | undefined = undefined;
+  // Director y Administrador pueden asignar cualquier rol, no hay rol forzado
+  const forcedRole: UserRole | undefined = undefined;
 
-  if (profile?.isAreaChief === true && !isAdmin) {
-    // Si es Jefe de Área (pero no es Administrador), el nuevo usuario DEBE tener el rol del jefe.
-    forcedRole = profile.role as UserRole;
-  } // Mostrar loading si los datos no están listos o si el usuario no está autorizado
-
-  if (loading || !isAuthenticated || !isChief) {
+  // Mostrar loading si los datos no están listos o si el usuario no está autorizado
+  if (loading || !isAuthenticated || !canAccessRegister) {
     return (
       <div className="min-h-screen flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />     {" "}
