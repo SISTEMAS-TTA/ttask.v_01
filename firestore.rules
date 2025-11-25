@@ -26,10 +26,12 @@ service cloud.firestore {
       let callerProfile = getCallerProfile();
       let callerRole = callerProfile.role;
 
-      // 1. Permiso Máximo: Administrador puede crear cualquier rol.
-      return callerRole == 'Administrador' ||
-             // 2. Si el usuario tiene el flag isAreaChief y el rol coincide
-             (callerProfile.isAreaChief == true && callerRole == newRole);
+            // 1. Permiso Máximo: Administrador puede crear cualquier rol.
+            // 2. Director puede crear usuarios también (permiso explícito solicitado).
+            return callerRole == 'Administrador' ||
+              callerRole == 'Director' ||
+              // 3. Si el usuario tiene el flag isAreaChief y el rol coincide
+              (callerProfile.isAreaChief == true && callerRole == newRole);
       
       // 3. Ningún otro usuario puede registrar (implícito en el return false)
     }
