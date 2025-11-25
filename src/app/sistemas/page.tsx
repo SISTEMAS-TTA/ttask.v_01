@@ -1,12 +1,7 @@
 "use client";
 
-import AreaProjectsView from "@/modules/projects/components/AreaProjectsView";
+import AreaProjectsPage from "@/components/AreaProjectsPage";
 
 export default function SistemasPage() {
-  return (
-    <AreaProjectsView
-      title="Sistemas"
-      description="Proyectos asignados al equipo de Sistemas."
-    />
-  );
+  return <AreaProjectsPage areaRole="Sistemas" areaName="Sistemas" />;
 }

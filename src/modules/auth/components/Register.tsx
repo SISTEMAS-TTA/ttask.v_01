@@ -287,7 +287,10 @@ export default function Register({
                           <SelectItem value="Administrador">
                             Administrador
                           </SelectItem>
-                          <SelectItem value="Proyectos">Proyectos</SelectItem>
+                          <SelectItem value="Aux. Admin">Aux. Admin</SelectItem>
+                          <SelectItem value="Arquitectura">
+                            Arquitectura
+                          </SelectItem>
                           <SelectItem value="Diseno">Diseño</SelectItem>
                           <SelectItem value="Gerencia">Gerencia</SelectItem>
                           <SelectItem value="Obra">Obra</SelectItem>

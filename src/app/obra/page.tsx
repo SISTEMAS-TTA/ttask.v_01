@@ -1,8 +1,7 @@
-export default function ObraPage() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold">Obra</h1>
-    </div>
-  );
-}
+"use client";
 
+import AreaProjectsPage from "@/components/AreaProjectsPage";
+
+export default function ObraPage() {
+  return <AreaProjectsPage areaRole="Obra" areaName="Obra" />;
+}

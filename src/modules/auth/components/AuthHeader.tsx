@@ -171,6 +171,46 @@ export function AuthHeader() {
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
                     <Link
+                      href="/arquitectura"
+                      className={navLinkClassName}
+                    >
+                      Arquitectura
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/diseno"
+                      className={navLinkClassName}
+                    >
+                      Diseño
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/gerencia"
+                      className={navLinkClassName}
+                    >
+                      Gerencia
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/sistemas"
+                      className={navLinkClassName}
+                    >
+                      Sistemas
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
                       href="/contacto"
                       className={navLinkClassName}
                     >
@@ -185,6 +225,16 @@ export function AuthHeader() {
                       className={navLinkClassName}
                     >
                       Cliente
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      href="/aux-admin"
+                      className={navLinkClassName}
+                    >
+                      Aux. Admin
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -315,11 +365,46 @@ export function AuthHeader() {
                     Admon
                   </Link>
                   <Link
+                    href="/arquitectura"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Arquitectura
+                  </Link>
+                  <Link
+                    href="/diseno"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Diseño
+                  </Link>
+                  <Link
+                    href="/gerencia"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Gerencia
+                  </Link>
+                  <Link
+                    href="/sistemas"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sistemas
+                  </Link>
+                  <Link
                     href="/cliente"
                     className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
                     onClick={() => setIsOpen(false)}
                   >
                     Cliente
+                  </Link>
+                  <Link
+                    href="/aux-admin"
+                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Aux. Admin
                   </Link>
                   <Link
                     href="/direccion"
