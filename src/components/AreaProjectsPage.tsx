@@ -4,18 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import useUser from "@/modules/auth/hooks/useUser";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import type {
   ProjectDoc,
   UserRole,
   ProjectTask,
-  ProjectSection,
 } from "@/modules/types";
 import { subscribeToProjectsByRole } from "@/lib/firebase/projects";
 import {
   Loader2,
   FolderOpen,
-  CheckCircle2,
   Circle,
   Star,
   ChevronRight,
@@ -55,9 +52,12 @@ export default function AreaProjectsPage({
         setProjects(projs);
         setLoading(false);
         // Seleccionar el primer proyecto automáticamente si no hay ninguno seleccionado
-        if (projs.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projs[0].id);
-        }
+        setSelectedProjectId((current) => {
+          if (projs.length > 0 && !current) {
+            return projs[0].id;
+          }
+          return current;
+        });
       },
       (err) => {
         console.error("Error al cargar proyectos:", err);
