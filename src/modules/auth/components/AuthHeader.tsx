@@ -17,6 +17,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 import useUser from "@/modules/auth/hooks/useUser";
 import {
@@ -30,11 +35,12 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
-// import { LogOut } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
-  // const [isServicesOpen, setIsServicesOpen] = useState(false);
+  const [isAreasOpen, setIsAreasOpen] = useState(false);
   const router = useRouter();
 
   const initials = (name?: string, email?: string) => {
@@ -53,14 +59,15 @@ export function AuthHeader() {
     }
   };
 
-  const navLinkClassName = "h-9 px-3 py-2 text-xs md:text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap leading-tight xl:h-10 xl:px-4 xl:text-sm";
+  const navLinkClassName =
+    "h-9 px-2 py-2 text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap leading-tight lg:px-3 xl:h-10 xl:px-4 xl:text-sm";
 
-  // Si no hay usuario autenticado, mostrar solo el logo sin navegación ni menú de usuario
+  // Si no hay usuario autenticado, mostrar solo el logo
   if (!user) {
     return (
-      <header className="fixed left-0 top-0 z-[1000] w-full bg-white/95 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
-        <div className="mx-auto px-4 py-4 sm:px-6 sm:py-4 lg:px-8 xl:px-12 2xl:px-16">
-          <div className="flex items-center justify-between gap-3">
+      <header className="fixed left-0 top-0 z-[1000] w-full h-16 bg-white/95 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
+        <div className="h-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
+          <div className="flex items-center justify-between gap-3 w-full">
             <div className="flex-shrink-0">
               <Link
                 href="/"
@@ -70,10 +77,10 @@ export function AuthHeader() {
                 <Image
                   src="/LogoTT.png"
                   alt="Logo de ttArquitectos"
-                  width={220}
-                  height={35}
+                  width={180}
+                  height={30}
                   priority
-                  className="h-auto w-32 xs:w-36 sm:w-40 md:w-48 lg:w-52 xl:w-56 2xl:w-60"
+                  className="h-auto w-28 sm:w-32 md:w-36 lg:w-40"
                 />
               </Link>
             </div>
@@ -82,11 +89,36 @@ export function AuthHeader() {
       </header>
     );
   }
+
+  // Enlaces principales (siempre visibles en desktop)
+  const mainLinks = [
+    { href: "/notes", label: "Inicio" },
+    { href: "/obra", label: "Obra" },
+    { href: "/logistica-compras", label: "Logística" },
+    { href: "/pagos-presupuestos", label: "Pagos" },
+  ];
+
+  // Áreas de trabajo (en dropdown)
+  const areaLinks = [
+    { href: "/arquitectura", label: "Arquitectura" },
+    { href: "/diseno", label: "Diseño" },
+    { href: "/gerencia", label: "Gerencia" },
+    { href: "/sistemas", label: "Sistemas" },
+    { href: "/admon", label: "Administración" },
+  ];
+
+  // Enlaces de gestión (en dropdown "Más")
+  const moreLinks = [
+    { href: "/cliente", label: "Cliente" },
+    { href: "/aux-admin", label: "Aux. Admin" },
+    { href: "/direccion", label: "Dirección" },
+  ];
+
   return (
-    <header className="fixed left-0 top-0 z-[1000] w-full bg-white/95 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
-      <div className="mx-auto px-4 py-4 sm:px-6 sm:py-4 lg:px-8 xl:px-12 2xl:px-16">
-        <div className="flex items-center justify-between gap-3">
-          {/* Logo - Responsive sizing */}
+    <header className="fixed left-0 top-0 z-[1000] w-full h-16 bg-white/95 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
+      <div className="h-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
+        <div className="flex items-center justify-between gap-2 w-full">
+          {/* Logo */}
           <div className="flex-shrink-0">
             <Link
               href="/"
@@ -96,435 +128,233 @@ export function AuthHeader() {
               <Image
                 src="/LogoTT.png"
                 alt="Logo de ttArquitectos"
-                width={220}
-                height={35}
+                width={180}
+                height={30}
                 priority
-                className="h-auto w-32 xs:w-36 sm:w-40 md:w-48 lg:w-52 xl:w-56 2xl:w-60"
+                className="h-auto w-28 sm:w-32 lg:w-36 xl:w-40"
               />
             </Link>
           </div>
 
-          {/* Desktop Navigation Menu - Hidden on tablets and mobile */}
-          <div className="hidden lg:flex">
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex flex-1 justify-center">
             <NavigationMenu>
-              <NavigationMenuList className="flex space-x-1 xl:space-x-2">
+              <NavigationMenuList className="flex items-center gap-1">
+                {/* Enlaces principales */}
+                {mainLinks.map((link) => (
+                  <NavigationMenuItem key={link.href}>
+                    <NavigationMenuLink asChild>
+                      <Link href={link.href} className={navLinkClassName}>
+                        {link.label}
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                ))}
+
+                {/* Dropdown: Áreas */}
                 <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/notes"
-                      className={navLinkClassName}
-                    >
-                      Inicio
-                    </Link>
-                  </NavigationMenuLink>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`${navLinkClassName} gap-1`}>
+                        Áreas
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" sideOffset={2} className="w-44">
+                      <DropdownMenuLabel className="text-xs text-gray-500">
+                        Áreas de trabajo
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {areaLinks.map((link) => (
+                        <DropdownMenuItem key={link.href} asChild>
+                          <Link
+                            href={link.href}
+                            className="w-full cursor-pointer"
+                          >
+                            {link.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </NavigationMenuItem>
+
+                {/* Dropdown: Más */}
                 <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/projects"
-                      className={navLinkClassName}
-                    >
-                      Proyectos
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/pagos-presupuestos"
-                      className={navLinkClassName}
-                    >
-                      Pagos y presupuestos
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/obra"
-                      className={navLinkClassName}
-                    >
-                      Obra
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/logistica-compras"
-                      className={navLinkClassName}
-                    >
-                      Logística y Compras
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/admon"
-                      className={navLinkClassName}
-                    >
-                      Admon
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/arquitectura"
-                      className={navLinkClassName}
-                    >
-                      Arquitectura
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/diseno"
-                      className={navLinkClassName}
-                    >
-                      Diseño
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/gerencia"
-                      className={navLinkClassName}
-                    >
-                      Gerencia
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/sistemas"
-                      className={navLinkClassName}
-                    >
-                      Sistemas
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/contacto"
-                      className={navLinkClassName}
-                    >
-                      Contacto
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/cliente"
-                      className={navLinkClassName}
-                    >
-                      Cliente
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/aux-admin"
-                      className={navLinkClassName}
-                    >
-                      Aux. Admin
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/direccion"
-                      className={navLinkClassName}
-                    >
-                      Dirección
-                    </Link>
-                  </NavigationMenuLink>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`${navLinkClassName} gap-1`}>
+                        Más
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" sideOffset={2} className="w-44">
+                      <DropdownMenuLabel className="text-xs text-gray-500">
+                        Gestión
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {moreLinks.map((link) => (
+                        <DropdownMenuItem key={link.href} asChild>
+                          <Link
+                            href={link.href}
+                            className="w-full cursor-pointer"
+                          >
+                            {link.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
           </div>
 
-          {/* User menu */}
-          <div className="flex items-center">
+          {/* User menu + Mobile menu */}
+          <div className="flex items-center gap-2">
+            {/* User Avatar Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  aria-label="User menu"
-                  className="inline-flex items-center justify-center h-11 w-11 rounded-full hover:bg-gray-100 sm:h-12 sm:w-12"
+                  aria-label="Menú de usuario"
+                  className="inline-flex items-center justify-center h-10 w-10 rounded-full hover:bg-gray-100"
                 >
-                  <Avatar className="h-9 w-9 sm:h-10 sm:w-10">
-                    <AvatarFallback className="text-sm sm:text-base">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-sm">
                       {initials(profile?.fullName, user?.email || undefined)}
                     </AvatarFallback>
                   </Avatar>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  {profile?.fullName || user?.email || "Usuario"}
+              <DropdownMenuContent align="end" sideOffset={2} className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">
+                      {profile?.fullName || user?.email || "Usuario"}
+                    </p>
+                    <p className="text-xs text-gray-500">{profile?.role}</p>
+                  </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  {/* <LogOut className="mr-2 h-4 w-4"/> */}
-                  Cerrar Sesion
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-600 cursor-pointer"
+                >
+                  Cerrar Sesión
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
 
-          {/* Mobile/Tablet Menu - Sheet Component */}
-          <div className="lg:hidden">
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 text-gray-700 hover:text-gray-900 hover:bg-gray-50 sm:h-12 sm:w-12"
-                >
-                  <span className="sr-only">Abrir menú principal</span>
-                  <svg
-                    className="h-6 w-6 sm:h-7 sm:w-7"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden">
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                    />
-                  </svg>
-                </Button>
-              </SheetTrigger>
-              <SheetContent
-                side="left"
-                className="w-[280px] sm:w-[320px] md:w-[360px] p-0"
-              >
-                <SheetHeader className="p-4 sm:p-6 border-b border-gray-100">
-                  <SheetTitle className="text-left">
-                    <Image
-                      src="/LogoTT.png"
-                      alt="Logo de ttArquitectos"
-                      width={180}
-                      height={28}
-                      className="h-auto w-36 sm:w-40"
-                    />
-                  </SheetTitle>
-                </SheetHeader>
-
-                <nav className="flex flex-col p-4 sm:p-6 space-y-2">
-                  <Link
-                    href="/notes"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Inicio
-                  </Link>
-                  <Link
-                    href="/projects"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Proyectos
-                  </Link>
-                  <Link
-                    href="/pagos-presupuestos"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Pagos y presupuestos
-                  </Link>
-                  <Link
-                    href="/obra"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Obra
-                  </Link>
-                  <Link
-                    href="/logistica-compras"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Logística y Compras
-                  </Link>
-                  <Link
-                    href="/admon"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Admon
-                  </Link>
-                  <Link
-                    href="/arquitectura"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Arquitectura
-                  </Link>
-                  <Link
-                    href="/diseno"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Diseño
-                  </Link>
-                  <Link
-                    href="/gerencia"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Gerencia
-                  </Link>
-                  <Link
-                    href="/sistemas"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Sistemas
-                  </Link>
-                  <Link
-                    href="/cliente"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Cliente
-                  </Link>
-                  <Link
-                    href="/aux-admin"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Aux. Admin
-                  </Link>
-                  <Link
-                    href="/direccion"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Dirección
-                  </Link>
-                  {/* {profile?.role === "Director" && (
-                    <Link
-                      href="/projects/new"
-                      className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                      onClick={() => setIsOpen(false)}
+                    <span className="sr-only">Abrir menú</span>
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
                     >
-                      Nuevo Proyecto
-                    </Link>
-                  )} */}
-                  {/* Services Collapsible */}
-                  {/* <Collapsible
-                    open={isServicesOpen}
-                    onOpenChange={setIsServicesOpen}
-                  >
-                    <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base">
-                      Servicios
-                      <svg
-                        className={`h-4 w-4 transition-transform duration-200 ${
-                          isServicesOpen ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                      />
+                    </svg>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent
+                  side="left"
+                  className="w-[280px] sm:w-[320px] p-0 overflow-y-auto"
+                >
+                  <SheetHeader className="p-4 border-b border-gray-100">
+                    <SheetTitle className="text-left">
+                      <Image
+                        src="/LogoTT.png"
+                        alt="Logo de ttArquitectos"
+                        width={140}
+                        height={24}
+                        className="h-auto w-32"
+                      />
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  <nav className="flex flex-col p-4 space-y-1">
+                    {/* Enlaces principales */}
+                    <div className="pb-2 border-b border-gray-100 mb-2">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-2 px-3">
+                        Principal
+                      </p>
+                      {mainLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          className="block rounded-md px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+
+                    {/* Áreas - Collapsible */}
+                    <Collapsible
+                      open={isAreasOpen}
+                      onOpenChange={setIsAreasOpen}
+                    >
+                      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <span className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 uppercase tracking-wide">
+                            Áreas
+                          </span>
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform duration-200 ${
+                            isAreasOpen ? "rotate-180" : ""
+                          }`}
                         />
-                      </svg>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-1 pl-4 pt-2">
-                      <Link
-                        href="/arquitectura"
-                        className="block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Arquitectura
-                      </Link>
-                      <Link
-                        href="/consultoria"
-                        className="block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Consultoría
-                      </Link>
-                      <Link
-                        href="/urbanismo"
-                        className="block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Urbanismo
-                      </Link>
-                      <Link
-                        href="/interiorismo"
-                        className="block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Interiorismo
-                      </Link>
-                    </CollapsibleContent>
-                  </Collapsible> */}
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-1 pl-3 pt-1">
+                        {areaLinks.map((link) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            className="block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
 
-                  {/* Direct Links */}
-                  <Link
-                    href="/proyectos"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Finanzas
-                  </Link>
-                  {/* 
-                  <Link
-                    href="/nosotros"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Nosotros
-                  </Link>
-
-                  <Link
-                    href="/contacto"
-                    className="block rounded-md px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors sm:text-base"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Contacto
-                  </Link> */}
-
-                  {/* Contact Info for Mobile */}
-                  <div className="mt-6 pt-6 border-t border-gray-100">
-                    <div className="text-xs text-gray-500 mb-2 sm:text-sm">
-                      Contacto directo:
+                    {/* Gestión */}
+                    <div className="pt-2 border-t border-gray-100 mt-2">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-2 px-3">
+                        Gestión
+                      </p>
+                      {moreLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          className="block rounded-md px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
                     </div>
-                    <div className="space-y-2">
-                      <a
-                        href="tel:+1234567890"
-                        className="block text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                      >
-                        📞 +1 (234) 567-890
-                      </a>
-                      <a
-                        href="mailto:info@ttarquitectos.com"
-                        className="block text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                      >
-                        ✉️ info@ttarquitectos.com
-                      </a>
-                    </div>
-                  </div>
-                </nav>
-              </SheetContent>
-            </Sheet>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </div>

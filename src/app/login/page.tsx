@@ -1,11 +1,12 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import Login from "@/modules/auth/components/Login";
-import { AuthHeader } from "@/modules/auth/components/AuthHeader";
 
-function login() {
+export default function LoginPage() {
   return (
-    <div className="relative min-h-screen">
+    <div className="fixed inset-0 top-16 overflow-y-auto">
       {/* Imagen de fondo */}
       <Image
         src="/wpp_sketches.jpg"
@@ -16,14 +17,11 @@ function login() {
         quality={75}
       />
       {/* Overlay oscuro para mejorar legibilidad */}
-      <div className="absolute inset-0 bg-black/20 z-10" />
-      <AuthHeader />
-      {/* Contenido */}
-      <div className="relative z-20 pt-24 sm:pt-28 md:pt-32">
+      <div className="absolute inset-0 bg-black/30" />
+      {/* Contenido con scroll */}
+      <div className="relative z-10 min-h-full flex items-center justify-center px-4 py-6 sm:py-8">
         <Login />
       </div>
     </div>
   );
 }
-
-export default login;
