@@ -1,5 +1,5 @@
 import { db } from "./config";
-// Importar la nueva función de usuarios
+import { UserRole } from "@/modules/types";
 import { getUserProfileById } from "./users";
 import {
   addDoc,
@@ -13,6 +13,7 @@ import {
   updateDoc,
   where,
   getDoc,
+  getDocs, // Agregamos getDocs
   arrayUnion,
   DocumentData,
 } from "firebase/firestore";
@@ -40,10 +41,17 @@ export type TaskDoc = {
   lastCommentAt?: Timestamp;
   lastSeenByAssignerAt?: Timestamp;
 };
-export type NewTaskInput = Omit<
-  TaskDoc,
-  "id" | "assignedBy" | "deleted" | "createdAt" | "updatedAt"
->;
+
+export interface NewTaskInput {
+  title: string;
+  project: string;
+  description: string;
+  assigneeId?: string; // string | undefined
+  assigneeRole?: UserRole;
+  viewed: boolean;
+  completed: boolean;
+  favorite: boolean;
+}
 
 const TASKS_COLLECTION = "tasks";
 
@@ -179,50 +187,109 @@ export const createTask = async (
   assignedByUserId: string,
   input: NewTaskInput
 ) => {
-  // 1. Crear la Tarea en Firestore (Lógica existente)
   const ref = collection(db, TASKS_COLLECTION);
+
+  // --- CASO 1: Asignación por Área (Rol) ---
+  if (input.assigneeRole && !input.assigneeId) {
+    try {
+      // Buscar todos los usuarios con ese rol
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("role", "==", input.assigneeRole));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        console.warn(
+          `No se encontraron usuarios para el rol: ${input.assigneeRole}`
+        );
+        return;
+      }
+
+      const batchPromises = snapshot.docs.map(async (userDoc) => {
+        const userId = userDoc.id;
+        const userData = userDoc.data();
+
+        const newTaskData = {
+          ...input,
+          assigneeId: userId, // Aquí asignamos el ID específico
+          assigneeRole: null, // Limpiamos el rol
+          assignedBy: assignedByUserId,
+          deleted: false,
+          createdAt: Timestamp.now(),
+        };
+
+        // Crear la tarea individual
+        await addDoc(ref, newTaskData);
+
+        // Enviar correo individual
+        if (userData.email) {
+          // CORRECCIÓN: Añadimos || "Usuario" por si fullName es undefined
+          await sendEmailNotification(
+            userData.email,
+            userData.fullName || "Usuario",
+            input.title
+          );
+        }
+      });
+
+      await Promise.all(batchPromises);
+      return;
+    } catch (error) {
+      console.error("Error al asignar tarea masiva por rol:", error);
+      throw error;
+    }
+  }
+
+  // --- CASO 2: Asignación Individual ---
   const newTaskData = {
     ...input,
+    // Aseguramos que assigneeId sea string vacío si viene undefined (para evitar errores en DB)
+    assigneeId: input.assigneeId || "",
     assignedBy: assignedByUserId,
     deleted: false,
     createdAt: Timestamp.now(),
   };
-  await addDoc(ref, newTaskData); // Usamos addDoc para obtener la referencia // 2. Notificación por Correo
 
-  const assigneeId = input.assigneeId; // Obtenemos el ID del asignado
+  await addDoc(ref, newTaskData);
 
-  if (assigneeId) {
-    try {
-      const assigneeProfile = await getUserProfileById(assigneeId);
+  // Notificación por Correo
+  if (input.assigneeId) {
+    // CORRECCIÓN: Forzamos el tipo 'as string' porque ya validamos en el if que existe
+    const assigneeProfile = await getUserProfileById(
+      input.assigneeId as string
+    );
 
-      if (assigneeProfile && assigneeProfile.email) {
-        const taskTitle = input.title; // Llamada al endpoint de Next.js API Route para enviar el correo
-
-        const response = await fetch("/api/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            recipientEmail: assigneeProfile.email,
-            recipientName: assigneeProfile.fullName,
-            taskTitle: taskTitle,
-          }),
-        });
-        if (response.ok) {
-          console.log(
-            "Notificación por correo enviada exitosamente a:",
-            assigneeProfile.email
-          );
-        } else {
-          console.error("Error al notificar por API:", await response.json());
-        }
-      } else {
-        console.warn("No se pudo notificar: Perfil no encontrado o sin email.");
-      }
-    } catch (error) {
-      console.error("Fallo la notificación por email:", error);
+    if (assigneeProfile && assigneeProfile.email) {
+      // CORRECCIÓN: Añadimos || "Usuario" para manejar el fullName opcional
+      await sendEmailNotification(
+        assigneeProfile.email,
+        assigneeProfile.fullName || "Usuario",
+        input.title
+      );
     }
   }
 };
+
+// Función auxiliar para no repetir código de email
+async function sendEmailNotification(
+  email: string,
+  name: string,
+  title: string
+) {
+  try {
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipientEmail: email,
+        recipientName: name,
+        taskTitle: title,
+      }),
+    });
+    if (!response.ok) console.error("Error API Email", await response.json());
+  } catch (e) {
+    console.error("Fallo fetch email", e);
+  }
+}
 
 // Solo el asignado puede marcar viewed/completed
 export async function updateTask(
@@ -420,7 +487,6 @@ export async function markTaskCommentsSeenByAssigner(taskId: string) {
   await updateDoc(ref, {
     lastSeenByAssignerAt: serverTimestamp(),
   });
-
 }
 
 // --- Borrar una Tarea---

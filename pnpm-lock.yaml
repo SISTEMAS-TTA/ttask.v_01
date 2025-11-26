@@ -72,8 +72,8 @@ importers:
         specifier: ^14.26.0
         version: 14.26.0(@types/node@20.19.17)(encoding@0.1.13)(typescript@5.9.3)
       lucide-react:
-        specifier: ^0.544.0
-        version: 0.544.0(react@19.1.0)
+        specifier: ^0.554.0
+        version: 0.554.0(react@19.1.0)
       next:
         specifier: 15.5.3
         version: 15.5.3(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -4028,8 +4028,8 @@ packages:
   lsofi@1.0.0:
     resolution: {integrity: sha512-MKr9vM1MSm+TSKfI05IYxpKV1NCxpJaBLnELyIf784zYJ5KV9lGCE1EvpA2DtXDNM3fCuFeCwXUzim/fyQRi+A==}
 
-  lucide-react@0.544.0:
-    resolution: {integrity: sha512-t5tS44bqd825zAW45UQxpG2CvcC4urOwn2TrwSH8u+MjeE+1NnWl6QqeQ/6NdjMqdOygyiT9p3Ev0p1NJykxjw==}
+  lucide-react@0.554.0:
+    resolution: {integrity: sha512-St+z29uthEJVx0Is7ellNkgTEhaeSoA42I7JjOCBCrc5X6LYMGSv0P/2uS5HDLTExP5tpiqRD2PyUEOS6s9UXA==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -10168,7 +10168,7 @@ snapshots:
       is-number: 2.1.0
       through2: 2.0.5
 
-  lucide-react@0.544.0(react@19.1.0):
+  lucide-react@0.554.0(react@19.1.0):
     dependencies:
       react: 19.1.0
 
