@@ -101,17 +101,34 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Director';
     }
     
+    // Función para verificar si puede gestionar proyectos (Director, Admin o Aux. Admin)
+    function canManageProjects() {
+      let userRole = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return request.auth != null && (
+        userRole == 'Director' ||
+        userRole == 'Administrador' ||
+        userRole == 'Aux. Admin'
+      );
+    }
+    
     match /projects/{projectId} {
-      allow create: if isDirector();
+      // Director, Administrador y Aux. Admin pueden crear proyectos
+      allow create: if canManageProjects();
+      
+      // Lectura: gestores de proyectos, miembros del proyecto, o usuarios cuyo rol está permitido
       allow read: if request.auth != null && (
-        isDirector() ||
+        canManageProjects() ||
         (request.auth.uid in resource.data.members) ||
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in resource.data.rolesAllowed)
       );
+      
+      // Actualización: gestores de proyectos o miembros del proyecto
       allow update: if request.auth != null && (
-        isDirector() || (request.auth.uid in resource.data.members)
+        canManageProjects() || (request.auth.uid in resource.data.members)
       );
-      allow delete: if isDirector();
+      
+      // Eliminación: solo gestores de proyectos
+      allow delete: if canManageProjects();
     }
     
     // Denegar todo lo demás por defecto

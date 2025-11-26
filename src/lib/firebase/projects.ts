@@ -133,3 +133,34 @@ export function subscribeToProjectsForUser(
   ];
   return () => unsubs.forEach((u) => u());
 }
+
+// Suscripción filtrada SOLO por el rol del usuario (para páginas de área)
+// Solo muestra proyectos donde el área/rol del usuario está en rolesAllowed
+export function subscribeToProjectsByRole(
+  role: ProjectRole,
+  onProjects: (projects: ProjectDoc[]) => void,
+  onError?: (e: unknown) => void
+) {
+  const ref = collection(db, PROJECTS_COLLECTION);
+  const qByRole = query(ref, where("rolesAllowed", "array-contains", role));
+
+  const handle = (snap: QuerySnapshot<DocumentData>) => {
+    const projects: ProjectDoc[] = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        title: data.title ?? "",
+        description: data.description ?? undefined,
+        createdBy: data.createdBy,
+        createdAt: data.createdAt,
+        members: Array.isArray(data.members) ? data.members : [],
+        rolesAllowed: Array.isArray(data.rolesAllowed) ? data.rolesAllowed : [],
+        sections: (data.sections as ProjectSection[]) ?? [],
+        tasks: (data.tasks as ProjectTask[]) ?? [],
+      };
+    });
+    onProjects(projects);
+  };
+
+  return onSnapshot(qByRole, handle, (e) => onError?.(e));
+}

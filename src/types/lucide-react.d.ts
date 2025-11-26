@@ -23,6 +23,9 @@ declare module "lucide-react" {
   export const Eye: LucideIcon;
   export const EyeOff: LucideIcon;
   export const Filter: LucideIcon;
+  export const Mail: LucideIcon;
+  export const Lock: LucideIcon;
+  export const FolderOpen: LucideIcon;
   export const CircleCheckBig: LucideIcon;
   export const ChevronDownIcon: LucideIcon;
   export const ChevronLeftIcon: LucideIcon;

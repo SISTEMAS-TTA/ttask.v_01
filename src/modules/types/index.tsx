@@ -9,7 +9,8 @@ export interface UserProfile {
   role:
     | "Director"
     | "Administrador"
-    | "Proyectos"
+    | "Aux. Admin"
+    | "Arquitectura"
     | "Diseno"
     | "Gerencia"
     | "Obra"
@@ -37,7 +38,8 @@ export interface Task {
 export type UserRole =
   | "Director"
   | "Administrador"
-  | "Proyectos"
+  | "Aux. Admin"
+  | "Arquitectura"
   | "Diseno"
   | "Gerencia"
   | "Obra"

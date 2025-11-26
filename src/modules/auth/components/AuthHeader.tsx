@@ -17,6 +17,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 import useUser from "@/modules/auth/hooks/useUser";
 import {
@@ -30,11 +35,12 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
-// import { LogOut } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
-  // const [isServicesOpen, setIsServicesOpen] = useState(false);
+  const [isAreasOpen, setIsAreasOpen] = useState(false);
   const router = useRouter();
 
   const initials = (name?: string, email?: string) => {
@@ -56,7 +62,7 @@ export function AuthHeader() {
   const navLinkClassName =
     "h-9 px-3 py-2 text-xs md:text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap leading-tight xl:h-10 xl:px-4 xl:text-sm";
 
-  // Si no hay usuario autenticado, mostrar solo el logo sin navegación ni menú de usuario
+  // Si no hay usuario autenticado, mostrar solo el logo
   if (!user) {
     return (
       <header className="fixed left-0 top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-md">
@@ -71,10 +77,10 @@ export function AuthHeader() {
                 <Image
                   src="/LogoTT.png"
                   alt="Logo de ttArquitectos"
-                  width={220}
-                  height={35}
+                  width={180}
+                  height={30}
                   priority
-                  className="h-auto w-32 xs:w-36 sm:w-40 md:w-48 lg:w-52 xl:w-56 2xl:w-60"
+                  className="h-auto w-28 sm:w-32 md:w-36 lg:w-40"
                 />
               </Link>
             </div>
@@ -83,6 +89,31 @@ export function AuthHeader() {
       </header>
     );
   }
+
+  // Enlaces principales (siempre visibles en desktop)
+  const mainLinks = [
+    { href: "/notes", label: "Inicio" },
+    { href: "/obra", label: "Obra" },
+    { href: "/logistica-compras", label: "Logística" },
+    { href: "/pagos-presupuestos", label: "Pagos" },
+  ];
+
+  // Áreas de trabajo (en dropdown)
+  const areaLinks = [
+    { href: "/arquitectura", label: "Arquitectura" },
+    { href: "/diseno", label: "Diseño" },
+    { href: "/gerencia", label: "Gerencia" },
+    { href: "/sistemas", label: "Sistemas" },
+    { href: "/admon", label: "Administración" },
+  ];
+
+  // Enlaces de gestión (en dropdown "Más")
+  const moreLinks = [
+    { href: "/cliente", label: "Cliente" },
+    { href: "/aux-admin", label: "Aux. Admin" },
+    { href: "/direccion", label: "Dirección" },
+  ];
+
   return (
     <header className="fixed left-0 top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-md">
       <div className="mx-auto px-4 py-4 sm:px-6 sm:py-4 lg:px-8 xl:px-12 2xl:px-16">
@@ -97,10 +128,10 @@ export function AuthHeader() {
               <Image
                 src="/LogoTT.png"
                 alt="Logo de ttArquitectos"
-                width={220}
-                height={35}
+                width={180}
+                height={30}
                 priority
-                className="h-auto w-32 xs:w-36 sm:w-40 md:w-48 lg:w-52 xl:w-56 2xl:w-60"
+                className="h-auto w-28 sm:w-32 lg:w-36 xl:w-40"
               />
             </Link>
           </div>
