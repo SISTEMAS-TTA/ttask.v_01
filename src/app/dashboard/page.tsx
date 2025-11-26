@@ -10,16 +10,16 @@ export default function DashboardPage() {
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Contenido principal */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 pb-8 md:pb-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 auto-rows-max pb-4 sm:pb-0">
-          {/* Columna de Gráficos del Proyecto (Inicio) */}
-          {/* <div className="flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-[500px] sm:h-[calc(100vh-180px)]">
-            <div className="p-4 md:p-6 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Inicio</h2>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
-              <ProjectCharts />
-            </div>
-          </div> */}
+        {/* CAMBIOS REALIZADOS AQUÍ:
+            1. Quitamos '2xl:grid-cols-5' -> Para que no deje un hueco vacío al final.
+            2. Quitamos 'lg:grid-cols-3' -> Para evitar que quede una tarjeta "huerfana" abajo sola. 
+               Es mejor pasar de 2 columnas a 4 directamente.
+            3. Agregamos 'mx-auto' -> Para asegurar que el bloque se centre.
+        */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 auto-rows-max pb-4 sm:pb-0 mx-auto">
+          
+          {/* Columna de Gráficos (Comentada) */}
+          {/* ... */}
 
           {/* Columna de Notas */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden min-h-[500px] sm:h-[calc(100vh-180px)]">
