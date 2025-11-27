@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -17,11 +17,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 import useUser from "@/modules/auth/hooks/useUser";
 import {
@@ -35,13 +30,43 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import type { UserRole } from "@/modules/types";
+
+// Mapeo de roles a sus enlaces correspondientes
+const roleToAreaLink: Record<UserRole, { href: string; label: string } | null> = {
+  "Director": { href: "/direccion", label: "Dirección" },
+  "Administrador": { href: "/admon", label: "Administración" },
+  "Aux. Admin": { href: "/aux-admin", label: "Aux. Admin" },
+  "Arquitectura": { href: "/arquitectura", label: "Arquitectura" },
+  "Diseno": { href: "/diseno", label: "Diseño" },
+  "Gerencia": { href: "/gerencia", label: "Gerencia" },
+  "Obra": { href: "/obra", label: "Obra" },
+  "Sistemas": { href: "/sistemas", label: "Sistemas" },
+  "Practicante": null, // Solo ve Inicio
+  "Usuario": null, // Solo ve Inicio
+};
 
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
-  const [isAreasOpen, setIsAreasOpen] = useState(false);
   const router = useRouter();
+
+  // Generar enlaces basados en el rol del usuario (DEBE estar antes de cualquier return condicional)
+  const navLinks = useMemo(() => {
+    const links: { href: string; label: string }[] = [
+      { href: "/notes", label: "Inicio" },
+    ];
+
+    // Agregar el enlace del área correspondiente al rol del usuario
+    if (profile?.role) {
+      const areaLink = roleToAreaLink[profile.role];
+      if (areaLink) {
+        links.push(areaLink);
+      }
+    }
+
+    return links;
+  }, [profile?.role]);
 
   const initials = (name?: string, email?: string) => {
     const src = name && name.trim().length ? name : (email || "").split("@")[0];
@@ -90,30 +115,6 @@ export function AuthHeader() {
     );
   }
 
-  // Enlaces principales (siempre visibles en desktop)
-  const mainLinks = [
-    { href: "/notes", label: "Inicio" },
-    { href: "/obra", label: "Obra" },
-    { href: "/logistica-compras", label: "Logística" },
-    { href: "/pagos-presupuestos", label: "Pagos" },
-  ];
-
-  // Áreas de trabajo (en dropdown)
-  const areaLinks = [
-    { href: "/arquitectura", label: "Arquitectura" },
-    { href: "/diseno", label: "Diseño" },
-    { href: "/gerencia", label: "Gerencia" },
-    { href: "/sistemas", label: "Sistemas" },
-    { href: "/admon", label: "Administración" },
-  ];
-
-  // Enlaces de gestión (en dropdown "Más")
-  const moreLinks = [
-    { href: "/cliente", label: "Cliente" },
-    { href: "/aux-admin", label: "Aux. Admin" },
-    { href: "/direccion", label: "Dirección" },
-  ];
-
   return (
     <header className="fixed left-0 top-0 z-[1000] w-full h-16 bg-white/95 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
       <div className="h-full mx-auto px-4 sm:px-6 lg:px-8 flex items-center">
@@ -140,8 +141,8 @@ export function AuthHeader() {
           <div className="hidden lg:flex flex-1 justify-center">
             <NavigationMenu>
               <NavigationMenuList className="flex items-center gap-1">
-                {/* Enlaces principales */}
-                {mainLinks.map((link) => (
+                {/* Enlaces basados en el rol del usuario */}
+                {navLinks.map((link) => (
                   <NavigationMenuItem key={link.href}>
                     <NavigationMenuLink asChild>
                       <Link href={link.href} className={navLinkClassName}>
@@ -150,62 +151,6 @@ export function AuthHeader() {
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                 ))}
-
-                {/* Dropdown: Áreas */}
-                <NavigationMenuItem>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className={`${navLinkClassName} gap-1`}>
-                        Áreas
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" sideOffset={2} className="w-44">
-                      <DropdownMenuLabel className="text-xs text-gray-500">
-                        Áreas de trabajo
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {areaLinks.map((link) => (
-                        <DropdownMenuItem key={link.href} asChild>
-                          <Link
-                            href={link.href}
-                            className="w-full cursor-pointer"
-                          >
-                            {link.label}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </NavigationMenuItem>
-
-                {/* Dropdown: Más */}
-                <NavigationMenuItem>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className={`${navLinkClassName} gap-1`}>
-                        Más
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" sideOffset={2} className="w-44">
-                      <DropdownMenuLabel className="text-xs text-gray-500">
-                        Gestión
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {moreLinks.map((link) => (
-                        <DropdownMenuItem key={link.href} asChild>
-                          <Link
-                            href={link.href}
-                            className="w-full cursor-pointer"
-                          >
-                            {link.label}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
           </div>
@@ -287,60 +232,12 @@ export function AuthHeader() {
                   </SheetHeader>
 
                   <nav className="flex flex-col p-4 space-y-1">
-                    {/* Enlaces principales */}
-                    <div className="pb-2 border-b border-gray-100 mb-2">
+                    {/* Enlaces basados en el rol del usuario */}
+                    <div className="pb-2">
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-2 px-3">
-                        Principal
+                        Navegación
                       </p>
-                      {mainLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className="block rounded-md px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-
-                    {/* Áreas - Collapsible */}
-                    <Collapsible
-                      open={isAreasOpen}
-                      onOpenChange={setIsAreasOpen}
-                    >
-                      <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-                        <span className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 uppercase tracking-wide">
-                            Áreas
-                          </span>
-                        </span>
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform duration-200 ${
-                            isAreasOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="space-y-1 pl-3 pt-1">
-                        {areaLinks.map((link) => (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className="block rounded-md px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                            onClick={() => setIsOpen(false)}
-                          >
-                            {link.label}
-                          </Link>
-                        ))}
-                      </CollapsibleContent>
-                    </Collapsible>
-
-                    {/* Gestión */}
-                    <div className="pt-2 border-t border-gray-100 mt-2">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-2 px-3">
-                        Gestión
-                      </p>
-                      {moreLinks.map((link) => (
+                      {navLinks.map((link) => (
                         <Link
                           key={link.href}
                           href={link.href}
