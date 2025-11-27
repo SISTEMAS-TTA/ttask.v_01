@@ -1,11 +1,11 @@
 "use client";
 
 import type React from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, X, Users, User } from "lucide-react";
 import { UserRole, USER_ROLES } from "@/modules/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -23,8 +23,8 @@ interface AddTaskModalProps {
   onAddTask: (task: {
     title: string;
     project: string;
-    assigneeId?: string;
-    assigneeRole?: UserRole;
+    assigneeIds?: string[];
+    assigneeRoles?: UserRole[];
     description?: string;
   }) => Promise<void> | void;
 }
@@ -38,29 +38,46 @@ export function AddTaskModal({
   const [title, setTitle] = useState("");
   const [project, setProject] = useState("General");
   const [content, setContent] = useState("");
-  const [assigneeId, setAssigneeId] = useState("");
-  const [assigneeRole, setAssigneeRole] = useState<UserRole | null>(null);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assigneeRoles, setAssigneeRoles] = useState<UserRole[]>([]);
   const [users, setUsers] = useState<UserWithId[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showSelector, setShowSelector] = useState(false);
   const [expandedRole, setExpandedRole] = useState<UserRole | null>(null);
 
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  // Helper para obtener nombre de usuario por ID
+  const getUserName = (userId: string) => {
+    const u = users.find((user) => user.id === userId);
+    return u?.fullName || u?.email || userId;
+  };
 
-  // Cerrar dropdown al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Toggle usuario individual
+  const toggleUser = (userId: string) => {
+    setAssigneeIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  // Toggle área completa
+  const toggleRole = (role: UserRole) => {
+    setAssigneeRoles((prev) =>
+      prev.includes(role)
+        ? prev.filter((r) => r !== role)
+        : [...prev, role]
+    );
+  };
+
+  // Remover usuario de la selección
+  const removeUser = (userId: string) => {
+    setAssigneeIds((prev) => prev.filter((id) => id !== userId));
+  };
+
+  // Remover área de la selección
+  const removeRole = (role: UserRole) => {
+    setAssigneeRoles((prev) => prev.filter((r) => r !== role));
+  };
 
   // Cargar usuarios
   useEffect(() => {
@@ -89,15 +106,12 @@ export function AddTaskModal({
     USER_ROLES.forEach((r) => (groups[r] = []));
 
     users.forEach((u) => {
-      // Intentar obtener el rol del usuario, con múltiples fallbacks
       const userData = u as UserWithId & { role?: string; userRole?: string };
       const role = userData.role || userData.userRole || "Usuario";
 
-      // Verificar si el rol existe en USER_ROLES
       if (USER_ROLES.includes(role as UserRole)) {
         groups[role as UserRole].push(u);
       } else {
-        // Si no existe, agregar a "Usuario" por defecto
         groups["Usuario"].push(u);
       }
     });
@@ -105,28 +119,32 @@ export function AddTaskModal({
     return groups;
   }, [users]);
 
+  // Contar selecciones
+  const totalSelections = assigneeIds.length + assigneeRoles.length;
+
   // Guardar tarea
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (title.trim() && (assigneeId || assigneeRole)) {
+    const hasAssignees = assigneeIds.length > 0 || assigneeRoles.length > 0;
+    
+    if (title.trim() && hasAssignees) {
       const taskData: {
         title: string;
         project: string;
         description?: string;
-        assigneeId?: string;
-        assigneeRole?: UserRole;
+        assigneeIds?: string[];
+        assigneeRoles?: UserRole[];
       } = {
         title: title.trim(),
         project,
         description: content.trim() || undefined,
       };
 
-      // Solo agregar los campos que tienen valor
-      if (assigneeId) {
-        taskData.assigneeId = assigneeId;
+      if (assigneeIds.length > 0) {
+        taskData.assigneeIds = assigneeIds;
       }
-      if (assigneeRole) {
-        taskData.assigneeRole = assigneeRole;
+      if (assigneeRoles.length > 0) {
+        taskData.assigneeRoles = assigneeRoles;
       }
 
       onAddTask(taskData);
@@ -134,16 +152,16 @@ export function AddTaskModal({
       setTitle("");
       setContent("");
       setProject("General");
-      setAssigneeId("");
-      setAssigneeRole(null);
-      setSearchTerm("");
+      setAssigneeIds([]);
+      setAssigneeRoles([]);
+      setShowSelector(false);
       onClose();
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Agregar Nueva Tarea</DialogTitle>
         </DialogHeader>
@@ -171,136 +189,169 @@ export function AddTaskModal({
           </div>
 
           {/* Asignar */}
-          <div className="space-y-2 relative" ref={dropdownRef}>
+          <div className="space-y-2">
             <Label>Asignar a</Label>
+            
+            {/* Botón tipo Select */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-between font-normal"
+              onClick={() => setShowSelector(!showSelector)}
+            >
+              <span className="text-gray-500">
+                {totalSelections === 0
+                  ? "Seleccionar destinatarios..."
+                  : `${totalSelections} seleccionado${totalSelections > 1 ? "s" : ""}`}
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${showSelector ? "rotate-180" : ""}`} />
+            </Button>
 
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></span>
-              <Input
-                placeholder="Buscar usuario o área..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowDropdown(true);
-                }}
-                onFocus={() => setShowDropdown(true)}
-                className="pl-10"
-              />
-            </div>
+            {/* Chips de selección */}
+            {(assigneeIds.length > 0 || assigneeRoles.length > 0) && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {/* Chips de áreas */}
+                {assigneeRoles.map((role) => (
+                  <span
+                    key={`role-${role}`}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md"
+                  >
+                    <Users className="h-3 w-3" />
+                    <span>{role}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeRole(role)}
+                      className="hover:bg-blue-200 rounded p-0.5 ml-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                {/* Chips de usuarios */}
+                {assigneeIds.map((userId) => (
+                  <span
+                    key={`user-${userId}`}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-md"
+                  >
+                    <User className="h-3 w-3" />
+                    <span>{getUserName(userId)}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeUser(userId)}
+                      className="hover:bg-green-200 rounded p-0.5 ml-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
 
-            {/* Dropdown */}
-            {showDropdown && (
-              <div className="absolute z-50 w-full max-h-72 overflow-y-auto bg-white border border-gray-300 rounded-md shadow-lg mt-1">
-                {/* Si hay texto, buscamos usuarios */}
-                {searchTerm &&
-                  users
-                    .filter((u) =>
-                      (u.fullName || u.email)
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase())
-                    )
-                    .map((u) => (
-                      <div
-                        key={u.id}
-                        className="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100"
-                        onClick={() => {
-                          setAssigneeId(u.id);
-                          setAssigneeRole(null);
-                          setSearchTerm(u.fullName || u.email);
-                          setShowDropdown(false);
-                        }}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <span className="text-gray-500"></span>
-                          <span>{u.fullName || u.email}</span>
-                        </div>
-                        {assigneeId === u.id && (
-                          <Check className="h-4 w-4 text-green-600" />
-                        )}
-                      </div>
-                    ))}
-
-                {/* Si NO hay texto, mostramos checklist por área */}
-                {!searchTerm &&
-                  USER_ROLES.map((role) => (
-                    <div key={role} className="border-b last:border-none">
-                      <div
-                        className="p-2 flex justify-between items-center cursor-pointer hover:bg-gray-50"
-                        onClick={() =>
-                          setExpandedRole((prev) =>
-                            prev === role ? null : role
-                          )
-                        }
-                      >
-                        <div className="flex items-center space-x-2">
-                          <span className="text-blue-500"></span>
-                          <span className="font-medium text-sm">{role}</span>
-                          <span className="text-xs text-gray-500">
-                            ({usersByRole[role]?.length || 0})
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {assigneeRole === role && (
-                            <Check className="h-4 w-4 text-green-600" />
-                          )}
-                          <ChevronDown
-                            className={`h-4 w-4 transition-transform ${
-                              expandedRole === role ? "rotate-180" : ""
-                            }`}
-                          />
-                        </div>
-                      </div>
-
-                      {expandedRole === role && (
-                        <div className="ml-4 pb-2 space-y-1">
-                          {/* Opción para seleccionar toda el área */}
+            {/* Panel de selección (dentro del flujo, no flotante) */}
+            {showSelector && (
+              <div className="border border-gray-200 rounded-md mt-2 bg-gray-50">
+                <div className="max-h-48 overflow-y-auto">
+                  {loadingUsers ? (
+                    <div className="p-4 text-center text-gray-500 text-sm">
+                      Cargando usuarios...
+                    </div>
+                  ) : (
+                    USER_ROLES.map((role) => {
+                      const usersInRole = usersByRole[role] || [];
+                      if (usersInRole.length === 0) return null;
+                      
+                      return (
+                        <div key={role} className="border-b border-gray-200 last:border-none">
+                          {/* Header del área */}
                           <div
-                            className="flex items-center space-x-2 p-1 cursor-pointer hover:bg-blue-50 rounded border-b border-gray-200 mb-2"
-                            onClick={() => {
-                              setAssigneeRole(role);
-                              setAssigneeId("");
-                              setSearchTerm(`Área: ${role}`);
-                              setShowDropdown(false);
-                            }}
+                            className="p-2 flex justify-between items-center cursor-pointer hover:bg-gray-100 bg-white"
+                            onClick={() =>
+                              setExpandedRole((prev) => (prev === role ? null : role))
+                            }
                           >
-                            <input
-                              type="radio"
-                              name="assignee"
-                              checked={assigneeRole === role}
-                              readOnly
-                            />
-                            <span className="text-sm font-medium text-blue-600">
-                              ✓ Toda el área de {role}
-                            </span>
-                          </div>
-
-                          {/* Lista de usuarios individuales */}
-                          {usersByRole[role]?.map((usr) => (
-                            <div
-                              key={usr.id}
-                              className="flex items-center space-x-2 p-1 cursor-pointer hover:bg-green-50 rounded"
-                              onClick={() => {
-                                setAssigneeId(usr.id);
-                                setAssigneeRole(null);
-                                setSearchTerm(usr.fullName || usr.email);
-                                setShowDropdown(false);
-                              }}
-                            >
-                              <input
-                                type="radio"
-                                name="assignee"
-                                checked={assigneeId === usr.id}
-                                readOnly
-                              />
-                              <span className="text-sm">
-                                {usr.fullName || usr.email}
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4 text-gray-500" />
+                              <span className="font-medium text-sm">{role}</span>
+                              <span className="text-xs text-gray-400">
+                                ({usersInRole.length})
                               </span>
                             </div>
-                          ))}
+                            <div className="flex items-center gap-2">
+                              {assigneeRoles.includes(role) && (
+                                <Check className="h-4 w-4 text-green-600" />
+                              )}
+                              <ChevronDown
+                                className={`h-4 w-4 text-gray-400 transition-transform ${
+                                  expandedRole === role ? "rotate-180" : ""
+                                }`}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Contenido expandido */}
+                          {expandedRole === role && (
+                            <div className="bg-white border-t border-gray-100">
+                              {/* Seleccionar toda el área */}
+                              <div
+                                className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-blue-50 border-b border-gray-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleRole(role);
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={assigneeRoles.includes(role)}
+                                  readOnly
+                                  className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                                />
+                                <span className="text-sm font-medium text-blue-700">
+                                  Toda el área
+                                </span>
+                              </div>
+
+                              {/* Lista de usuarios */}
+                              {usersInRole.map((usr) => (
+                                <div
+                                  key={usr.id}
+                                  className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-green-50 pl-6"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleUser(usr.id);
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={assigneeIds.includes(usr.id)}
+                                    readOnly
+                                    className="h-4 w-4 rounded border-gray-300 text-green-600"
+                                  />
+                                  <User className="h-3 w-3 text-gray-400" />
+                                  <span className="text-sm text-gray-700">
+                                    {usr.fullName || usr.email}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      );
+                    })
+                  )}
+                </div>
+                
+                {/* Botón para cerrar el selector */}
+                <div className="p-2 border-t border-gray-200 bg-white">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowSelector(false)}
+                  >
+                    Cerrar
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -311,7 +362,7 @@ export function AddTaskModal({
             </Button>
             <Button
               type="submit"
-              disabled={!title.trim() || (!assigneeId && !assigneeRole)}
+              disabled={!title.trim() || (assigneeIds.length === 0 && assigneeRoles.length === 0)}
             >
               Agregar Tarea
             </Button>

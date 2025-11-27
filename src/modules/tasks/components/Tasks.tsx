@@ -133,13 +133,13 @@ export function TasksColumn() {
   const addTask = async (task: {
     title: string;
     project: string;
-    assigneeId?: string;
-    assigneeRole?: UserRole;
+    assigneeIds?: string[];
+    assigneeRoles?: UserRole[];
     description?: string;
   }) => {
     if (!user) return;
 
-    // Construir el payload base
+    // Construir el payload con soporte para múltiples destinatarios
     const payload: NewTaskInput = {
       title: task.title,
       project: task.project,
@@ -147,17 +147,9 @@ export function TasksColumn() {
       viewed: false,
       completed: false,
       favorite: false,
-      // Inicializamos ambos como undefined
-      assigneeId: undefined,
-      assigneeRole: undefined,
+      assigneeIds: task.assigneeIds,
+      assigneeRoles: task.assigneeRoles,
     };
-
-    // Lógica condicional estricta
-    if (task.assigneeId) {
-      payload.assigneeId = task.assigneeId;
-    } else if (task.assigneeRole) {
-      payload.assigneeRole = task.assigneeRole;
-    }
 
     try {
       await createTask(user.uid, payload);

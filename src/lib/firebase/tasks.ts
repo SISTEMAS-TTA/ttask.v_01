@@ -46,8 +46,8 @@ export interface NewTaskInput {
   title: string;
   project: string;
   description: string;
-  assigneeId?: string; // string | undefined
-  assigneeRole?: UserRole;
+  assigneeIds?: string[]; // Array de IDs de usuarios
+  assigneeRoles?: UserRole[]; // Array de roles/áreas
   viewed: boolean;
   completed: boolean;
   favorite: boolean;
@@ -182,99 +182,101 @@ export const subscribeToTasksAssignedTo = (
   );
 };
 
-// Modificado para enviar a email
+// Modificado para enviar a email y soportar múltiples destinatarios
 export const createTask = async (
   assignedByUserId: string,
   input: NewTaskInput
 ) => {
   const ref = collection(db, TASKS_COLLECTION);
+  const usersRef = collection(db, "users");
 
-  // --- CASO 1: Asignación por Área (Rol) ---
-  if (input.assigneeRole && !input.assigneeId) {
+  // Set para evitar duplicados (un usuario podría estar en múltiples áreas seleccionadas)
+  const usersToNotify = new Map<string, { email: string; fullName: string }>();
+  const tasksToCreate: Array<{ assigneeId: string; email?: string; fullName?: string }> = [];
+
+  // --- Recolectar usuarios de las áreas seleccionadas ---
+  if (input.assigneeRoles && input.assigneeRoles.length > 0) {
     try {
-      // Buscar todos los usuarios con ese rol
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("role", "==", input.assigneeRole));
-      const snapshot = await getDocs(q);
+      for (const role of input.assigneeRoles) {
+        const q = query(usersRef, where("role", "==", role));
+        const snapshot = await getDocs(q);
 
-      if (snapshot.empty) {
-        console.warn(
-          `No se encontraron usuarios para el rol: ${input.assigneeRole}`
-        );
-        return;
+        snapshot.docs.forEach((userDoc) => {
+          const userId = userDoc.id;
+          const userData = userDoc.data();
+          if (!usersToNotify.has(userId)) {
+            usersToNotify.set(userId, {
+              email: userData.email || "",
+              fullName: userData.fullName || "Usuario",
+            });
+            tasksToCreate.push({
+              assigneeId: userId,
+              email: userData.email,
+              fullName: userData.fullName || "Usuario",
+            });
+          }
+        });
       }
-
-      const batchPromises = snapshot.docs.map(async (userDoc) => {
-        const userId = userDoc.id;
-        const userData = userDoc.data();
-
-        const newTaskData: Record<string, unknown> = {
-          title: input.title,
-          project: input.project,
-          description: input.description,
-          viewed: input.viewed,
-          completed: input.completed,
-          favorite: input.favorite,
-          assignedBy: assignedByUserId,
-          deleted: false,
-          createdAt: Timestamp.now(),
-        };
-
-        // Solo agregar assigneeId si existe
-        if (input.assigneeId) {
-          newTaskData.assigneeId = input.assigneeId;
-        }
-
-        // Crear la tarea individual
-        await addDoc(ref, newTaskData);
-
-        // Enviar correo individual
-        if (userData.email) {
-          // CORRECCIÓN: Añadimos || "Usuario" por si fullName es undefined
-          await sendEmailNotification(
-            userData.email,
-            userData.fullName || "Usuario",
-            input.title
-          );
-        }
-      });
-
-      await Promise.all(batchPromises);
-      return;
     } catch (error) {
-      console.error("Error al asignar tarea masiva por rol:", error);
+      console.error("Error al obtener usuarios por rol:", error);
       throw error;
     }
   }
 
-  // --- CASO 2: Asignación Individual ---
-  const newTaskData = {
-    ...input,
-    // Aseguramos que assigneeId sea string vacío si viene undefined (para evitar errores en DB)
-    assigneeId: input.assigneeId || "",
-    assignedBy: assignedByUserId,
-    deleted: false,
-    createdAt: Timestamp.now(),
-  };
+  // --- Recolectar usuarios individuales seleccionados ---
+  if (input.assigneeIds && input.assigneeIds.length > 0) {
+    for (const userId of input.assigneeIds) {
+      if (!usersToNotify.has(userId)) {
+        const userProfile = await getUserProfileById(userId);
+        if (userProfile) {
+          usersToNotify.set(userId, {
+            email: userProfile.email || "",
+            fullName: userProfile.fullName || "Usuario",
+          });
+          tasksToCreate.push({
+            assigneeId: userId,
+            email: userProfile.email,
+            fullName: userProfile.fullName || "Usuario",
+          });
+        }
+      }
+    }
+  }
 
-  await addDoc(ref, newTaskData);
+  // --- Crear las tareas y enviar notificaciones ---
+  if (tasksToCreate.length === 0) {
+    console.warn("No se encontraron destinatarios para la tarea");
+    return;
+  }
 
-  // Notificación por Correo
-  if (input.assigneeId) {
-    // CORRECCIÓN: Forzamos el tipo 'as string' porque ya validamos en el if que existe
-    const assigneeProfile = await getUserProfileById(
-      input.assigneeId as string
-    );
+  const batchPromises = tasksToCreate.map(async (target) => {
+    const newTaskData: Record<string, unknown> = {
+      title: input.title,
+      project: input.project,
+      description: input.description,
+      viewed: input.viewed,
+      completed: input.completed,
+      favorite: input.favorite,
+      assignedBy: assignedByUserId,
+      assigneeId: target.assigneeId,
+      deleted: false,
+      createdAt: Timestamp.now(),
+    };
 
-    if (assigneeProfile && assigneeProfile.email) {
-      // CORRECCIÓN: Añadimos || "Usuario" para manejar el fullName opcional
+    // Crear la tarea individual
+    await addDoc(ref, newTaskData);
+
+    // Enviar correo individual
+    if (target.email) {
       await sendEmailNotification(
-        assigneeProfile.email,
-        assigneeProfile.fullName || "Usuario",
+        target.email,
+        target.fullName || "Usuario",
         input.title
       );
     }
-  }
+  });
+
+  await Promise.all(batchPromises);
 };
 
 // Función auxiliar para no repetir código de email
