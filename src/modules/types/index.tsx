@@ -28,7 +28,8 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  assigneeId: string;
+  assigneeId?: string; // Ahora opcional
+  assigneeRole?: UserRole; // Nuevo campo para áreas
   deleted: boolean;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
@@ -46,6 +47,19 @@ export type UserRole =
   | "Sistemas"
   | "Practicante"
   | "Usuario";
+
+export const USER_ROLES: UserRole[] = [
+  "Director",
+  "Administrador",
+  "Aux. Admin",
+  "Arquitectura",
+  "Diseno",
+  "Gerencia",
+  "Obra",
+  "Sistemas",
+  "Practicante",
+  "Usuario",
+];
 
 export interface Note {
   id: string;

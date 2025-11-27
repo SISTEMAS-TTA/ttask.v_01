@@ -10,7 +10,6 @@ import {
   Star,
   ChevronDown,
   ChevronRight,
-  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -81,6 +80,7 @@ export function NotesColumn() {
   >({});
 
   useEffect(() => {
+    // [CAMBIO MANTENIDO]: Cargar colores persistidos en sessionStorage al inicio.
     setLocalNoteColors(loadNoteColors());
 
     if (userLoading) {
@@ -125,6 +125,8 @@ export function NotesColumn() {
     if (!user) return;
 
     try {
+      // [CORRECCIÓN IMPLICADA]: Si createNote ahora guarda el campo 'color' en Firebase,
+      // la nota se creará con el color correcto (no el amarillo por defecto).
       await createNote(user.uid, newNote);
     } catch (error) {
       console.error("Error al crear la nota", error);
@@ -153,6 +155,8 @@ export function NotesColumn() {
     updates: Partial<Omit<Note, "id" | "userId" | "createdAt">>
   ) => {
     try {
+      // Importante: updateNote en firebase NO guarda el campo 'color'.
+      // Solo guarda título/contenido, etc. El color se maneja localmente.
       await updateNote(id, updates);
     } catch (err) {
       console.error("Error al guardar edición de la nota", err);
@@ -161,6 +165,8 @@ export function NotesColumn() {
   };
 
   const handleColorChange = (noteId: string, newColor: string) => {
+    // [LÓGICA CENTRAL]: Al cambiar el color en el modal de edición,
+    // solo se actualiza el sessionStorage y el estado local. NO SE TOCA FIREBASE.
     saveNoteColor(noteId, newColor);
     setLocalNoteColors((prev) => ({
       ...prev,
@@ -214,6 +220,31 @@ export function NotesColumn() {
       : note.createdAt.toDate();
   };
 
+  // Agrupar notas activas por mes
+  const groupedActiveNotes = useMemo(() => {
+    const groups = new Map<string, Note[]>();
+
+    activeNotes.forEach((note) => {
+      const date = getNoteDate(note);
+      const monthYear = formatMonthYear(date);
+
+      if (!groups.has(monthYear)) {
+        groups.set(monthYear, []);
+      }
+      groups.get(monthYear)!.push(note);
+    });
+
+    // Convertir a array y ordenar por fecha (más reciente primero)
+    return Array.from(groups.entries())
+      .map(([monthYear, notes]) => ({
+        monthYear,
+        notes,
+        // Usar la fecha más reciente del grupo para ordenar
+        sortDate: Math.max(...notes.map((note) => getNoteDate(note).getTime())),
+      }))
+      .sort((a, b) => b.sortDate - a.sortDate);
+  }, [activeNotes]);
+
   // Agrupar notas completadas por mes
   const groupedCompletedNotes = useMemo(() => {
     const groups = new Map<string, Note[]>();
@@ -238,22 +269,29 @@ export function NotesColumn() {
       .sort((a, b) => b.sortDate - a.sortDate);
   }, [completedNotes]);
 
-  // Estados para controlar qué grupos de finalizadas están abiertos
-  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
+  // Estados para controlar qué grupos están abiertos
+  const [openActiveGroups, setOpenActiveGroups] = useState<Set<string>>(
     new Set()
   );
 
-  const toggleCompletedGroup = (monthYear: string) => {
-    setOpenCompletedGroups((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(monthYear)) {
-        newSet.delete(monthYear);
-      } else {
-        newSet.add(monthYear);
-      }
-      return newSet;
-    });
-  };
+  // Al cargar, abrir el mes más reciente por defecto
+  useEffect(() => {
+    if (groupedActiveNotes.length > 0) {
+      setOpenActiveGroups(new Set([groupedActiveNotes[0].monthYear]));
+    }
+  }, [groupedActiveNotes]);
+
+  // const toggleActiveGroup = (monthYear: string) => {
+  //   setOpenActiveGroups((prev) => {
+  //     const newSet = new Set(prev);
+  //     if (newSet.has(monthYear)) {
+  //       newSet.delete(monthYear);
+  //     } else {
+  //       newSet.add(monthYear);
+  //     }
+  //     return newSet;
+  //   });
+  // };
 
   // Componente para renderizar una nota individual
   const NoteCard = ({
@@ -414,6 +452,7 @@ export function NotesColumn() {
     const toIndex = ids.indexOf(overId);
     if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return;
 
+    // Determinar orders base: si falta alguno, inicializar con huecos
     const hasMissingOrder = sourceList.some((n) => typeof n.order !== "number");
 
     try {
@@ -421,6 +460,7 @@ export function NotesColumn() {
         await initializeNotesOrder(ids);
       }
 
+      // Construir un mapa de order actual (usando valores existentes o el plan de inicialización)
       const step = 1024;
       const baseOrderById = new Map<string, number>();
       sourceList.forEach((n, i) => {
@@ -429,10 +469,12 @@ export function NotesColumn() {
         baseOrderById.set(n.id, val);
       });
 
+      // Reordenar localmente ids
       const newIds = ids.slice();
       const [moved] = newIds.splice(fromIndex, 1);
       newIds.splice(toIndex, 0, moved);
 
+      // Calcular nuevo order para la nota movida usando vecinos
       const prevId = newIds[toIndex - 1] ?? null;
       const nextId = newIds[toIndex + 1] ?? null;
       const prevOrder = prevId ? baseOrderById.get(prevId) ?? null : null;
@@ -440,20 +482,24 @@ export function NotesColumn() {
 
       let newOrder: number;
       if (prevOrder != null && nextOrder != null) {
+        // Si no hay espacio entre vecinos, re-normalizar la lista con huecos
         if (Math.floor(nextOrder) - Math.floor(prevOrder) <= 1) {
           await initializeNotesOrder(newIds);
           return;
         }
         newOrder = Math.floor((prevOrder + nextOrder) / 2);
       } else if (prevOrder == null && nextOrder != null) {
+        // Insertar al inicio: crear espacio antes del primero
         newOrder = Math.floor(nextOrder / 2);
         if (newOrder === nextOrder) {
           await initializeNotesOrder(newIds);
           return;
         }
       } else if (prevOrder != null && nextOrder == null) {
+        // Insertar al final: empujar más allá del último
         newOrder = Math.floor(prevOrder + step);
       } else {
+        // Lista de un solo elemento
         newOrder = step;
       }
 
@@ -489,68 +535,57 @@ export function NotesColumn() {
           </div>
         ) : (
           <>
-            {/* Notas activas - Sin separadores, lista continua */}
-            {activeNotes.length > 0 && (
-              <div className="space-y-2">
-                {activeNotes.map((note) => (
-                  <NoteCard key={note.id} note={note} />
-                ))}
+            {/* Notas activas agrupadas por mes (sin dropdown, solo título y lista) */}
+            {groupedActiveNotes.map(({ monthYear, notes }) => (
+              <div key={`active-${monthYear}`}>
+                <div className="flex items-center my-4">
+                  <div className="flex-1 border-t border-blue-200" />
+                  <span className="mx-2 text-xs font-semibold text-blue-600 uppercase">
+                    {monthYear}
+                  </span>
+                  <div className="flex-1 border-t border-blue-200" />
+                </div>
+                <div className="space-y-2">
+                  {notes.map((note) => (
+                    <NoteCard key={note.id} note={note} />
+                  ))}
+                </div>
               </div>
-            )}
-
-            {/* Separador entre activas y finalizadas */}
-            {activeNotes.length > 0 && completedNotes.length > 0 && (
-              <div className="flex items-center my-6">
-                <div className="flex-1 border-t-2 border-gray-300" />
-                <span className="mx-3 text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
-                  <CircleCheck className="h-3 w-3" />
-                  Finalizadas
-                </span>
-                <div className="flex-1 border-t-2 border-gray-300" />
-              </div>
-            )}
-
-            {/* Notas finalizadas agrupadas por mes con filtro colapsable */}
-            {groupedCompletedNotes.map(({ monthYear, notes }) => (
-              <Collapsible
-                key={`completed-${monthYear}`}
-                open={openCompletedGroups.has(monthYear)}
-                onOpenChange={() => toggleCompletedGroup(monthYear)}
-              >
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center my-3 cursor-pointer hover:opacity-80 transition-opacity">
-                    <div className="flex-1 border-t border-yellow-300" />
-                    <span className="mx-2 px-2 py-1 text-xs font-semibold text-gray-600 uppercase bg-yellow-200 rounded-full flex items-center gap-1.5">
-                      <Filter className="h-3 w-3" />
-                      {monthYear}
-                      <span className="bg-gray-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1">
-                        {notes.length}
-                      </span>
-                      {openCompletedGroups.has(monthYear) ? (
-                        <ChevronDown className="h-3 w-3" />
-                      ) : (
-                        <ChevronRight className="h-3 w-3" />
-                      )}
-                    </span>
-                    <div className="flex-1 border-t border-yellow-300" />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="space-y-2 mt-2">
-                    {notes.map((note) => (
-                      <NoteCard key={note.id} note={note} isCompleted />
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
             ))}
 
+            {/* Completed Notes: solo línea divisoria con mes, sin dropdown */}
+            {(() => {
+              // Agrupar finalizadas por mes, pero solo para mostrar la línea divisoria
+              let lastMonth: string | null = null;
+              return completedNotes.map((note) => {
+                const date = getNoteDate(note);
+                const monthYear = formatMonthYear(date);
+                const showDivider = monthYear !== lastMonth;
+                lastMonth = monthYear;
+                return (
+                  <div key={note.id}>
+                    {showDivider && (
+                      <div className="flex items-center my-4">
+                        <div className="flex-1 border-t border-yellow-200" />
+                        <span className="mx-2 text-xs font-semibold text-gray-500 uppercase">
+                          {monthYear}
+                        </span>
+                        <div className="flex-1 border-t border-yellow-200" />
+                      </div>
+                    )}
+                    <NoteCard note={note} isCompleted />
+                  </div>
+                );
+              });
+            })()}
+
             {/* Empty State */}
-            {activeNotes.length === 0 && completedNotes.length === 0 && (
-              <p className="text-sm text-gray-500 text-center">
-                Aún no tienes notas guardadas.
-              </p>
-            )}
+            {groupedActiveNotes.length === 0 &&
+              groupedCompletedNotes.length === 0 && (
+                <p className="text-sm text-gray-500 text-center">
+                  Aún no tienes notas guardadas.
+                </p>
+              )}
           </>
         )}
       </div>
@@ -565,8 +600,11 @@ export function NotesColumn() {
         onClose={() => setEditingNote(null)}
         note={editingNote}
         onSave={handleSaveEdit}
+        // [CORRECCIÓN SINTÁCTICA]: Se mantiene para permitir la actualización de sessionStorage.
         onColorChange={handleColorChange}
         currentNoteColor={
+          // [CORRECCIÓN CLAVE]: Pasa el color actual (sessionStorage > Firebase) al modal
+          // para que el selector sepa qué color está "seleccionado".
           editingNote
             ? localNoteColors[editingNote.id] || editingNote.color
             : "bg-yellow-200"
