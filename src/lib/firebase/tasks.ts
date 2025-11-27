@@ -208,14 +208,22 @@ export const createTask = async (
         const userId = userDoc.id;
         const userData = userDoc.data();
 
-        const newTaskData = {
-          ...input,
-          assigneeId: userId, // Aquí asignamos el ID específico
-          assigneeRole: null, // Limpiamos el rol
+        const newTaskData: Record<string, unknown> = {
+          title: input.title,
+          project: input.project,
+          description: input.description,
+          viewed: input.viewed,
+          completed: input.completed,
+          favorite: input.favorite,
           assignedBy: assignedByUserId,
           deleted: false,
           createdAt: Timestamp.now(),
         };
+
+        // Solo agregar assigneeId si existe
+        if (input.assigneeId) {
+          newTaskData.assigneeId = input.assigneeId;
+        }
 
         // Crear la tarea individual
         await addDoc(ref, newTaskData);

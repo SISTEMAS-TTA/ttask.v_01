@@ -11,6 +11,8 @@
     "deploy-rules": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.0",
     "@getbrevo/brevo": "^3.0.1",
     "@radix-ui/react-alert-dialog": "^1.1.10",
     "@radix-ui/react-avatar": "^1.1.10",

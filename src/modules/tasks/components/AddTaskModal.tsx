@@ -90,7 +90,8 @@ export function AddTaskModal({
 
     users.forEach((u) => {
       // Intentar obtener el rol del usuario, con múltiples fallbacks
-      const role = (u as any).role || (u as any).userRole || "Usuario";
+      const userData = u as UserWithId & { role?: string; userRole?: string };
+      const role = userData.role || userData.userRole || "Usuario";
 
       // Verificar si el rol existe en USER_ROLES
       if (USER_ROLES.includes(role as UserRole)) {
@@ -174,9 +175,7 @@ export function AddTaskModal({
             <Label>Asignar a</Label>
 
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                🔍
-              </span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></span>
               <Input
                 placeholder="Buscar usuario o área..."
                 value={searchTerm}
@@ -212,7 +211,7 @@ export function AddTaskModal({
                         }}
                       >
                         <div className="flex items-center space-x-2">
-                          <span className="text-gray-500">👤</span>
+                          <span className="text-gray-500"></span>
                           <span>{u.fullName || u.email}</span>
                         </div>
                         {assigneeId === u.id && (
@@ -234,7 +233,7 @@ export function AddTaskModal({
                         }
                       >
                         <div className="flex items-center space-x-2">
-                          <span className="text-blue-500">👥</span>
+                          <span className="text-blue-500"></span>
                           <span className="font-medium text-sm">{role}</span>
                           <span className="text-xs text-gray-500">
                             ({usersByRole[role]?.length || 0})
