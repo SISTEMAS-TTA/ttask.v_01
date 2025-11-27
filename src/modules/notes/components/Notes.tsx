@@ -8,9 +8,16 @@ import {
   Loader2,
   Plus,
   Star,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { AddNoteModal } from "@/modules/notes/components/AddNoteModal";
 import { EditNoteModal } from "@/modules/notes/components/EditNoteModal";
 import useUser from "@/modules/auth/hooks/useUser";
@@ -213,31 +220,6 @@ export function NotesColumn() {
       : note.createdAt.toDate();
   };
 
-  // Agrupar notas activas por mes
-  const groupedActiveNotes = useMemo(() => {
-    const groups = new Map<string, Note[]>();
-
-    activeNotes.forEach((note) => {
-      const date = getNoteDate(note);
-      const monthYear = formatMonthYear(date);
-
-      if (!groups.has(monthYear)) {
-        groups.set(monthYear, []);
-      }
-      groups.get(monthYear)!.push(note);
-    });
-
-    // Convertir a array y ordenar por fecha (más reciente primero)
-    return Array.from(groups.entries())
-      .map(([monthYear, notes]) => ({
-        monthYear,
-        notes,
-        // Usar la fecha más reciente del grupo para ordenar
-        sortDate: Math.max(...notes.map((note) => getNoteDate(note).getTime())),
-      }))
-      .sort((a, b) => b.sortDate - a.sortDate);
-  }, [activeNotes]);
-
   // Agrupar notas completadas por mes
   const groupedCompletedNotes = useMemo(() => {
     const groups = new Map<string, Note[]>();
@@ -262,6 +244,23 @@ export function NotesColumn() {
       .sort((a, b) => b.sortDate - a.sortDate);
   }, [completedNotes]);
 
+  // Estados para controlar qué grupos de notas finalizadas están abiertos
+  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Toggle para expandir/colapsar grupos de notas finalizadas
+  const toggleCompletedGroup = (monthYear: string) => {
+    setOpenCompletedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(monthYear)) {
+        newSet.delete(monthYear);
+      } else {
+        newSet.add(monthYear);
+      }
+      return newSet;
+    });
+  };
 
   // const toggleActiveGroup = (monthYear: string) => {
   //   setOpenActiveGroups((prev) => {
@@ -517,53 +516,55 @@ export function NotesColumn() {
           </div>
         ) : (
           <>
-            {/* Notas activas agrupadas por mes (sin dropdown, solo título y lista) */}
-            {groupedActiveNotes.map(({ monthYear, notes }) => (
-              <div key={`active-${monthYear}`}>
-                <div className="flex items-center my-4">
-                  <div className="flex-1 border-t border-blue-200" />
-                  <span className="mx-2 text-xs font-semibold text-blue-600 uppercase">
-                    {monthYear}
-                  </span>
-                  <div className="flex-1 border-t border-blue-200" />
-                </div>
-                <div className="space-y-2">
-                  {notes.map((note) => (
-                    <NoteCard key={note.id} note={note} />
-                  ))}
-                </div>
-              </div>
+            {/* Notas activas (sin separación por mes) */}
+            {activeNotes.map((note) => (
+              <NoteCard key={note.id} note={note} />
             ))}
 
-            {/* Completed Notes: solo línea divisoria con mes, sin dropdown */}
-            {(() => {
-              // Agrupar finalizadas por mes, pero solo para mostrar la línea divisoria
-              let lastMonth: string | null = null;
-              return completedNotes.map((note) => {
-                const date = getNoteDate(note);
-                const monthYear = formatMonthYear(date);
-                const showDivider = monthYear !== lastMonth;
-                lastMonth = monthYear;
-                return (
-                  <div key={note.id}>
-                    {showDivider && (
-                      <div className="flex items-center my-4">
-                        <div className="flex-1 border-t border-yellow-200" />
-                        <span className="mx-2 text-xs font-semibold text-gray-500 uppercase">
-                          {monthYear}
-                        </span>
-                        <div className="flex-1 border-t border-yellow-200" />
-                      </div>
-                    )}
-                    <NoteCard note={note} isCompleted />
-                  </div>
-                );
-              });
-            })()}
+            {/* Notas finalizadas agrupadas por mes en desplegables */}
+            {groupedCompletedNotes.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex-1 border-t-2 border-gray-300" />
+                  <span className="mx-3 text-sm font-bold text-gray-600 uppercase">
+                    Finalizadas
+                  </span>
+                  <div className="flex-1 border-t-2 border-gray-300" />
+                </div>
+
+                {groupedCompletedNotes.map(({ monthYear, notes }) => (
+                  <Collapsible
+                    key={`completed-${monthYear}`}
+                    open={openCompletedGroups.has(monthYear)}
+                    onOpenChange={() => toggleCompletedGroup(monthYear)}
+                    className="mb-3"
+                  >
+                    <CollapsibleTrigger className="flex items-center w-full p-2 rounded-md hover:bg-yellow-200/50 transition-colors">
+                      {openCompletedGroups.has(monthYear) ? (
+                        <ChevronDown className="h-4 w-4 text-gray-500 mr-2" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-500 mr-2" />
+                      )}
+                      <span className="text-sm font-semibold text-gray-600">
+                        {monthYear}
+                      </span>
+                      <span className="ml-2 text-xs text-gray-400">
+                        ({notes.length})
+                      </span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-2 mt-2 pl-6">
+                      {notes.map((note) => (
+                        <NoteCard key={note.id} note={note} isCompleted />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
+            )}
 
             {/* Empty State */}
-            {groupedActiveNotes.length === 0 &&
-              groupedCompletedNotes.length === 0 && (
+            {activeNotes.length === 0 &&
+              completedNotes.length === 0 && (
                 <p className="text-sm text-gray-500 text-center">
                   Aún no tienes notas guardadas.
                 </p>
