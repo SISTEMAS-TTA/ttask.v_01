@@ -8,16 +8,9 @@ import {
   Loader2,
   Plus,
   Star,
-  ChevronDown,
-  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { AddNoteModal } from "@/modules/notes/components/AddNoteModal";
 import { EditNoteModal } from "@/modules/notes/components/EditNoteModal";
 import useUser from "@/modules/auth/hooks/useUser";
@@ -269,17 +262,6 @@ export function NotesColumn() {
       .sort((a, b) => b.sortDate - a.sortDate);
   }, [completedNotes]);
 
-  // Estados para controlar qué grupos están abiertos
-  const [openActiveGroups, setOpenActiveGroups] = useState<Set<string>>(
-    new Set()
-  );
-
-  // Al cargar, abrir el mes más reciente por defecto
-  useEffect(() => {
-    if (groupedActiveNotes.length > 0) {
-      setOpenActiveGroups(new Set([groupedActiveNotes[0].monthYear]));
-    }
-  }, [groupedActiveNotes]);
 
   // const toggleActiveGroup = (monthYear: string) => {
   //   setOpenActiveGroups((prev) => {
