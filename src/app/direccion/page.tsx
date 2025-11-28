@@ -165,9 +165,10 @@ export default function DirectorPage() {
   }, []);
   // --- FIN Bloque 2 ---
 
-  const canCreate = profile?.role === "Director";
+const canCreate = profile?.role === "Director";
+
   const canRegister =
-    profile?.role === "Director" || profile?.role === "Administrador";
+  profile?.role === "Director";
 
   const visible = projects; // ya vienen filtrados por la suscripción
   // Estados para cotización simulada

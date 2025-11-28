@@ -35,7 +35,6 @@ import type { UserRole } from "@/modules/types";
 // Mapeo de roles a sus enlaces correspondientes
 const roleToAreaLink: Record<UserRole, { href: string; label: string } | null> = {
   "Director": { href: "/direccion", label: "Dirección" },
-  "Administrador": { href: "/admon", label: "Administración" },
   "Aux. Admin": { href: "/aux-admin", label: "Aux. Admin" },
   "Arquitectura": { href: "/arquitectura", label: "Arquitectura" },
   "Diseno": { href: "/diseno", label: "Diseño" },

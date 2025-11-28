@@ -162,16 +162,14 @@ export default function AuxAdminPage() {
   // Verificar permisos: solo Director, Administrador y Aux. Admin
   const canAccess =
     profile?.role === "Director" ||
-    profile?.role === "Administrador" ||
     profile?.role === "Aux. Admin";
 
   const canCreate =
     profile?.role === "Director" ||
-    profile?.role === "Administrador" ||
     profile?.role === "Aux. Admin";
 
   const canRegister =
-    profile?.role === "Director" || profile?.role === "Administrador";
+    profile?.role === "Director";
 
   // Estados para cotización simulada
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);

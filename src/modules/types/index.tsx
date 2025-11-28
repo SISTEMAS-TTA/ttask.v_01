@@ -6,17 +6,7 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   fullName?: string;
-  role:
-    | "Director"
-    | "Administrador"
-    | "Aux. Admin"
-    | "Arquitectura"
-    | "Diseno"
-    | "Gerencia"
-    | "Obra"
-    | "Sistemas"
-    | "Practicante"
-    | "Usuario";
+  role: UserRole;
   createdAt: Timestamp;
   lastLogin?: Date;
   active?: boolean;
@@ -38,7 +28,6 @@ export interface Task {
 
 export type UserRole =
   | "Director"
-  | "Administrador"
   | "Aux. Admin"
   | "Arquitectura"
   | "Diseno"
@@ -50,7 +39,6 @@ export type UserRole =
 
 export const USER_ROLES: UserRole[] = [
   "Director",
-  "Administrador",
   "Aux. Admin",
   "Arquitectura",
   "Diseno",

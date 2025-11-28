@@ -165,7 +165,6 @@ export default function AreaProjectsPage({
   const canAccess =
     profile?.role === areaRole ||
     profile?.role === "Director" ||
-    profile?.role === "Administrador" ||
     profile?.role === "Aux. Admin";
 
   if (userLoading || loading) {

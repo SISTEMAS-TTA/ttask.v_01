@@ -30,7 +30,7 @@ function AdminRegisterContent() {
   //SE MODIFICO ESTA PARTE
   const loading = adminLoading || userProfileLoading; // 1.CONTROL DE ACCESO: Permite acceso si es Director O Administrador. (Correcto)
   const canAccessRegister =
-    profile?.role === "Director" || profile?.role === "Administrador"; // 2.CONTROL DE ELEVACIÓN: Define quién tiene el permiso para marcar 'isAreaChief'. // El Administrador (isAdmin) tiene este permiso por definición, pero lo extendemos al Director.
+profile?.role === "Director";
   const canSetAreaChief = isAdmin || profile?.role === "Director";
 
   useEffect(() => {
