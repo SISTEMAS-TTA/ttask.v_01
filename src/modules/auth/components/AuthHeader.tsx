@@ -33,18 +33,24 @@ import { useRouter } from "next/navigation";
 import type { UserRole } from "@/modules/types";
 
 // Mapeo de roles a sus enlaces correspondientes
-const roleToAreaLink: Record<UserRole, { href: string; label: string } | null> = {
-  "Director": { href: "/direccion", label: "Dirección" },
-  "Administrador": { href: "/admon", label: "Administración" },
-  "Aux. Admin": { href: "/aux-admin", label: "Aux. Admin" },
-  "Arquitectura": { href: "/arquitectura", label: "Arquitectura" },
-  "Diseno": { href: "/diseno", label: "Diseño" },
-  "Gerencia": { href: "/gerencia", label: "Gerencia" },
-  "Obra": { href: "/obra", label: "Obra" },
-  "Sistemas": { href: "/sistemas", label: "Sistemas" },
-  "Practicante": null, // Solo ve Inicio
-  "Usuario": null, // Solo ve Inicio
-};
+const roleToAreaLink: Record<UserRole, { href: string; label: string } | null> =
+  {
+    Director: { href: "/direccion", label: "Dirección" },
+    Administrador: { href: "/admon", label: "Administración" },
+    "Aux. Admin": { href: "/aux-admin", label: "Aux. Admin" },
+
+    // Áreas técnicas
+    Arquitectura: { href: "/arquitectura", label: "Arquitectura" },
+    Diseno: { href: "/diseno", label: "Diseño" },
+    Proyectos: { href: "/proyectos", label: "Proyectos" }, // <--- ESTA ERA LA QUE FALTABA
+    Gerencia: { href: "/gerencia", label: "Gerencia" },
+    Obra: { href: "/obra", label: "Obra" },
+    Sistemas: { href: "/sistemas", label: "Sistemas" },
+
+    // Otros
+    Practicante: { href: "/practicante", label: "Practicante" },
+    Usuario: null,
+  };
 
 export function AuthHeader() {
   const { profile, user } = useUser();

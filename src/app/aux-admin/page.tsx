@@ -39,6 +39,7 @@ import {
 import { listAllUsers } from "@/lib/firebase/firestore";
 import {
   createProject,
+  updateProject, // <--- NUEVO: Importamos la función de update
   subscribeToProjectsForUser,
   deleteProject,
 } from "@/lib/firebase/projects";
@@ -55,7 +56,6 @@ function useProjects(userId?: string, role?: UserRole) {
     return () => unsub();
   }, [userId, role]);
 
-  // AGREGAMOS "setProjects" AQUÍ PARA PODER USARLO AFUERA
   return { projects, setProjects } as const;
 }
 
@@ -138,15 +138,22 @@ function buildTemplate() {
   return { sections, tasks };
 }
 
+// Definimos el tipo aquí para reusarlo
+type Asignacion =
+  | { tipo: "area"; id: string }
+  | { tipo: "usuario"; id: string };
+
 export default function AuxAdminPage() {
   const { user, profile, loading: userLoading } = useUser();
-
-  // AHORA RECIBIMOS setProjects TAMBIÉN
   const { projects, setProjects } = useProjects(user?.uid, profile?.role);
 
-  const [isCreating, setIsCreating] = useState(false);
+  // --- ESTADOS DEL MODAL DE PROYECTO (CREAR / EDITAR) ---
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false); // Renombrado de isCreating
+  const [editingProject, setEditingProject] = useState<ProjectDoc | null>(null); // Nuevo: para saber si editamos
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
 
   // Estado para controlar qué proyecto se está eliminando
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -157,10 +164,6 @@ export default function AuxAdminPage() {
   const [allUsers, setAllUsers] = useState<
     Array<{ id: string; name: string; role: string }>
   >([]);
-  type Asignacion =
-    | { tipo: "area"; id: string }
-    | { tipo: "usuario"; id: string };
-  const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
 
   // Estado para controlar qué área está expandida (acordeón)
   const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
@@ -206,23 +209,61 @@ export default function AuxAdminPage() {
   const canRegister =
     profile?.role === "Director" || profile?.role === "Administrador";
 
-  const createProjectAction = async () => {
+  // --- FUNCIONES PARA ABRIR EL MODAL ---
+
+  const openCreateModal = () => {
+    setEditingProject(null); // Modo crear
+    setTitle("");
+    setDescription("");
+    setAsignaciones([]);
+    setIsProjectModalOpen(true);
+  };
+
+  const openEditModal = (project: ProjectDoc) => {
+    console.log("Editando proyecto:", project.title);
+    setEditingProject(project); // Modo editar
+    setTitle(project.title);
+    setDescription(project.description || "");
+    // Cargamos las asignaciones existentes.
+    // OJO: Asegúrate que tu tipo ProjectDoc tenga 'asignaciones'
+    setAsignaciones((project.asignaciones as Asignacion[]) || []);
+    setIsProjectModalOpen(true);
+  };
+
+  // --- FUNCIÓN UNIFICADA DE GUARDAR (CREAR O EDITAR) ---
+  const handleSaveProject = async () => {
     if (!user) return;
-    const base = buildTemplate();
-    await createProject(user.uid, {
-      title: title.trim(),
-      description: description.trim() || undefined,
-      asignaciones: asignaciones,
-      sections: base.sections,
-      tasks: base.tasks,
-    });
-    setIsCreating(false);
+
+    if (editingProject) {
+      // MODO EDITAR
+      await updateProject(editingProject.id, {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        asignaciones: asignaciones,
+        sections: editingProject.sections,
+        tasks: editingProject.tasks,
+      });
+    } else {
+      // MODO CREAR
+      const base = buildTemplate();
+      await createProject(user.uid, {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        asignaciones: asignaciones,
+        sections: base.sections,
+        tasks: base.tasks,
+      });
+    }
+
+    // Limpiar y cerrar
+    setIsProjectModalOpen(false);
+    setEditingProject(null);
     setTitle("");
     setDescription("");
     setAsignaciones([]);
   };
 
-  // LÓGICA DE ELIMINACIÓN OPTIMIZADA
+  // Lógica de eliminación
   const confirmDelete = async () => {
     if (!projectToDelete) return;
     setIsDeleting(true);
@@ -290,18 +331,18 @@ export default function AuxAdminPage() {
               </Button>
             )}
             {canCreate && (
-              <Button onClick={() => setIsCreating(true)}>
-                Nuevo Proyecto
-              </Button>
+              <Button onClick={openCreateModal}>Nuevo Proyecto</Button>
             )}
           </div>
         </div>
 
-        {/* Modal: Crear Proyecto */}
-        <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        {/* Modal: Crear / Editar Proyecto */}
+        <Dialog open={isProjectModalOpen} onOpenChange={setIsProjectModalOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Nuevo proyecto</DialogTitle>
+              <DialogTitle>
+                {editingProject ? "Editar Proyecto" : "Nuevo Proyecto"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div>
@@ -343,7 +384,7 @@ export default function AuxAdminPage() {
                     return (
                       <div key={area} className="border-b last:border-b-0">
                         <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100">
-                          <label className="flex items-center gap-2 text-sm font-medium flex-grow">
+                          <label className="flex items-center gap-2 text-sm font-medium flex-grow cursor-pointer">
                             <input
                               type="checkbox"
                               checked={areaSeleccionada}
@@ -393,7 +434,7 @@ export default function AuxAdminPage() {
                               return (
                                 <label
                                   key={u.id}
-                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
                                 >
                                   <input
                                     type="checkbox"
@@ -439,11 +480,14 @@ export default function AuxAdminPage() {
               </div>
 
               <div className="flex gap-2 justify-end pt-1">
-                <Button variant="outline" onClick={() => setIsCreating(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsProjectModalOpen(false)}
+                >
                   Cancelar
                 </Button>
-                <Button onClick={createProjectAction} disabled={!title.trim()}>
-                  Crear
+                <Button onClick={handleSaveProject} disabled={!title.trim()}>
+                  {editingProject ? "Guardar Cambios" : "Crear Proyecto"}
                 </Button>
               </div>
             </div>
@@ -557,12 +601,14 @@ export default function AuxAdminPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
+                    {/* --- AQUÍ ESTÁ TU BOTÓN EDITAR EN EL DROPDOWN --- */}
                     <DropdownMenuItem
-                      onClick={() => console.log("Editar", p.id)}
+                      onClick={() => openEditModal(p)}
                       className="cursor-pointer"
                     >
                       Editar proyecto
                     </DropdownMenuItem>
+
                     <DropdownMenuItem
                       onClick={() => setProjectToDelete(p.id)}
                       className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
@@ -572,7 +618,7 @@ export default function AuxAdminPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center mt-4">
+              <div className="flex-1 flex flex-col items-center justify-center p-2 text-center mt-4">
                 <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-2">
                   {p.title}
                 </h3>

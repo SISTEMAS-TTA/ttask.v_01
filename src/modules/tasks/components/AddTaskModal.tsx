@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { ChevronDown, Check, X, Users, User } from "lucide-react";
-import { UserRole, USER_ROLES } from "@/modules/types";
+import { UserRole, ALL_USER_ROLES } from "@/modules/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState, useMemo } from "react";
@@ -63,9 +63,7 @@ export function AddTaskModal({
   // Toggle área completa
   const toggleRole = (role: UserRole) => {
     setAssigneeRoles((prev) =>
-      prev.includes(role)
-        ? prev.filter((r) => r !== role)
-        : [...prev, role]
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
     );
   };
 
@@ -103,13 +101,13 @@ export function AddTaskModal({
       UserWithId[]
     >;
 
-    USER_ROLES.forEach((r) => (groups[r] = []));
+    ALL_USER_ROLES.forEach((r) => (groups[r] = []));
 
     users.forEach((u) => {
       const userData = u as UserWithId & { role?: string; userRole?: string };
       const role = userData.role || userData.userRole || "Usuario";
 
-      if (USER_ROLES.includes(role as UserRole)) {
+      if (ALL_USER_ROLES.includes(role as UserRole)) {
         groups[role as UserRole].push(u);
       } else {
         groups["Usuario"].push(u);
@@ -126,7 +124,7 @@ export function AddTaskModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const hasAssignees = assigneeIds.length > 0 || assigneeRoles.length > 0;
-    
+
     if (title.trim() && hasAssignees) {
       const taskData: {
         title: string;
@@ -191,7 +189,7 @@ export function AddTaskModal({
           {/* Asignar */}
           <div className="space-y-2">
             <Label>Asignar a</Label>
-            
+
             {/* Botón tipo Select */}
             <Button
               type="button"
@@ -202,9 +200,15 @@ export function AddTaskModal({
               <span className="text-gray-500">
                 {totalSelections === 0
                   ? "Seleccionar destinatarios..."
-                  : `${totalSelections} seleccionado${totalSelections > 1 ? "s" : ""}`}
+                  : `${totalSelections} seleccionado${
+                      totalSelections > 1 ? "s" : ""
+                    }`}
               </span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${showSelector ? "rotate-180" : ""}`} />
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${
+                  showSelector ? "rotate-180" : ""
+                }`}
+              />
             </Button>
 
             {/* Chips de selección */}
@@ -256,22 +260,29 @@ export function AddTaskModal({
                       Cargando usuarios...
                     </div>
                   ) : (
-                    USER_ROLES.map((role) => {
+                    ALL_USER_ROLES.map((role) => {
                       const usersInRole = usersByRole[role] || [];
                       if (usersInRole.length === 0) return null;
-                      
+
                       return (
-                        <div key={role} className="border-b border-gray-200 last:border-none">
+                        <div
+                          key={role}
+                          className="border-b border-gray-200 last:border-none"
+                        >
                           {/* Header del área */}
                           <div
                             className="p-2 flex justify-between items-center cursor-pointer hover:bg-gray-100 bg-white"
                             onClick={() =>
-                              setExpandedRole((prev) => (prev === role ? null : role))
+                              setExpandedRole((prev) =>
+                                prev === role ? null : role
+                              )
                             }
                           >
                             <div className="flex items-center gap-2">
                               <Users className="h-4 w-4 text-gray-500" />
-                              <span className="font-medium text-sm">{role}</span>
+                              <span className="font-medium text-sm">
+                                {role}
+                              </span>
                               <span className="text-xs text-gray-400">
                                 ({usersInRole.length})
                               </span>
@@ -339,7 +350,7 @@ export function AddTaskModal({
                     })
                   )}
                 </div>
-                
+
                 {/* Botón para cerrar el selector */}
                 <div className="p-2 border-t border-gray-200 bg-white">
                   <Button
@@ -362,7 +373,10 @@ export function AddTaskModal({
             </Button>
             <Button
               type="submit"
-              disabled={!title.trim() || (assigneeIds.length === 0 && assigneeRoles.length === 0)}
+              disabled={
+                !title.trim() ||
+                (assigneeIds.length === 0 && assigneeRoles.length === 0)
+              }
             >
               Agregar Tarea
             </Button>

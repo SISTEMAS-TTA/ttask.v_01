@@ -1,12 +1,14 @@
 import { getAllUserProfiles } from "@/lib/firebase/users";
-import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "./config";
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   onSnapshot,
   query,
   serverTimestamp,
+  updateDoc,
   where,
   QuerySnapshot,
   DocumentData,
@@ -20,70 +22,44 @@ import type {
 
 const PROJECTS_COLLECTION = "projects";
 
-// --- PEGA ESTE NUEVO BLOQUE ---
+// --- TIPOS ---
 
-// Definimos el tipo de Asignacion aquí para poder usarlo
-type Asignacion =
+export type Asignacion =
   | { tipo: "area"; id: string }
   | { tipo: "usuario"; id: string };
 
 export type NewProjectINput = {
   title: string;
   description?: string;
-  // members: string[]; // BORRADO
-  // rolesAllowed: string[]; // BORRADO
-
-  asignaciones: Asignacion[]; // NUEVO: Nuestra propiedad ya es válida
-
+  asignaciones: Asignacion[];
   sections: ProjectSection[];
   tasks: ProjectTask[];
 };
 
-// --- INICIO Bloque Corregido ---
+// --- FUNCIONES DE ESCRITURA ---
+
+/**
+ * Crea un nuevo proyecto y calcula automáticamente los miembros y roles permitidos.
+ */
 export async function createProject(createdBy: string, input: NewProjectINput) {
   const ref = collection(db, PROJECTS_COLLECTION);
 
-  // PASO 1: Obtener todos los usuarios del sistema
-  const allUsers = await getAllUserProfiles();
+  // 1. Calcular permisos basados en asignaciones
+  const { finalMembers, allowedRoles } = await calculatePermissions(
+    input.asignaciones
+  );
 
-  // PASO 2: Calcular miembros finales y roles permitidos a partir de asignaciones
-  const finalMembers = new Set<string>();
-  const allowedRoles = new Set<ProjectRole>();
-
-  input.asignaciones.forEach((assignment) => {
-    if (assignment.tipo === "usuario") {
-      if (assignment.id) {
-        finalMembers.add(assignment.id!);
-      }
-    } else if (assignment.tipo === "area") {
-      // 1. Agregamos el rol/área a la lista de roles permitidos (Clave para suscripción)
-      if (assignment.id) {
-        // Asumimos que assignment.id del tipo 'area' es un ProjectRole válido
-        allowedRoles.add(assignment.id as ProjectRole);
-      }
-
-      // 2.Agregamos todos los UIDs que tienen ese rol
-      // Usamos assignment.id! si ya está validado o lo validamos aquí de nuevo
-      allUsers
-        .filter((user) => user.role === assignment.id)
-        .forEach((user) => {
-          // Aplicamos aserción no nula (!) después de verificar
-          if (user.id) {
-            finalMembers.add(user.id!); // <--- Aserción de tipo
-          }
-        });
-    }
-  });
-
-  // PASO 3: Guardar el documento, incluyendo los campos calculados
+  // 2. Guardar documento
   await addDoc(ref, {
     title: input.title,
     description: input.description ?? null,
     createdBy,
     createdAt: serverTimestamp(),
-    asignaciones: input.asignaciones,
 
-    // CAMPOS VITALES CALCULADOS:
+    // Guardamos la configuración visual
+    asignaciones: input.asignaciones ?? [],
+
+    // Guardamos los permisos calculados (Seguridad)
     members: Array.from(finalMembers),
     rolesAllowed: Array.from(allowedRoles),
 
@@ -91,11 +67,43 @@ export async function createProject(createdBy: string, input: NewProjectINput) {
     tasks: input.tasks,
   });
 }
-// --- FIN Bloque Corregido ---
+
+/**
+ * Actualiza un proyecto existente.
+ * Si se modifican las 'asignaciones', recalcula automáticamente los permisos.
+ */
+export async function updateProject(
+  projectId: string,
+  updates: Partial<NewProjectINput>
+) {
+  const ref = doc(db, PROJECTS_COLLECTION, projectId);
+
+  // 1. Limpiamos datos undefined
+  // Usamos DocumentData para evitar el error de "Unexpected any"
+  const dataToUpdate: DocumentData = { ...updates };
+
+  Object.keys(dataToUpdate).forEach((key) => {
+    if (dataToUpdate[key] === undefined) {
+      delete dataToUpdate[key];
+    }
+  });
+
+  // 2. Si se están actualizando las asignaciones, debemos recalcular permisos
+  if (updates.asignaciones) {
+    const { finalMembers, allowedRoles } = await calculatePermissions(
+      updates.asignaciones
+    );
+
+    dataToUpdate.members = Array.from(finalMembers);
+    dataToUpdate.rolesAllowed = Array.from(allowedRoles);
+  }
+
+  await updateDoc(ref, dataToUpdate);
+}
 
 export async function deleteProject(projectId: string): Promise<void> {
   try {
-    const projectRef = doc(db, "projects", projectId);
+    const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
     await deleteDoc(projectRef);
   } catch (error) {
     console.error("Error al eliminar el proyecto:", error);
@@ -103,7 +111,43 @@ export async function deleteProject(projectId: string): Promise<void> {
   }
 }
 
-// Merge three queries: createdBy, members contains uid, rolesAllowed contains role
+// --- UTILIDADES INTERNAS ---
+
+/**
+ * Helper para no repetir lógica entre create y update.
+ * Calcula los UIDs y Roles permitidos basándose en las asignaciones.
+ */
+async function calculatePermissions(asignaciones: Asignacion[]) {
+  const allUsers = await getAllUserProfiles();
+  const finalMembers = new Set<string>();
+  const allowedRoles = new Set<ProjectRole>();
+
+  asignaciones.forEach((assignment) => {
+    if (assignment.tipo === "usuario") {
+      if (assignment.id) {
+        finalMembers.add(assignment.id);
+      }
+    } else if (assignment.tipo === "area") {
+      // 1. Agregar el rol a roles permitidos
+      if (assignment.id) {
+        allowedRoles.add(assignment.id as ProjectRole);
+      }
+      // 2. Agregar a todos los usuarios que tengan ese rol actualmente
+      allUsers
+        .filter((user) => user.role === assignment.id)
+        .forEach((user) => {
+          if (user.id) {
+            finalMembers.add(user.id);
+          }
+        });
+    }
+  });
+
+  return { finalMembers, allowedRoles };
+}
+
+// --- SUSCRIPCIONES (READ) ---
+
 export function subscribeToProjectsForUser(
   userId: string,
   role: ProjectRole,
@@ -121,17 +165,7 @@ export function subscribeToProjectsForUser(
   const handle = (snap: QuerySnapshot<DocumentData>) => {
     snap.docs.forEach((d) => {
       const data = d.data();
-      const proj: ProjectDoc = {
-        id: d.id,
-        title: data.title ?? "",
-        description: data.description ?? undefined,
-        createdBy: data.createdBy,
-        createdAt: data.createdAt,
-        members: Array.isArray(data.members) ? data.members : [],
-        rolesAllowed: Array.isArray(data.rolesAllowed) ? data.rolesAllowed : [],
-        sections: (data.sections as ProjectSection[]) ?? [],
-        tasks: (data.tasks as ProjectTask[]) ?? [],
-      };
+      const proj = mapDocToProject(d.id, data);
       map.set(d.id, proj);
     });
     emit();
@@ -145,8 +179,6 @@ export function subscribeToProjectsForUser(
   return () => unsubs.forEach((u) => u());
 }
 
-// Suscripción filtrada SOLO por el rol del usuario (para páginas de área)
-// Solo muestra proyectos donde el área/rol del usuario está en rolesAllowed
 export function subscribeToProjectsByRole(
   role: ProjectRole,
   onProjects: (projects: ProjectDoc[]) => void,
@@ -156,22 +188,25 @@ export function subscribeToProjectsByRole(
   const qByRole = query(ref, where("rolesAllowed", "array-contains", role));
 
   const handle = (snap: QuerySnapshot<DocumentData>) => {
-    const projects: ProjectDoc[] = snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        id: d.id,
-        title: data.title ?? "",
-        description: data.description ?? undefined,
-        createdBy: data.createdBy,
-        createdAt: data.createdAt,
-        members: Array.isArray(data.members) ? data.members : [],
-        rolesAllowed: Array.isArray(data.rolesAllowed) ? data.rolesAllowed : [],
-        sections: (data.sections as ProjectSection[]) ?? [],
-        tasks: (data.tasks as ProjectTask[]) ?? [],
-      };
-    });
+    const projects = snap.docs.map((d) => mapDocToProject(d.id, d.data()));
     onProjects(projects);
   };
 
   return onSnapshot(qByRole, handle, (e) => onError?.(e));
+}
+
+// Helper para mapear datos crudos a ProjectDoc
+function mapDocToProject(id: string, data: DocumentData): ProjectDoc {
+  return {
+    id: id,
+    title: data.title ?? "",
+    description: data.description ?? undefined,
+    createdBy: data.createdBy,
+    createdAt: data.createdAt,
+    asignaciones: data.asignaciones ?? [], // Aseguramos que venga del DB
+    members: Array.isArray(data.members) ? data.members : [],
+    rolesAllowed: Array.isArray(data.rolesAllowed) ? data.rolesAllowed : [],
+    sections: (data.sections as ProjectSection[]) ?? [],
+    tasks: (data.tasks as ProjectTask[]) ?? [],
+  };
 }
