@@ -1,4 +1,5 @@
 import { getAllUserProfiles } from "@/lib/firebase/users";
+import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "./config";
 import {
   addDoc,
@@ -91,6 +92,16 @@ export async function createProject(createdBy: string, input: NewProjectINput) {
   });
 }
 // --- FIN Bloque Corregido ---
+
+export async function deleteProject(projectId: string): Promise<void> {
+  try {
+    const projectRef = doc(db, "projects", projectId);
+    await deleteDoc(projectRef);
+  } catch (error) {
+    console.error("Error al eliminar el proyecto:", error);
+    throw error;
+  }
+}
 
 // Merge three queries: createdBy, members contains uid, rolesAllowed contains role
 export function subscribeToProjectsForUser(

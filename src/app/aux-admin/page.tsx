@@ -20,23 +20,43 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { listAllUsers } from "@/lib/firebase/firestore";
 import {
   createProject,
   subscribeToProjectsForUser,
+  deleteProject,
 } from "@/lib/firebase/projects";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, MoreHorizontal } from "lucide-react";
 
-// Firestore-backed projects for current user (owner, member, role allowed)
+// Firestore-backed projects for current user
 function useProjects(userId?: string, role?: UserRole) {
   const [projects, setProjects] = useState<ProjectDoc[]>([]);
+
   useEffect(() => {
     if (!userId || !role) return;
     const unsub = subscribeToProjectsForUser(userId, role, setProjects);
     return () => unsub();
   }, [userId, role]);
-  return { projects } as const;
+
+  // AGREGAMOS "setProjects" AQUÍ PARA PODER USARLO AFUERA
+  return { projects, setProjects } as const;
 }
 
 // Plantilla de secciones y tareas iniciales
@@ -120,10 +140,17 @@ function buildTemplate() {
 
 export default function AuxAdminPage() {
   const { user, profile, loading: userLoading } = useUser();
-  const { projects } = useProjects(user?.uid, profile?.role);
+
+  // AHORA RECIBIMOS setProjects TAMBIÉN
+  const { projects, setProjects } = useProjects(user?.uid, profile?.role);
+
   const [isCreating, setIsCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
+  // Estado para controlar qué proyecto se está eliminando
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Estados para manejar áreas, usuarios y la selección
   const [allAreas, setAllAreas] = useState<string[]>([]);
@@ -137,6 +164,12 @@ export default function AuxAdminPage() {
 
   // Estado para controlar qué área está expandida (acordeón)
   const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
+
+  // Estados para cotización simulada
+  const [isQuoteOpen, setIsQuoteOpen] = useState(false);
+  const [quoteTitle, setQuoteTitle] = useState("");
+  const [quoteClient, setQuoteClient] = useState("");
+  const [quoteAmount, setQuoteAmount] = useState("");
 
   const router = useRouter();
 
@@ -159,7 +192,7 @@ export default function AuxAdminPage() {
     })();
   }, []);
 
-  // Verificar permisos: solo Director, Administrador y Aux. Admin
+  // Verificar permisos
   const canAccess =
     profile?.role === "Director" ||
     profile?.role === "Administrador" ||
@@ -172,12 +205,6 @@ export default function AuxAdminPage() {
 
   const canRegister =
     profile?.role === "Director" || profile?.role === "Administrador";
-
-  // Estados para cotización simulada
-  const [isQuoteOpen, setIsQuoteOpen] = useState(false);
-  const [quoteTitle, setQuoteTitle] = useState("");
-  const [quoteClient, setQuoteClient] = useState("");
-  const [quoteAmount, setQuoteAmount] = useState("");
 
   const createProjectAction = async () => {
     if (!user) return;
@@ -193,6 +220,24 @@ export default function AuxAdminPage() {
     setTitle("");
     setDescription("");
     setAsignaciones([]);
+  };
+
+  // LÓGICA DE ELIMINACIÓN OPTIMIZADA
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteProject(projectToDelete);
+      setProjects((prevProjects) =>
+        prevProjects.filter((p) => p.id !== projectToDelete)
+      );
+      setProjectToDelete(null);
+    } catch (error) {
+      console.error(error);
+      alert("Hubo un error al eliminar el proyecto");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (userLoading) {
@@ -225,6 +270,7 @@ export default function AuxAdminPage() {
   return (
     <AuthGuard>
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+        {/* Header y Botones Superiores */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold text-gray-900">
@@ -460,32 +506,104 @@ export default function AuxAdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Grid de proyectos */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+        {/* ALERTA DE CONFIRMACIÓN DE ELIMINAR */}
+        <AlertDialog
+          open={!!projectToDelete}
+          onOpenChange={(open) => !open && setProjectToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción no se puede deshacer. Esto eliminará permanentemente
+                el proyecto y desaparecerá para todos los usuarios asignados.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  confirmDelete();
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Eliminando..." : "Sí, eliminar proyecto"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Grid de proyectos*/}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {projects.map((p) => (
-            <Card key={p.id} className="p-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">{p.title}</h3>
-                {p.description && (
-                  <p className="text-sm text-gray-600">{p.description}</p>
+            <Card
+              key={p.id}
+              className="relative flex flex-col justify-between min-h-[180px] group hover:shadow-md transition-all duration-200"
+            >
+              <div className="absolute top-3 right-3 z-10">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-gray-400 hover:text-gray-900 rounded-full"
+                    >
+                      <span className="sr-only">Opciones</span>
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={() => console.log("Editar", p.id)}
+                      className="cursor-pointer"
+                    >
+                      Editar proyecto
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setProjectToDelete(p.id)}
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                    >
+                      Eliminar proyecto
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center mt-4">
+                <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-2">
+                  {p.title}
+                </h3>
+                {p.description ? (
+                  <p className="text-sm text-gray-500 line-clamp-2 px-2">
+                    {p.description}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">
+                    Sin descripción
+                  </p>
                 )}
               </div>
-              <Link
-                href={`/projects/${p.id}`}
-                className="text-blue-600 hover:underline text-sm"
-              >
-                Ver
-              </Link>
+              <div className="w-full border-t border-gray-100">
+                <Link
+                  href={`/projects/${p.id}`}
+                  className="block w-full py-3 text-sm font-medium text-center text-blue-600 hover:bg-gray-50 hover:text-blue-700 transition-colors rounded-b-xl"
+                >
+                  Ver detalles
+                </Link>
+              </div>
             </Card>
           ))}
+
           {projects.length === 0 && (
-            <p className="text-sm text-gray-600">
-              No hay proyectos disponibles.
-            </p>
+            <div className="col-span-full py-12 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+              <p className="text-gray-500">No hay proyectos disponibles.</p>
+            </div>
           )}
         </div>
       </div>
     </AuthGuard>
   );
 }
-
