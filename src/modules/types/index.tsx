@@ -6,22 +6,14 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   fullName?: string;
-  role:
-    | "Director"
-    | "Administrador"
-    | "Aux. Admin"
-    | "Arquitectura"
-    | "Diseno"
-    | "Gerencia"
-    | "Obra"
-    | "Sistemas"
-    | "Practicante"
-    | "Usuario";
+  
+  // USA EL TIPO QUE CREAMOS ABAJO
+  role: UserRole; 
+  
   createdAt: Timestamp;
   lastLogin?: Date;
   active?: boolean;
-  // Permite que conocer si el usuario es un administrador para ciertos permisos
-  isAreaChief?: boolean; // True si este usuario es jefe de su 'role' (área).
+  isAreaChief?: boolean;
 }
 
 export interface Task {
@@ -36,30 +28,23 @@ export interface Task {
   status?: "pending" | "in-progress" | "completed";
 }
 
-export type UserRole =
-  | "Director"
-  | "Administrador"
-  | "Aux. Admin"
-  | "Arquitectura"
-  | "Diseno"
-  | "Gerencia"
-  | "Obra"
-  | "Sistemas"
-  | "Practicante"
-  | "Usuario";
-
-export const USER_ROLES: UserRole[] = [
+export const ALL_USER_ROLES = [
   "Director",
   "Administrador",
   "Aux. Admin",
-  "Arquitectura",
+  "Arquitectura", 
+  "Proyectos",
   "Diseno",
   "Gerencia",
   "Obra",
   "Sistemas",
   "Practicante",
   "Usuario",
-];
+] as const;
+
+export type UserRole = (typeof ALL_USER_ROLES)[number];
+
+
 
 export interface Note {
   id: string;
@@ -107,4 +92,5 @@ export interface ProjectDoc {
   sections: ProjectSection[];
   tasks: ProjectTask[];
   progress?: number; // calculado en cliente por ahora
+  asignaciones?: Array<{ tipo: "area" | "usuario"; id: string }>;
 }

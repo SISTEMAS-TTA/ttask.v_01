@@ -2,8 +2,7 @@
 
 import type React from "react";
 import { ChevronDown, Check, X, Users, User } from "lucide-react";
-import { UserRole, USER_ROLES } from "@/modules/types";
-import { Input } from "@/components/ui/input";
+import { UserRole, ALL_USER_ROLES } from "@/modules/types";import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState, useMemo } from "react";
 import {
@@ -103,13 +102,13 @@ export function AddTaskModal({
       UserWithId[]
     >;
 
-    USER_ROLES.forEach((r) => (groups[r] = []));
+    ALL_USER_ROLES.forEach((r) => (groups[r] = []));
 
     users.forEach((u) => {
       const userData = u as UserWithId & { role?: string; userRole?: string };
       const role = userData.role || userData.userRole || "Usuario";
 
-      if (USER_ROLES.includes(role as UserRole)) {
+      if (ALL_USER_ROLES.includes(role as UserRole)) {
         groups[role as UserRole].push(u);
       } else {
         groups["Usuario"].push(u);
@@ -256,7 +255,7 @@ export function AddTaskModal({
                       Cargando usuarios...
                     </div>
                   ) : (
-                    USER_ROLES.map((role) => {
+                    ALL_USER_ROLES.map((role) => {
                       const usersInRole = usersByRole[role] || [];
                       if (usersInRole.length === 0) return null;
                       

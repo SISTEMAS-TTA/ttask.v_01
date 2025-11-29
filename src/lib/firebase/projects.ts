@@ -17,6 +17,22 @@ import type {
   ProjectRole,
 } from "@/modules/types";
 
+import { updateDoc, doc } from "firebase/firestore";
+
+export async function updateProject(
+  projectId: string,
+  updates: Partial<NewProjectINput>
+) {
+  const ref = doc(db, PROJECTS_COLLECTION, projectId);
+
+  // Limpiamos los datos undefined para que no den error
+  const cleanUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([_, v]) => v !== undefined)
+  );
+
+  await updateDoc(ref, cleanUpdates);
+}
+
 const PROJECTS_COLLECTION = "projects";
 
 // --- PEGA ESTE NUEVO BLOQUE ---
@@ -75,16 +91,22 @@ export async function createProject(createdBy: string, input: NewProjectINput) {
   });
 
   // PASO 3: Guardar el documento, incluyendo los campos calculados
+  // ... (toda tu lógica de cálculo de miembros que se ve en la foto) ...
+
   await addDoc(ref, {
     title: input.title,
     description: input.description ?? null,
     createdBy,
     createdAt: serverTimestamp(),
-    asignaciones: input.asignaciones,
 
-    // CAMPOS VITALES CALCULADOS:
+    // --- ESTAS SON LAS LÍNEAS IMPORTANTES ---
+    // 1. Guardamos la lista cruda (para que el Modal la lea)
+    asignaciones: input.asignaciones ?? [],
+
+    // 2. Guardamos los miembros calculados (para que la seguridad funcione)
     members: Array.from(finalMembers),
     rolesAllowed: Array.from(allowedRoles),
+    // ----------------------------------------
 
     sections: input.sections,
     tasks: input.tasks,
@@ -116,6 +138,7 @@ export function subscribeToProjectsForUser(
         description: data.description ?? undefined,
         createdBy: data.createdBy,
         createdAt: data.createdAt,
+        asignaciones: data.asignaciones ?? [],
         members: Array.isArray(data.members) ? data.members : [],
         rolesAllowed: Array.isArray(data.rolesAllowed) ? data.rolesAllowed : [],
         sections: (data.sections as ProjectSection[]) ?? [],
@@ -153,6 +176,7 @@ export function subscribeToProjectsByRole(
         description: data.description ?? undefined,
         createdBy: data.createdBy,
         createdAt: data.createdAt,
+        asignaciones: data.asignaciones ?? [],
         members: Array.isArray(data.members) ? data.members : [],
         rolesAllowed: Array.isArray(data.rolesAllowed) ? data.rolesAllowed : [],
         sections: (data.sections as ProjectSection[]) ?? [],

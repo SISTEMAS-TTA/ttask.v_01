@@ -38,6 +38,7 @@ const roleToAreaLink: Record<UserRole, { href: string; label: string } | null> =
   "Administrador": { href: "/admon", label: "Administración" },
   "Aux. Admin": { href: "/aux-admin", label: "Aux. Admin" },
   "Arquitectura": { href: "/arquitectura", label: "Arquitectura" },
+  "Proyectos": { href: "/proyectos", label: "Proyectos" },
   "Diseno": { href: "/diseno", label: "Diseño" },
   "Gerencia": { href: "/gerencia", label: "Gerencia" },
   "Obra": { href: "/obra", label: "Obra" },
