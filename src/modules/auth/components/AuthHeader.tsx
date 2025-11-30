@@ -42,8 +42,7 @@ const roleToAreaLink: Record<UserRole, { href: string; label: string } | null> =
     // Áreas técnicas
     Arquitectura: { href: "/arquitectura", label: "Arquitectura" },
     Diseno: { href: "/diseno", label: "Diseño" },
-    Proyectos: { href: "/proyectos", label: "Proyectos" }, // <--- ESTA ERA LA QUE FALTABA
-    Gerencia: { href: "/gerencia", label: "Gerencia" },
+    // Gerencia: { href: "/gerencia", label: "Gerencia" },
     Obra: { href: "/obra", label: "Obra" },
     Sistemas: { href: "/sistemas", label: "Sistemas" },
 
@@ -52,10 +51,22 @@ const roleToAreaLink: Record<UserRole, { href: string; label: string } | null> =
     Usuario: null,
   };
 
+// Áreas que el Director puede ver (todas las áreas técnicas)
+const directorAreas: { href: string; label: string }[] = [
+  { href: "/arquitectura", label: "Arquitectura" },
+  { href: "/diseno", label: "Diseño" },
+  { href: "/gerencia", label: "Gerencia" },
+  { href: "/obra", label: "Obra" },
+  { href: "/sistemas", label: "Sistemas" },
+];
+
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+
+  // Verificar si el usuario es Director
+  const isDirector = profile?.role === "Director";
 
   // Generar enlaces basados en el rol del usuario (DEBE estar antes de cualquier return condicional)
   const navLinks = useMemo(() => {
@@ -90,8 +101,13 @@ export function AuthHeader() {
     }
   };
 
+  // Clases responsivas para los enlaces de navegación
   const navLinkClassName =
-    "h-9 px-3 py-2 text-xs md:text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap leading-tight xl:h-10 xl:px-4 xl:text-sm";
+    "h-9 px-2 py-2 text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap leading-tight lg:px-2.5 xl:px-3 xl:text-sm 2xl:px-4";
+  
+  // Clases para las áreas del Director (más compactas)
+  const areaLinkClassName =
+    "h-8 px-2 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-blue-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap border border-transparent hover:border-blue-200 lg:px-2 xl:px-2.5 xl:text-xs 2xl:px-3";
 
   // Si no hay usuario autenticado, mostrar solo el logo
   if (!user) {
@@ -145,16 +161,30 @@ export function AuthHeader() {
 
           {/* CENTRO (solo se muestra en desktop) */}
           <div className="hidden lg:flex justify-center flex-grow">
-            {" "}
-            {/* Añadir flex-grow para usar espacio */}
             <NavigationMenu>
-              <NavigationMenuList className="flex items-center gap-1">
+              <NavigationMenuList className="flex items-center gap-0.5 xl:gap-1">
                 {/* Enlaces basados en el rol del usuario */}
                 {navLinks.map((link) => (
                   <NavigationMenuItem key={link.href}>
                     <NavigationMenuLink asChild>
                       <Link href={link.href} className={navLinkClassName}>
                         {link.label}
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                ))}
+
+                {/* Separador visual - Solo para Director */}
+                {isDirector && (
+                  <div className="h-6 w-px bg-gray-300 mx-1 xl:mx-2" />
+                )}
+
+                {/* Áreas directas - Solo para Director */}
+                {isDirector && directorAreas.map((area) => (
+                  <NavigationMenuItem key={area.href}>
+                    <NavigationMenuLink asChild>
+                      <Link href={area.href} className={areaLinkClassName}>
+                        {area.label}
                       </Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
@@ -256,6 +286,25 @@ export function AuthHeader() {
                         </Link>
                       ))}
                     </div>
+
+                    {/* Sección de Áreas - Solo para Director */}
+                    {isDirector && (
+                      <div className="pt-2 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2 px-3">
+                          Áreas
+                        </p>
+                        {directorAreas.map((area) => (
+                          <Link
+                            key={area.href}
+                            href={area.href}
+                            className="block rounded-md px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            {area.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </nav>
                 </SheetContent>
               </Sheet>
