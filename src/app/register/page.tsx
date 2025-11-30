@@ -28,10 +28,15 @@ function AdminRegisterContent() {
   const router = useRouter();
 
   //SE MODIFICO ESTA PARTE
-  const loading = adminLoading || userProfileLoading; // 1.CONTROL DE ACCESO: Permite acceso si es Director O Administrador. (Correcto)
+  const loading = adminLoading || userProfileLoading; // 1.CONTROL DE ACCESO: Permite acceso si es Director, Administrador o Aux. Admin.
   const canAccessRegister =
-    profile?.role === "Director" || profile?.role === "Administrador"; // 2.CONTROL DE ELEVACIÓN: Define quién tiene el permiso para marcar 'isAreaChief'. // El Administrador (isAdmin) tiene este permiso por definición, pero lo extendemos al Director.
-  const canSetAreaChief = isAdmin || profile?.role === "Director";
+    profile?.role === "Director" ||
+    profile?.role === "Administrador" ||
+    profile?.role === "Aux. Admin"; // 2.CONTROL DE ELEVACIÓN: Define quién tiene el permiso para marcar 'isAreaChief'. // El Administrador (isAdmin) tiene este permiso por definición, pero lo extendemos al Director y Aux. Admin.
+  const canSetAreaChief =
+    isAdmin ||
+    profile?.role === "Director" ||
+    profile?.role === "Aux. Admin";
 
   useEffect(() => {
     if (loading) return;
@@ -41,7 +46,7 @@ function AdminRegisterContent() {
       return;
     }
 
-    // Solo Director y Administrador pueden registrar usuarios
+    // Solo Director, Administrador y Aux. Admin pueden registrar usuarios
     if (!canAccessRegister) {
       router.replace("/");
     }

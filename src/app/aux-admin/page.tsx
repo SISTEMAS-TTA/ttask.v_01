@@ -207,7 +207,9 @@ export default function AuxAdminPage() {
     profile?.role === "Aux. Admin";
 
   const canRegister =
-    profile?.role === "Director" || profile?.role === "Administrador";
+    profile?.role === "Director" ||
+    profile?.role === "Administrador" ||
+    profile?.role === "Aux. Admin";
 
   // --- FUNCIONES PARA ABRIR EL MODAL ---
 
