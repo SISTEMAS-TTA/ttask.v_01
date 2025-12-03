@@ -334,8 +334,9 @@ export default function AuxAdminPage() {
             )}
             {canCreate && (
               <Button onClick={openCreateModal}>Nuevo Proyecto</Button>
+              
             )}
-          </div>
+         </div>
         </div>
 
         {/* Modal: Crear / Editar Proyecto */}
