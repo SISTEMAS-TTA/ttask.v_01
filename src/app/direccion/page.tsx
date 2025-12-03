@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { uploadTemplateToFirebase } from "@/lib/firebase/seedTemplate";
 import type {
   ProjectDoc,
   ProjectSection,
