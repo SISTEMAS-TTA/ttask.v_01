@@ -8,6 +8,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,6 +73,7 @@ export function TaskViewModal({
   const [assignedBy, setAssignedBy] = useState<string | null>(null);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (task) {
@@ -221,19 +232,41 @@ export function TaskViewModal({
             </Button>
             {!readOnly && <Button onClick={handleSave}>Guardar</Button>}
             <Button 
-            variant="destructive" 
-            type="button"
-            onClick={() => {
-              if (task && confirm("¿Estás seguro de borrar esta tarea?")) {
-                onDelete(task.id);
-              }
-            }}
-          >
-            Eliminar
-          </Button>
+              variant="destructive" 
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Eliminar
+            </Button>
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Modal de confirmación para eliminar */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar tarea?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. La tarea será eliminada permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (task) {
+                  onDelete(task.id);
+                  setShowDeleteConfirm(false);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Sí, eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

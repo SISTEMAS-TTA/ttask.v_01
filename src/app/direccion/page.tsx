@@ -206,7 +206,7 @@ export default function DirectorPage() {
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold text-gray-900">Proyectos</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Dirección</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={() => setIsQuoteOpen(true)}>
@@ -225,6 +225,7 @@ export default function DirectorPage() {
                 Nuevo Proyecto
               </Button>
             )}
+            
           </div>
         </div>
 
