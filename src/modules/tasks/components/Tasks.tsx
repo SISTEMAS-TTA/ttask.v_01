@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Filter, Star, Circle } from "lucide-react";
+import { Plus, Filter, Star, Circle, ChevronDown, ChevronRight, CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddTaskModal } from "@/modules/tasks/components/AddTaskModal";
@@ -15,6 +15,12 @@ import {
   deleteTask
 } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
+
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface UITask {
   id: string;
@@ -181,11 +187,56 @@ export function TasksColumn() {
     return 0;
   });
 
-  // Visibles en asignadas: excluir las completadas
-  const visibleTasks = orderedTasks.filter((t) => !t.completed);
+  // --- LÓGICA DE HISTORIAL Y AGRUPACIÓN ---
+
+  // 1. Estado para los acordeones (qué meses están abiertos)
+  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
+    new Set()
+  );
+
+  const toggleCompletedGroup = (monthYear: string) => {
+    setOpenCompletedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(monthYear)) newSet.delete(monthYear);
+      else newSet.add(monthYear);
+      return newSet;
+    });
+  };
+
+  // 2. Separar tareas
+  const activeTasks = orderedTasks.filter((t) => !t.completed);
+  const completedTasks = orderedTasks.filter((t) => t.completed);
+
+  // 3. Helpers de Fecha
+  const getTaskDate = (task: UITask) => task.createdAt;
+  
+  const formatMonthYear = (date: Date) => 
+    date.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+        .replace(/^\w/, (c) => c.toUpperCase());
+
+  // 4. Agrupar Matemáticamente
+  const groupedCompletedTasks = completedTasks.reduce((groups, task) => {
+    const date = getTaskDate(task);
+    const monthYear = formatMonthYear(date);
+    if (!groups[monthYear]) {
+      groups[monthYear] = [];
+    }
+    groups[monthYear].push(task);
+    return groups;
+  }, {} as Record<string, UITask[]>);
+
+  // 5. Ordenar los grupos (Mes más reciente primero)
+  const sortedGroups = Object.entries(groupedCompletedTasks).sort((a, b) => {
+    // Tomamos la fecha de la primera tarea de cada grupo para comparar
+    const dateA = getTaskDate(a[1][0]).getTime();
+    const dateB = getTaskDate(b[1][0]).getTime();
+    return dateB - dateA;
+  });
+
+  // --- FIN LÓGICA HISTORIAL ---
 
   return (
-    <div className="w-full bg-blue-100 flex flex-col h-full">
+    <div className="w-full bg-blue-100 flex flex-col h-[500px] md:h-full">
       {/* Header */}
       <div className="p-4 border-b border-blue-200 flex items-center justify-between">
         <h2 className="text-base sm:text-lg font-semibold text-gray-800">
@@ -213,8 +264,9 @@ export function TasksColumn() {
 
       {/* Tasks List */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
-        {/* Active Tasks */}
-        {visibleTasks.map((task) => (
+        
+        {/* 1. TAREAS ACTIVAS (Lista normal) */}
+        {activeTasks.map((task) => (
           <Card
             key={task.id}
             className={`p-3 border-none shadow-sm ${
@@ -237,22 +289,86 @@ export function TasksColumn() {
                   )}
                 <Star
                   className={`h-5 w-5 ${
-                    task.viewed
-                      ? "text-yellow-600 fill-current"
-                      : "text-gray-400"
+                    task.viewed ? "text-yellow-600 fill-current" : "text-gray-400"
                   }`}
-                  aria-hidden
                 />
-                <Circle className="h-5 w-5 text-gray-400" aria-hidden />
+                <Circle className="h-5 w-5 text-gray-400" />
               </div>
             </div>
             {task.description && (
-              <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+              <p className="text-sm text-gray-600 mb-2 line-clamp-2">{task.description}</p>
             )}
-            {/* [IMPLEMENTACIÓN]: Footer con el asignado y la fecha/hora */}
-            <AssignedTaskFooter task={task} getUserName={getUserName} />
+            <p className="text-xs text-gray-500 mt-1">
+              Asignado a: {getUserName(task.assigneeId)}
+            </p>
           </Card>
         ))}
+
+        {/* 2. SEPARADOR (Solo si hay historial) */}
+        {activeTasks.length > 0 && sortedGroups.length > 0 && (
+          <div className="flex items-center my-6">
+            <div className="flex-1 border-t-2 border-blue-300/50" />
+            <span className="mx-3 text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
+              <CircleCheck className="h-3 w-3" />
+              Finalizadas
+            </span>
+            <div className="flex-1 border-t-2 border-blue-300/50" />
+          </div>
+        )}
+
+        {/* 3. HISTORIAL AGRUPADO (Acordeones) */}
+        {sortedGroups.map(([monthYear, groupTasks]) => (
+          <Collapsible
+            key={monthYear}
+            open={openCompletedGroups.has(monthYear)}
+            onOpenChange={() => toggleCompletedGroup(monthYear)}
+          >
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center my-3 cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="flex-1 border-t border-blue-300" />
+                <span className="mx-2 px-2 py-1 text-xs font-semibold text-gray-600 uppercase bg-blue-200 rounded-full flex items-center gap-1.5">
+                  <Filter className="h-3 w-3" />
+                  {monthYear}
+                  <span className="bg-gray-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1">
+                    {groupTasks.length}
+                  </span>
+                  {openCompletedGroups.has(monthYear) ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                </span>
+                <div className="flex-1 border-t border-blue-300" />
+              </div>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <div className="space-y-2 mt-2 opacity-75">
+                {groupTasks.map((task) => (
+                  <Card
+                    key={task.id}
+                    className="p-3 border-none shadow-sm bg-gray-200"
+                    onClick={() => {
+                      setActiveTask(task);
+                      setIsViewModalOpen(true);
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-sm text-gray-600 line-through decoration-gray-400">
+                        {task.title}
+                      </h3>
+                      <CircleCheck className="h-4 w-4 text-green-600" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Finalizada el {task.createdAt.toLocaleDateString()}
+                    </p>
+                  </Card>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
+
       </div>
 
       <AddTaskModal
