@@ -49,8 +49,7 @@ export async function createProject(createdBy: string, input: NewProjectINput) {
     input.asignaciones
   );
 
-  // 2. Guardar documento
-  await addDoc(ref, {
+  const projectData = {
     title: input.title,
     description: input.description ?? null,
     createdBy,
@@ -65,7 +64,19 @@ export async function createProject(createdBy: string, input: NewProjectINput) {
 
     sections: input.sections,
     tasks: input.tasks,
-  });
+  };
+
+  // Log para debugging (solo en desarrollo)
+  if (process.env.NODE_ENV === "development") {
+    console.group("🚀 Creando Proyecto");
+    console.log("Asignaciones:", input.asignaciones);
+    console.log("Members calculados:", Array.from(finalMembers));
+    console.log("Roles permitidos:", Array.from(allowedRoles));
+    console.groupEnd();
+  }
+
+  // 2. Guardar documento
+  await addDoc(ref, projectData);
 }
 
 /**
@@ -122,10 +133,30 @@ async function calculatePermissions(asignaciones: Asignacion[]) {
   const finalMembers = new Set<string>();
   const allowedRoles = new Set<ProjectRole>();
 
+  if (process.env.NODE_ENV === "development") {
+    console.log("👥 Total usuarios en el sistema:", allUsers.length);
+    console.log(
+      "👥 Usuarios por rol:",
+      allUsers.reduce((acc, u) => {
+        acc[u.role] = (acc[u.role] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    );
+  }
+
   asignaciones.forEach((assignment) => {
     if (assignment.tipo === "usuario") {
       if (assignment.id) {
         finalMembers.add(assignment.id);
+
+        if (process.env.NODE_ENV === "development") {
+          const user = allUsers.find((u) => u.id === assignment.id);
+          console.log(
+            `👤 Usuario individual agregado: ${
+              user?.fullName || user?.email || assignment.id
+            }`
+          );
+        }
       }
     } else if (assignment.tipo === "area") {
       // 1. Agregar el rol a roles permitidos
@@ -133,13 +164,26 @@ async function calculatePermissions(asignaciones: Asignacion[]) {
         allowedRoles.add(assignment.id as ProjectRole);
       }
       // 2. Agregar a todos los usuarios que tengan ese rol actualmente
-      allUsers
-        .filter((user) => user.role === assignment.id)
-        .forEach((user) => {
-          if (user.id) {
-            finalMembers.add(user.id);
-          }
+      const usersInThisRole = allUsers.filter(
+        (user) => user.role === assignment.id
+      );
+
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `🏢 Área "${assignment.id}": ${usersInThisRole.length} usuarios encontrados`
+        );
+        usersInThisRole.forEach((user) => {
+          console.log(
+            `  ✅ ${user.fullName || user.email} (role: ${user.role})`
+          );
         });
+      }
+
+      usersInThisRole.forEach((user) => {
+        if (user.id) {
+          finalMembers.add(user.id);
+        }
+      });
     }
   });
 

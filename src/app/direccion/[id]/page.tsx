@@ -6,7 +6,7 @@ import AuthGuard from "@/components/AuthGuard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { ProjectDoc, ProjectTask, ProjectRole } from "@/modules/types";
-import { Star, ArrowLeft } from "lucide-react";
+import { Star } from "lucide-react";
 import { db } from "@/lib/firebase/config";
 import { doc, onSnapshot } from "firebase/firestore";
 
@@ -102,7 +102,7 @@ export default function ProjectDetailPage() {
             onClick={() => router.push("/direccion")}
             className="h-10 w-10"
           >
-            <ArrowLeft className="h-5 w-5" />
+            {/* <ArrowLeft className="h-5 w-5" /> */}
           </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-semibold text-gray-900">
