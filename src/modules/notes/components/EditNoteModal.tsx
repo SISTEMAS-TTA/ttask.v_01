@@ -8,6 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +63,7 @@ export function EditNoteModal({
   // Esto asegura que si el color cambió en sessionStorage, el selector refleje ese cambio.
   const [selectedColor, setSelectedColor] = useState(currentNoteColor);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (note) {
@@ -168,14 +179,7 @@ export function EditNoteModal({
             <Button
               type="button"
               variant="destructive"
-              onClick={() => {
-                if (!note) return;
-                // Confirmación simple
-                if (confirm("¿Eliminar nota?")) {
-                  void handleDelete(note.id);
-                  onClose();
-                }
-              }}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={!note || isSubmitting}
               className="flex items-center space-x-2"
             >
@@ -185,6 +189,32 @@ export function EditNoteModal({
           </div>
         </form>
       </DialogContent>
+
+      {/* Modal de confirmación para eliminar */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar nota?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. La nota será eliminada permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!note) return;
+                void handleDelete(note.id);
+                setShowDeleteConfirm(false);
+                onClose();
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Sí, eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

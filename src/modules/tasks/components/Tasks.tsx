@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { UserRole } from "@/modules/types";
 import { Plus, Filter, Star, Circle, ChevronDown, ChevronRight, CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,7 +13,7 @@ import {
   createTask,
   NewTaskInput,
   subscribeToTasksAssignedBy,
-  deleteTask
+  deleteTask,
 } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
 
@@ -46,21 +47,26 @@ const AssignedTaskFooter = ({
   task: UITask;
   getUserName: (uid: string) => string;
 }) => {
-  const assigneeName = getUserName(task.assigneeId);
+  // Obtenemos el nombre usando el hook de mapa de usuarios
+  const assigneeName = task.assigneeId
+    ? getUserName(task.assigneeId)
+    : "Sin asignar";
 
   return (
-    <div className="text-sm text-gray-500 mt-1">
-      {/* Muestra quién recibió la tarea */}
-      <p>
-        Asignada a: <span className="font-semibold">{assigneeName}</span>
-      </p>
-      {/* Muestra la fecha y hora de creación */}
-      <p className="text-xs mt-1">
-        Creada:{" "}
+    <div className="text-sm text-gray-500 mt-1 border-t border-blue-200/50 pt-2">
+      <div className="flex justify-between items-center">
+        <span className="text-xs font-medium text-gray-400">Para:</span>
+        <span
+          className="text-xs font-semibold text-gray-700 truncate max-w-[120px]"
+          title={assigneeName}
+        >
+          {assigneeName}
+        </span>
+      </div>
+      <p className="text-[10px] text-right mt-1 text-gray-400">
         {task.createdAt.toLocaleString("es-MX", {
           day: "2-digit",
           month: "short",
-          year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
         })}
@@ -133,20 +139,32 @@ export function TasksColumn() {
   const addTask = async (task: {
     title: string;
     project: string;
-    assigneeId: string;
+    assigneeIds?: string[];
+    assigneeRoles?: UserRole[];
     description?: string;
   }) => {
     if (!user) return;
+
+    // Construir el payload con soporte para múltiples destinatarios
     const payload: NewTaskInput = {
       title: task.title,
       project: task.project,
-      description: task.description ?? "",
-      assigneeId: task.assigneeId,
+      description: task.description || "",
       viewed: false,
       completed: false,
       favorite: false,
+      assigneeIds: task.assigneeIds,
+      assigneeRoles: task.assigneeRoles,
     };
-    await createTask(user.uid, payload);
+
+    try {
+      await createTask(user.uid, payload);
+      // No necesitamos actualizar el estado local manualmente,
+      // la suscripción (onSnapshot) lo hará automáticamente.
+    } catch (error) {
+      console.error("Error creating task:", error);
+      alert("Hubo un error al crear la tarea.");
+    }
   };
 
   // --- Funcion para elimminar la tarea ---
@@ -154,14 +172,13 @@ export function TasksColumn() {
     try {
       // 1. Borrar de Firebase
       await deleteTask(taskId);
-      
+
       // 2. Actualizar la lista visualmente (para que desaparezca al instante)
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      
+
       // 3. Cerrar el modal y limpiar selección
       setIsViewModalOpen(false);
       setActiveTask(null);
-      
     } catch (error) {
       console.error("Error al eliminar tarea:", error);
       alert("No se pudo eliminar la tarea");

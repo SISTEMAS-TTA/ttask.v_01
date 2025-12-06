@@ -11,7 +11,9 @@ declare module "lucide-react" {
   export const ChevronLeft: LucideIcon;
   export const ChevronUp: LucideIcon;
   export const Trash2: LucideIcon;
+  export const User: LucideIcon;
   export const UserPlus: LucideIcon;
+  export const Users: LucideIcon;
   export const MoreHorizontal: LucideIcon;
   export const X: LucideIcon;
   export const XIcon: LucideIcon;
@@ -25,12 +27,16 @@ declare module "lucide-react" {
   export const Filter: LucideIcon;
   export const Mail: LucideIcon;
   export const Lock: LucideIcon;
+  export const Folder: LucideIcon;
   export const FolderOpen: LucideIcon;
   export const CircleCheckBig: LucideIcon;
   export const ChevronDownIcon: LucideIcon;
   export const ChevronLeftIcon: LucideIcon;
   export const ChevronRightIcon: LucideIcon;
   export const ChevronUpIcon: LucideIcon;
+  export const FileText: LucideIcon;
+  export const Pencil: LucideIcon;
+  export const LayoutDashboard: LucideIcon;
   const _default: LucideIcon;
   export default _default;
 }
