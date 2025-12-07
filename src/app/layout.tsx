@@ -1,7 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import NavigationGuard from "@/components/NavigationGuard";
 import { AuthHeader } from "@/modules/auth/components/AuthHeader";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#ffffff",
+};
 
 export const metadata: Metadata = {
   title: "TTask - Sistema de Gestión",

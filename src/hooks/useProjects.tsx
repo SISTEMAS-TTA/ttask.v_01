@@ -6,10 +6,28 @@ import { subscribeToProjectsForUser } from "@/lib/firebase/projects";
 
 export default function useProjects(userId?: string, role?: UserRole) {
   const [projects, setProjects] = useState<ProjectDoc[]>([]);
+  // 1. Agregamos el estado de carga (true por defecto)
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!userId || !role) return;
-    const unsub = subscribeToProjectsForUser(userId, role, setProjects);
+    // Si no hay usuario o rol, no cargamos nada y quitamos el loading
+    if (!userId || !role) {
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true); // Reiniciamos loading al cambiar de usuario
+
+    // 2. Pasamos una función intermedia para manejar los datos Y el loading
+    const unsub = subscribeToProjectsForUser(userId, role, (newProjects) => {
+      setProjects(newProjects);
+      setLoading(false); // ¡Datos recibidos! Apagamos el spinner
+    });
+
     return () => unsub();
   }, [userId, role]);
-  return { projects } as const;
+
+  // 3. Retornamos projects Y loading
+  return { projects, loading } as const;
 }
