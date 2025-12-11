@@ -324,6 +324,33 @@ export default function AuxAdminPage() {
 
   return (
     <AuthGuard>
+ feature/cargar-checklist
+      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
+        {/* Header y Botones Superiores */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Administración de Proyectos
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setIsQuoteOpen(true)}>
+              Cotización (simulado)
+            </Button>
+            {canRegister && (
+              <Button
+                variant="outline"
+                onClick={() => router.push("/register")}
+              >
+                Registrar Usuario
+              </Button>
+            )}
+            {canCreate && (
+              <Button onClick={openCreateModal}>Nuevo Proyecto</Button>
+              
+            )}
+         </div>
+
       <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* --- TÍTULO PRINCIPAL --- */}
         <div className="flex flex-col items-center justify-center space-y-2 mb-8">

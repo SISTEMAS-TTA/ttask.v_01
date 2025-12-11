@@ -6,7 +6,7 @@ service cloud.firestore {
     // Función helper para verificar si el usuario es administrador
     function isAdmin() {
       return request.auth != null && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador';
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Director';
     }
     
     //----------------NUEVO BLOQUE---------------------------------
@@ -28,7 +28,7 @@ service cloud.firestore {
       let callerRole = callerProfile.role;
 
       // 1. Permiso Máximo: Administrador puede crear cualquier rol.
-      return callerRole == 'Administrador' ||
+return callerRole == 'Director' ||
              // 2. Si el usuario tiene el flag isAreaChief y el rol coincide
              (callerProfile.isAreaChief == true && callerRole == newRole);
       
@@ -43,7 +43,7 @@ service cloud.firestore {
       allow read: if request.auth != null;
       
       // SOLO SE AGREGO ESTO 24/11/25: Permite la escritura (creación/actualización) si el rol es Administrador O Director
-  		allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Administrador"
+  		allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Director";
               || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Director"; 
       
       // [MODIFICACIÓN CLAVE EN LA REGLA CREATE]
@@ -106,7 +106,6 @@ service cloud.firestore {
       let userRole = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
       return request.auth != null && (
         userRole == 'Director' ||
-        userRole == 'Administrador' ||
         userRole == 'Aux. Admin'
       );
     }
@@ -131,9 +130,9 @@ service cloud.firestore {
       allow delete: if canManageProjects();
     }
     
-    // Denegar todo lo demás por defecto
-    match /{document=**} {
-      allow read, write: if false;
+    // Reglas para plantillas (templates)
+    match /templates/{templateId} {
+      allow read, write: if request.auth != null;
     }
   }
 }
