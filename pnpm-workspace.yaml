@@ -3,5 +3,6 @@ onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - msw
   - protobufjs
+  - re2
   - sharp
   - unrs-resolver

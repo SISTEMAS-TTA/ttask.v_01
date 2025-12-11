@@ -491,7 +491,7 @@ export function NotesColumn() {
   };
 
   return (
-    <div className="w-full bg-yellow-100 flex flex-col h-full">
+    <div className="w-full bg-yellow-100 flex flex-col h-[500px] md:h-full">
       {/* Header */}
       <div className="p-4 border-b border-yellow-200 flex items-center justify-between">
         <h2 className="text-base sm:text-lg font-semibold text-gray-800">

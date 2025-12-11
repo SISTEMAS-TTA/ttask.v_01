@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import useUser from "@/modules/auth/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,12 +45,20 @@ import {
 import { listAllUsers } from "@/lib/firebase/firestore";
 import {
   createProject,
-  updateProject, // <--- NUEVO: Importamos la función de update
+  updateProject,
   subscribeToProjectsForUser,
   deleteProject,
 } from "@/lib/firebase/projects";
 import { useRouter } from "next/navigation";
-import { Loader2, MoreHorizontal } from "lucide-react";
+import {
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  FileText,
+  UserPlus,
+  LayoutDashboard,
+  Pencil,
+} from "lucide-react";
 
 // Firestore-backed projects for current user
 function useProjects(userId?: string, role?: UserRole) {
@@ -148,8 +162,8 @@ export default function AuxAdminPage() {
   const { projects, setProjects } = useProjects(user?.uid, profile?.role);
 
   // --- ESTADOS DEL MODAL DE PROYECTO (CREAR / EDITAR) ---
-  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false); // Renombrado de isCreating
-  const [editingProject, setEditingProject] = useState<ProjectDoc | null>(null); // Nuevo: para saber si editamos
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<ProjectDoc | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -222,12 +236,9 @@ export default function AuxAdminPage() {
   };
 
   const openEditModal = (project: ProjectDoc) => {
-    console.log("Editando proyecto:", project.title);
     setEditingProject(project); // Modo editar
     setTitle(project.title);
     setDescription(project.description || "");
-    // Cargamos las asignaciones existentes.
-    // OJO: Asegúrate que tu tipo ProjectDoc tenga 'asignaciones'
     setAsignaciones((project.asignaciones as Asignacion[]) || []);
     setIsProjectModalOpen(true);
   };
@@ -241,6 +252,7 @@ export default function AuxAdminPage() {
       await updateProject(editingProject.id, {
         title: title.trim(),
         description: description.trim() || undefined,
+
         asignaciones: asignaciones,
         sections: editingProject.sections,
         tasks: editingProject.tasks,
@@ -312,6 +324,7 @@ export default function AuxAdminPage() {
 
   return (
     <AuthGuard>
+ feature/cargar-checklist
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
         {/* Header y Botones Superiores */}
         <div className="flex items-center justify-between">
@@ -337,45 +350,197 @@ export default function AuxAdminPage() {
               
             )}
          </div>
+
+      <div className="max-w-7xl mx-auto p-4 md:p-6">
+        {/* --- TÍTULO PRINCIPAL --- */}
+        <div className="flex flex-col items-center justify-center space-y-2 mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 text-center">
+            Administración de Proyectos
+          </h1>
+          <p className="text-gray-500 text-center"></p>
         </div>
+
+        {/* LAYOUT PRINCIPAL: FLEXIBLE */}
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          {/* --- IZQUIERDA: BARRA LATERAL DE ACCIONES --- */}
+          <aside className="w-full md:w-64 flex-shrink-0 space-y-4">
+            {/* Tarjeta de Acciones Principales */}
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Acciones</CardTitle>
+                <CardDescription>Gestión rápida</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {canCreate && (
+                  <Button
+                    onClick={openCreateModal}
+                    className="w-full justify-start font-medium"
+                    size="lg"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Nuevo Proyecto
+                  </Button>
+                )}
+
+                <Button
+                  onClick={() => setIsQuoteOpen(true)}
+                  variant="secondary"
+                  className="w-full justify-start"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Cotización
+                </Button>
+
+                {canRegister && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => router.push("/register")}
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Registrar Usuario
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </aside>
+
+          {/* --- DERECHA: CONTENIDO PRINCIPAL (GRID) --- */}
+          <main className="flex-1">
+            {/* Grid de proyectos */}
+            <div className="grid grid-cols-3 lg:grid-cols-3 gap-3">
+              {projects.map((p) => (
+                <Card
+                  key={p.id}
+                  className="relative flex flex-col justify-between min-h-[200px] group hover:shadow-lg transition-all duration-300 border-gray-200"
+                >
+                  <div className="absolute top-3 right-3 z-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-400 hover:text-gray-900 rounded-full hover:bg-white/80 backdrop-blur-sm"
+                        >
+                          <span className="sr-only">Opciones</span>
+                          <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        {/* --- EDICIÓN ELIMINADA DE AQUÍ, SOLO QUEDA ELIMINAR --- */}
+                        <DropdownMenuItem
+                          onClick={() => setProjectToDelete(p.id)}
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                        >
+                          Eliminar proyecto
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <FileText className="h-6 w-6" />
+                    </div>
+                    {/* ENVOLVIMOS EL TÍTULO EN LINK PARA NO PERDER ACCESO AL PROYECTO */}
+                    <Link
+                      href={`/projects/${p.id}`}
+                      className="hover:underline"
+                    >
+                      <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-2">
+                        {p.title}
+                      </h3>
+                    </Link>
+                    {p.description ? (
+                      <p className="text-sm text-gray-500 line-clamp-2 px-2">
+                        {p.description}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic">
+                        Sin descripción
+                      </p>
+                    )}
+                  </div>
+
+                  {/* --- BOTÓN INFERIOR: AHORA ES "EDITAR PROYECTO" --- */}
+                  <div className="w-full border-t border-gray-100">
+                    <Button
+                      variant="ghost"
+                      onClick={() => openEditModal(p)}
+                      className="w-full h-auto py-3 text-sm font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors rounded-none rounded-b-xl"
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Editar proyecto
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+
+              {/* Estado vacío con diseño amigable */}
+              {projects.length === 0 && (
+                <div className="col-span-full py-16 text-center bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center">
+                  <div className="bg-white p-3 rounded-full mb-3 shadow-sm">
+                    <LayoutDashboard className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    No hay proyectos
+                  </h3>
+                  <p className="text-gray-500 max-w-sm mt-1 mb-4">
+                    Comienza creando un nuevo proyecto desde el menú lateral.
+                  </p>
+                  <Button variant="outline" onClick={openCreateModal}>
+                    Crear mi primer proyecto
+                  </Button>
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+
+        {/* --- MODALES (Fuera del layout para evitar z-index issues) --- */}
 
         {/* Modal: Crear / Editar Proyecto */}
         <Dialog open={isProjectModalOpen} onOpenChange={setIsProjectModalOpen}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingProject ? "Editar Proyecto" : "Nuevo Proyecto"}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Título</label>
+                <label className="block text-sm font-medium mb-1.5">
+                  Título del Proyecto
+                </label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Casa Gómez"
+                  placeholder="Ej. Casa Gómez - Remodelación"
+                  className="w-full"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium mb-1.5">
                   Descripción (opcional)
                 </label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Detalles clave del proyecto..."
+                  rows={3}
                 />
               </div>
 
               {/* Selector de Integrantes y Áreas */}
-              <div>
+              <div className="pt-2">
                 <label className="block text-sm font-medium mb-1">
-                  Asignar a Áreas/Usuarios
+                  Asignar Equipo
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Selecciona las áreas que trabajarán en este proyecto
+                  Selecciona áreas completas o usuarios específicos.
                 </p>
 
-                <div className="max-h-60 overflow-y-auto border rounded">
+                <div className="max-h-52 overflow-y-auto border rounded-md bg-gray-50/50">
                   {allAreas.map((area) => {
                     const areaSeleccionada = asignaciones.some(
                       (a) => a.tipo === "area" && a.id === area
@@ -385,11 +550,15 @@ export default function AuxAdminPage() {
                     );
 
                     return (
-                      <div key={area} className="border-b last:border-b-0">
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100">
-                          <label className="flex items-center gap-2 text-sm font-medium flex-grow cursor-pointer">
+                      <div
+                        key={area}
+                        className="border-b last:border-b-0 bg-white"
+                      >
+                        <div className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors">
+                          <label className="flex items-center gap-3 text-sm font-medium flex-grow cursor-pointer select-none">
                             <input
                               type="checkbox"
+                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               checked={areaSeleccionada}
                               onChange={(e) => {
                                 const checked = e.target.checked;
@@ -414,21 +583,21 @@ export default function AuxAdminPage() {
                                 });
                               }}
                             />
-                            Área: {area}
+                            <span className="capitalize">Área: {area}</span>
                           </label>
                           <button
                             type="button"
                             onClick={() =>
                               setAreaAbierta(areaAbierta === area ? null : area)
                             }
-                            className="text-sm text-blue-600 hover:underline"
+                            className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
                           >
                             {areaAbierta === area ? "Ocultar" : "Ver usuarios"}
                           </button>
                         </div>
 
                         {areaAbierta === area && (
-                          <div className="pl-6 bg-white">
+                          <div className="pl-9 pr-3 pb-2 bg-gray-50/50 border-t border-dashed">
                             {usuariosDelArea.map((u) => {
                               const usuarioSeleccionado = asignaciones.some(
                                 (a) => a.tipo === "usuario" && a.id === u.id
@@ -437,10 +606,11 @@ export default function AuxAdminPage() {
                               return (
                                 <label
                                   key={u.id}
-                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+                                  className="flex items-center gap-2 py-2 text-sm hover:text-blue-600 cursor-pointer select-none"
                                 >
                                   <input
                                     type="checkbox"
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                     disabled={areaSeleccionada}
                                     checked={
                                       usuarioSeleccionado || areaSeleccionada
@@ -470,8 +640,8 @@ export default function AuxAdminPage() {
                               );
                             })}
                             {usuariosDelArea.length === 0 && (
-                              <span className="block px-3 py-2 text-sm text-gray-500">
-                                No hay usuarios en esta área.
+                              <span className="block py-2 text-xs text-gray-400 italic">
+                                No hay usuarios registrados en esta área.
                               </span>
                             )}
                           </div>
@@ -482,7 +652,7 @@ export default function AuxAdminPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2 justify-end pt-1">
+              <div className="flex gap-3 justify-end pt-4 border-t mt-4">
                 <Button
                   variant="outline"
                   onClick={() => setIsProjectModalOpen(false)}
@@ -503,12 +673,13 @@ export default function AuxAdminPage() {
             <DialogHeader>
               <DialogTitle>Crear Cotización (simulado)</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Título</label>
                 <Input
                   value={quoteTitle}
                   onChange={(e) => setQuoteTitle(e.target.value)}
+                  placeholder="Ej. Presupuesto Inicial"
                 />
               </div>
               <div>
@@ -518,19 +689,28 @@ export default function AuxAdminPage() {
                 <Input
                   value={quoteClient}
                   onChange={(e) => setQuoteClient(e.target.value)}
+                  placeholder="Nombre del cliente"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Importe
+                  Importe Total
                 </label>
-                <Input
-                  value={quoteAmount}
-                  onChange={(e) => setQuoteAmount(e.target.value)}
-                  placeholder="0.00"
-                />
+                <div className="relative">
+                  {/* SE AJUSTÓ LA POSICIÓN DEL SIGNO DE PESOS (top-1.5) */}
+                  <span className="absolute left-3 top-1.5 text-gray-500">
+                    $
+                  </span>
+                  <Input
+                    className="pl-7"
+                    value={quoteAmount}
+                    onChange={(e) => setQuoteAmount(e.target.value)}
+                    placeholder="0.00"
+                    type="number"
+                  />
+                </div>
               </div>
-              <div className="flex gap-2 justify-end pt-1">
+              <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={() => setIsQuoteOpen(false)}>
                   Cancelar
                 </Button>
@@ -546,7 +726,7 @@ export default function AuxAdminPage() {
                   }}
                   disabled={!quoteTitle.trim()}
                 >
-                  Crear (simulado)
+                  Generar PDF
                 </Button>
               </div>
             </div>
@@ -560,10 +740,10 @@ export default function AuxAdminPage() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+              <AlertDialogTitle>¿Eliminar este proyecto?</AlertDialogTitle>
               <AlertDialogDescription>
-                Esta acción no se puede deshacer. Esto eliminará permanentemente
-                el proyecto y desaparecerá para todos los usuarios asignados.
+                Esta acción es irreversible. Se eliminará el proyecto y todo el
+                historial de tareas asociado para todos los usuarios.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -578,80 +758,11 @@ export default function AuxAdminPage() {
                 className="bg-red-600 hover:bg-red-700 text-white"
                 disabled={isDeleting}
               >
-                {isDeleting ? "Eliminando..." : "Sí, eliminar proyecto"}
+                {isDeleting ? "Eliminando..." : "Sí, eliminar definitivamente"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        {/* Grid de proyectos*/}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {projects.map((p) => (
-            <Card
-              key={p.id}
-              className="relative flex flex-col justify-between min-h-[180px] group hover:shadow-md transition-all duration-200"
-            >
-              <div className="absolute top-3 right-3 z-10">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-gray-400 hover:text-gray-900 rounded-full"
-                    >
-                      <span className="sr-only">Opciones</span>
-                      <MoreHorizontal className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    {/* --- AQUÍ ESTÁ TU BOTÓN EDITAR EN EL DROPDOWN --- */}
-                    <DropdownMenuItem
-                      onClick={() => openEditModal(p)}
-                      className="cursor-pointer"
-                    >
-                      Editar proyecto
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                      onClick={() => setProjectToDelete(p.id)}
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                    >
-                      Eliminar proyecto
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center p-2 text-center mt-4">
-                <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-2">
-                  {p.title}
-                </h3>
-                {p.description ? (
-                  <p className="text-sm text-gray-500 line-clamp-2 px-2">
-                    {p.description}
-                  </p>
-                ) : (
-                  <p className="text-sm text-gray-400 italic">
-                    Sin descripción
-                  </p>
-                )}
-              </div>
-              <div className="w-full border-t border-gray-100">
-                <Link
-                  href={`/projects/${p.id}`}
-                  className="block w-full py-3 text-sm font-medium text-center text-blue-600 hover:bg-gray-50 hover:text-blue-700 transition-colors rounded-b-xl"
-                >
-                  Ver detalles
-                </Link>
-              </div>
-            </Card>
-          ))}
-
-          {projects.length === 0 && (
-            <div className="col-span-full py-12 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
-              <p className="text-gray-500">No hay proyectos disponibles.</p>
-            </div>
-          )}
-        </div>
       </div>
     </AuthGuard>
   );
