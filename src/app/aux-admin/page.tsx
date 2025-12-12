@@ -1,25 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import useUser from "@/modules/auth/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import Link from "next/link";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type {
-  ProjectDoc,
-  ProjectSection,
-  ProjectTask,
-  UserRole,
-} from "@/modules/types";
+import type { ProjectDoc, UserRole } from "@/modules/types";
 import {
   Dialog,
   DialogContent,
@@ -36,12 +24,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { listAllUsers } from "@/lib/firebase/firestore";
 import {
   createProject,
@@ -52,15 +34,20 @@ import {
 import { useRouter } from "next/navigation";
 import {
   Loader2,
-  MoreHorizontal,
+  FolderOpen,
+  ChevronRight,
+  ArrowLeft,
   Plus,
-  FileText,
   UserPlus,
-  LayoutDashboard,
   Pencil,
+  Trash2,
+  FileText,
 } from "lucide-react";
 
-// Firestore-backed projects for current user
+type Asignacion =
+  | { tipo: "area"; id: string }
+  | { tipo: "usuario"; id: string };
+
 function useProjects(userId?: string, role?: UserRole) {
   const [projects, setProjects] = useState<ProjectDoc[]>([]);
 
@@ -73,9 +60,8 @@ function useProjects(userId?: string, role?: UserRole) {
   return { projects, setProjects } as const;
 }
 
-// Plantilla de secciones y tareas iniciales
 function buildTemplate() {
-  const sections: ProjectSection[] = [
+  const sections = [
     { id: "sec-2", title: "Proyecto Arquitectónico", order: 1 },
     { id: "sec-3", title: "Proyecto Ejecutivo Arquitectónico", order: 2 },
     { id: "sec-4", title: "Diseño Estructural", order: 3 },
@@ -83,14 +69,24 @@ function buildTemplate() {
     { id: "sec-6", title: "Instalaciones Especiales", order: 5 },
     { id: "sec-7", title: "Tablaroca", order: 6 },
   ];
-  const tasks: ProjectTask[] = [
+
+  const tasks = [
+    // Proyecto Arquitectónico
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-2",
+      title: "Planta de conjunto",
+      completed: false,
+      favorite: false,
+      order: 100,
+    },
     {
       id: crypto.randomUUID(),
       sectionId: "sec-2",
       title: "Plantas arquitectónicas",
       completed: false,
       favorite: false,
-      order: 1024,
+      order: 200,
     },
     {
       id: crypto.randomUUID(),
@@ -98,97 +94,96 @@ function buildTemplate() {
       title: "Fachadas arquitectónicas",
       completed: false,
       favorite: false,
-      order: 2048,
+      order: 300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-2",
+      title: "Visualización digital",
+      completed: false,
+      favorite: false,
+      order: 1000,
+    },
+    // Proyecto Ejecutivo
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Detalles de cancelería",
+      completed: false,
+      favorite: false,
+      order: 100,
     },
     {
       id: crypto.randomUUID(),
       sectionId: "sec-3",
-      title: "Detalles de carpintería",
+      title: "Plantas de acabados",
       completed: false,
       favorite: false,
-      order: 1024,
+      order: 1100,
     },
+    // Diseño Estructural
     {
       id: crypto.randomUUID(),
-      sectionId: "sec-3",
-      title: "Detalles de herrería",
+      sectionId: "sec-4",
+      title: "Planta estructural de cimentación",
       completed: false,
       favorite: false,
-      order: 2048,
+      order: 200,
     },
     {
       id: crypto.randomUUID(),
       sectionId: "sec-4",
-      title: "Planos de especificaciones generales",
+      title: "Memoria de cálculo",
       completed: false,
       favorite: false,
-      order: 1024,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-5",
-      title: "Hidráulica: acometida general",
-      completed: false,
-      favorite: false,
-      order: 1024,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-6",
-      title: "Domótica",
-      completed: false,
-      favorite: false,
-      order: 1024,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-7",
-      title: "Plano de plafones",
-      completed: false,
-      favorite: false,
-      order: 1024,
+      order: 600,
     },
   ];
+
   return { sections, tasks };
 }
-
-// Definimos el tipo aquí para reusarlo
-type Asignacion =
-  | { tipo: "area"; id: string }
-  | { tipo: "usuario"; id: string };
 
 export default function AuxAdminPage() {
   const { user, profile, loading: userLoading } = useUser();
   const { projects, setProjects } = useProjects(user?.uid, profile?.role);
+  const router = useRouter();
 
-  // --- ESTADOS DEL MODAL DE PROYECTO (CREAR / EDITAR) ---
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    null
+  );
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Estados del modal de proyecto
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDoc | null>(null);
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
 
-  // Estado para controlar qué proyecto se está eliminando
+  // Estados para eliminación
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Estados para manejar áreas, usuarios y la selección
-  const [allAreas, setAllAreas] = useState<string[]>([]);
-  const [allUsers, setAllUsers] = useState<
-    Array<{ id: string; name: string; role: string }>
-  >([]);
-
-  // Estado para controlar qué área está expandida (acordeón)
-  const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
-
-  // Estados para cotización simulada
+  // Estados para cotización
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
   const [quoteTitle, setQuoteTitle] = useState("");
   const [quoteClient, setQuoteClient] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
 
-  const router = useRouter();
+  // Estados para áreas y usuarios
+  const [allAreas, setAllAreas] = useState<string[]>([]);
+  const [allUsers, setAllUsers] = useState<
+    Array<{ id: string; name: string; role: string }>
+  >([]);
+  const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
+
+  // Detectar móvil
+  useEffect(() => {
+    const checkIsMobile = () => setIsMobile(window.innerWidth < 768);
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
 
   // Cargar usuarios y áreas
   useEffect(() => {
@@ -209,26 +204,25 @@ export default function AuxAdminPage() {
     })();
   }, []);
 
-  // Verificar permisos
+  // Seleccionar primer proyecto en desktop
+  useEffect(() => {
+    if (!isMobile && projects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [projects, isMobile, selectedProjectId]);
+
+  const selectedProject = useMemo(() => {
+    return projects.find((p) => p.id === selectedProjectId) || null;
+  }, [projects, selectedProjectId]);
+
   const canAccess =
     profile?.role === "Director" ||
     profile?.role === "Administrador" ||
     profile?.role === "Aux. Admin";
 
-  const canCreate =
-    profile?.role === "Director" ||
-    profile?.role === "Administrador" ||
-    profile?.role === "Aux. Admin";
-
-  const canRegister =
-    profile?.role === "Director" ||
-    profile?.role === "Administrador" ||
-    profile?.role === "Aux. Admin";
-
-  // --- FUNCIONES PARA ABRIR EL MODAL ---
-
+  // Funciones para modales
   const openCreateModal = () => {
-    setEditingProject(null); // Modo crear
+    setEditingProject(null);
     setTitle("");
     setDescription("");
     setAsignaciones([]);
@@ -236,29 +230,25 @@ export default function AuxAdminPage() {
   };
 
   const openEditModal = (project: ProjectDoc) => {
-    setEditingProject(project); // Modo editar
+    setEditingProject(project);
     setTitle(project.title);
     setDescription(project.description || "");
     setAsignaciones((project.asignaciones as Asignacion[]) || []);
     setIsProjectModalOpen(true);
   };
 
-  // --- FUNCIÓN UNIFICADA DE GUARDAR (CREAR O EDITAR) ---
   const handleSaveProject = async () => {
-    if (!user) return;
+    if (!user || !title.trim()) return;
 
     if (editingProject) {
-      // MODO EDITAR
       await updateProject(editingProject.id, {
         title: title.trim(),
         description: description.trim() || undefined,
-
         asignaciones: asignaciones,
         sections: editingProject.sections,
         tasks: editingProject.tasks,
       });
     } else {
-      // MODO CREAR
       const base = buildTemplate();
       await createProject(user.uid, {
         title: title.trim(),
@@ -269,7 +259,6 @@ export default function AuxAdminPage() {
       });
     }
 
-    // Limpiar y cerrar
     setIsProjectModalOpen(false);
     setEditingProject(null);
     setTitle("");
@@ -277,15 +266,15 @@ export default function AuxAdminPage() {
     setAsignaciones([]);
   };
 
-  // Lógica de eliminación
   const confirmDelete = async () => {
     if (!projectToDelete) return;
     setIsDeleting(true);
     try {
       await deleteProject(projectToDelete);
-      setProjects((prevProjects) =>
-        prevProjects.filter((p) => p.id !== projectToDelete)
-      );
+      setProjects((prev) => prev.filter((p) => p.id !== projectToDelete));
+      if (selectedProjectId === projectToDelete) {
+        setSelectedProjectId(null);
+      }
       setProjectToDelete(null);
     } catch (error) {
       console.error(error);
@@ -298,7 +287,7 @@ export default function AuxAdminPage() {
   if (userLoading) {
     return (
       <AuthGuard>
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-[60vh] flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         </div>
       </AuthGuard>
@@ -322,421 +311,504 @@ export default function AuxAdminPage() {
     );
   }
 
-  return (
-    <AuthGuard>
-      <div className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* --- TÍTULO PRINCIPAL --- */}
-        <div className="flex flex-col items-center justify-center space-y-2 mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 text-center">
-            Administración de Proyectos
-          </h1>
-          <p className="text-gray-500 text-center"></p>
-        </div>
-
-        {/* LAYOUT PRINCIPAL: FLEXIBLE */}
-        <div className="flex flex-col md:flex-row gap-6 items-start">
-          {/* --- IZQUIERDA: BARRA LATERAL DE ACCIONES --- */}
-          <aside className="w-full md:w-64 flex-shrink-0 space-y-4">
-            {/* Tarjeta de Acciones Principales */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Acciones</CardTitle>
-                <CardDescription>Gestión rápida</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {canCreate && (
-                  <Button
-                    onClick={openCreateModal}
-                    className="w-full justify-start font-medium"
-                    size="lg"
-                  >
-                    <Plus className="mr-2 h-5 w-5" />
-                    Nuevo Proyecto
-                  </Button>
-                )}
-
-                <Button
-                  onClick={() => setIsQuoteOpen(true)}
-                  variant="secondary"
-                  className="w-full justify-start"
+  // Componente de lista de proyectos
+  const ProjectsList = () => (
+    <>
+      <div className="p-3 border-b bg-white">
+        <h2 className="text-sm font-medium text-gray-700">Proyectos</h2>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {projects.length === 0 ? (
+          <div className="p-4 text-center text-sm text-gray-500">
+            No hay proyectos creados
+          </div>
+        ) : (
+          <div className="divide-y">
+            {projects.map((project) => {
+              const isSelected = selectedProjectId === project.id;
+              return (
+                <button
+                  key={project.id}
+                  onClick={() => setSelectedProjectId(project.id)}
+                  className={`w-full text-left p-3 hover:bg-gray-100 transition-colors ${
+                    isSelected ? "bg-blue-50 border-l-4 border-blue-500" : ""
+                  }`}
                 >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Cotización
-                </Button>
-
-                {canRegister && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => router.push("/register")}
-                  >
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Registrar Usuario
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </aside>
-
-          {/* --- DERECHA: CONTENIDO PRINCIPAL (GRID) --- */}
-          <main className="flex-1">
-            {/* Grid de proyectos */}
-            <div className="grid grid-cols-3 lg:grid-cols-3 gap-3">
-              {projects.map((p) => (
-                <Card
-                  key={p.id}
-                  className="relative flex flex-col justify-between min-h-[200px] group hover:shadow-lg transition-all duration-300 border-gray-200"
-                >
-                  <div className="absolute top-3 right-3 z-10">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-gray-900 rounded-full hover:bg-white/80 backdrop-blur-sm"
-                        >
-                          <span className="sr-only">Opciones</span>
-                          <MoreHorizontal className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        {/* --- EDICIÓN ELIMINADA DE AQUÍ, SOLO QUEDA ELIMINAR --- */}
-                        <DropdownMenuItem
-                          onClick={() => setProjectToDelete(p.id)}
-                          className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-                        >
-                          Eliminar proyecto
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <FileText className="h-6 w-6" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FolderOpen
+                        className={`h-4 w-4 flex-shrink-0 ${
+                          isSelected ? "text-blue-600" : "text-gray-400"
+                        }`}
+                      />
+                      <span
+                        className={`text-sm font-medium truncate ${
+                          isSelected ? "text-blue-700" : "text-gray-800"
+                        }`}
+                      >
+                        {project.title}
+                      </span>
                     </div>
-                    {/* ENVOLVIMOS EL TÍTULO EN LINK PARA NO PERDER ACCESO AL PROYECTO */}
-                    <Link
-                      href={`/projects/${p.id}`}
-                      className="hover:underline"
-                    >
-                      <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-2">
-                        {p.title}
-                      </h3>
-                    </Link>
-                    {p.description ? (
-                      <p className="text-sm text-gray-500 line-clamp-2 px-2">
-                        {p.description}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-gray-400 italic">
-                        Sin descripción
-                      </p>
-                    )}
+                    <ChevronRight
+                      className={`h-4 w-4 flex-shrink-0 ${
+                        isSelected ? "text-blue-500" : "text-gray-300"
+                      }`}
+                    />
                   </div>
+                  {project.description && (
+                    <p className="text-xs text-gray-500 mt-1 truncate pl-6">
+                      {project.description}
+                    </p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
+  );
 
-                  {/* --- BOTÓN INFERIOR: AHORA ES "EDITAR PROYECTO" --- */}
-                  <div className="w-full border-t border-gray-100">
-                    <Button
-                      variant="ghost"
-                      onClick={() => openEditModal(p)}
-                      className="w-full h-auto py-3 text-sm font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors rounded-none rounded-b-xl"
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Editar proyecto
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-
-              {/* Estado vacío con diseño amigable */}
-              {projects.length === 0 && (
-                <div className="col-span-full py-16 text-center bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center">
-                  <div className="bg-white p-3 rounded-full mb-3 shadow-sm">
-                    <LayoutDashboard className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900">
-                    No hay proyectos
-                  </h3>
-                  <p className="text-gray-500 max-w-sm mt-1 mb-4">
-                    Comienza creando un nuevo proyecto desde el menú lateral.
-                  </p>
-                  <Button variant="outline" onClick={openCreateModal}>
-                    Crear mi primer proyecto
-                  </Button>
-                </div>
+  // Componente de detalle del proyecto
+  const ProjectDetail = () => (
+    <>
+      {selectedProject ? (
+        <div className="p-4 md:p-6 space-y-4">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {selectedProject.title}
+              </h2>
+              {selectedProject.description && (
+                <p className="text-sm text-gray-600 mt-1">
+                  {selectedProject.description}
+                </p>
               )}
             </div>
-          </main>
+
+            <Card className="p-4 bg-gray-50">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Opciones del Proyecto
+              </h3>
+              <div className="space-y-2">
+                <Button
+                  onClick={() => openEditModal(selectedProject)}
+                  variant="outline"
+                  className="w-full justify-start"
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Actualizar Proyecto
+                </Button>
+                <Button
+                  onClick={() => setProjectToDelete(selectedProject.id)}
+                  variant="outline"
+                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar Proyecto
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        <div className="h-full flex items-center justify-center text-gray-500">
+          <div className="text-center">
+            <FolderOpen className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg">Selecciona un proyecto</p>
+            <p className="text-sm text-gray-400 mt-1">para ver sus opciones</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // VISTA MÓVIL
+  if (isMobile) {
+    return (
+      <AuthGuard>
+        <div className="h-screen flex flex-col bg-gray-50">
+          <div className="px-4 py-3 border-b bg-white flex-shrink-0">
+            <h1 className="text-xl font-semibold text-gray-900">
+              {profile?.role === "Director" ? "Director" : "Aux. Admin"}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {projects.length} proyecto{projects.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="px-4 py-3 bg-white border-b flex gap-2 flex-shrink-0">
+            <Button onClick={openCreateModal} size="sm" className="flex-1">
+              <Plus className="mr-1 h-4 w-4" />
+              Nuevo Proyecto
+            </Button>
+            <Button
+              onClick={() => router.push("/register")}
+              size="sm"
+              variant="outline"
+              className="flex-1"
+            >
+              <UserPlus className="mr-1 h-4 w-4" />
+              Registrar Usuario
+            </Button>
+          </div>
+
+          <div
+            className={`flex-1 overflow-hidden transition-transform duration-300 ${
+              selectedProjectId ? "-translate-x-full" : "translate-x-0"
+            }`}
+          >
+            <div className="h-full flex flex-col bg-white border-r">
+              <ProjectsList />
+            </div>
+          </div>
+
+          <div
+            className={`absolute inset-0 bg-white transition-transform duration-300 ${
+              selectedProjectId ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            <div className="h-full flex flex-col">
+              <div className="flex items-center gap-3 px-4 py-3 border-b bg-white flex-shrink-0">
+                <button
+                  onClick={() => setSelectedProjectId(null)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h2 className="text-lg font-semibold truncate">
+                  {selectedProject?.title || "Detalle"}
+                </h2>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                <ProjectDetail />
+              </div>
+
+              <button
+                onClick={() => setSelectedProjectId(null)}
+                className="fixed bottom-6 left-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all hover:scale-110 active:scale-95 z-50"
+                aria-label="Volver a la lista"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </AuthGuard>
+    );
+  }
+
+  // VISTA DESKTOP
+  return (
+    <AuthGuard>
+      <div className="h-[calc(100vh-5rem)] flex flex-col">
+        <div className="px-4 py-5 border-b bg-white flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">
+                {profile?.role === "Director" ? "Director" : "Aux. Admin"}
+              </h1>
+              <p className="text-sm text-gray-500">
+                {projects.length} proyecto{projects.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={openCreateModal} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Nuevo Proyecto
+              </Button>
+              <Button
+                onClick={() => router.push("/register")}
+                size="sm"
+                variant="outline"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Registrar Usuario
+              </Button>
+            </div>
+          </div>
         </div>
 
-        {/* --- MODALES (Fuera del layout para evitar z-index issues) --- */}
+        <div className="flex-1 flex overflow-hidden">
+          <div className="w-72 lg:w-80 border-r bg-gray-50 flex flex-col overflow-hidden">
+            <ProjectsList />
+          </div>
 
-        {/* Modal: Crear / Editar Proyecto */}
-        <Dialog open={isProjectModalOpen} onOpenChange={setIsProjectModalOpen}>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingProject ? "Editar Proyecto" : "Nuevo Proyecto"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  Título del Proyecto
-                </label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Casa Gómez - Remodelación"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  Descripción (opcional)
-                </label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detalles clave del proyecto..."
-                  rows={3}
-                />
-              </div>
-
-              {/* Selector de Integrantes y Áreas */}
-              <div className="pt-2">
-                <label className="block text-sm font-medium mb-1">
-                  Asignar Equipo
-                </label>
-                <p className="text-xs text-gray-500 mb-2">
-                  Selecciona áreas completas o usuarios específicos.
-                </p>
-
-                <div className="max-h-52 overflow-y-auto border rounded-md bg-gray-50/50">
-                  {allAreas.map((area) => {
-                    const areaSeleccionada = asignaciones.some(
-                      (a) => a.tipo === "area" && a.id === area
-                    );
-                    const usuariosDelArea = allUsers.filter(
-                      (u) => u.role === area
-                    );
-
-                    return (
-                      <div
-                        key={area}
-                        className="border-b last:border-b-0 bg-white"
-                      >
-                        <div className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors">
-                          <label className="flex items-center gap-3 text-sm font-medium flex-grow cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              checked={areaSeleccionada}
-                              onChange={(e) => {
-                                const checked = e.target.checked;
-                                setAsignaciones((prev) => {
-                                  const filtrados = prev.filter(
-                                    (a) =>
-                                      !(a.tipo === "area" && a.id === area) &&
-                                      !(
-                                        a.tipo === "usuario" &&
-                                        usuariosDelArea.some(
-                                          (u) => u.id === a.id
-                                        )
-                                      )
-                                  );
-                                  if (checked) {
-                                    return [
-                                      ...filtrados,
-                                      { tipo: "area", id: area },
-                                    ];
-                                  }
-                                  return filtrados;
-                                });
-                              }}
-                            />
-                            <span className="capitalize">Área: {area}</span>
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setAreaAbierta(areaAbierta === area ? null : area)
-                            }
-                            className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
-                          >
-                            {areaAbierta === area ? "Ocultar" : "Ver usuarios"}
-                          </button>
-                        </div>
-
-                        {areaAbierta === area && (
-                          <div className="pl-9 pr-3 pb-2 bg-gray-50/50 border-t border-dashed">
-                            {usuariosDelArea.map((u) => {
-                              const usuarioSeleccionado = asignaciones.some(
-                                (a) => a.tipo === "usuario" && a.id === u.id
-                              );
-
-                              return (
-                                <label
-                                  key={u.id}
-                                  className="flex items-center gap-2 py-2 text-sm hover:text-blue-600 cursor-pointer select-none"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    disabled={areaSeleccionada}
-                                    checked={
-                                      usuarioSeleccionado || areaSeleccionada
-                                    }
-                                    onChange={(e) => {
-                                      const checked = e.target.checked;
-                                      setAsignaciones((prev) => {
-                                        const filtrados = prev.filter(
-                                          (a) =>
-                                            !(
-                                              a.tipo === "usuario" &&
-                                              a.id === u.id
-                                            )
-                                        );
-                                        if (checked) {
-                                          return [
-                                            ...filtrados,
-                                            { tipo: "usuario", id: u.id },
-                                          ];
-                                        }
-                                        return filtrados;
-                                      });
-                                    }}
-                                  />
-                                  {u.name}
-                                </label>
-                              );
-                            })}
-                            {usuariosDelArea.length === 0 && (
-                              <span className="block py-2 text-xs text-gray-400 italic">
-                                No hay usuarios registrados en esta área.
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex gap-3 justify-end pt-4 border-t mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsProjectModalOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveProject} disabled={!title.trim()}>
-                  {editingProject ? "Guardar Cambios" : "Crear Proyecto"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal: Cotización (Simulado) */}
-        <Dialog open={isQuoteOpen} onOpenChange={setIsQuoteOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Crear Cotización (simulado)</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Título</label>
-                <Input
-                  value={quoteTitle}
-                  onChange={(e) => setQuoteTitle(e.target.value)}
-                  placeholder="Ej. Presupuesto Inicial"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Cliente
-                </label>
-                <Input
-                  value={quoteClient}
-                  onChange={(e) => setQuoteClient(e.target.value)}
-                  placeholder="Nombre del cliente"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Importe Total
-                </label>
-                <div className="relative">
-                  {/* SE AJUSTÓ LA POSICIÓN DEL SIGNO DE PESOS (top-1.5) */}
-                  <span className="absolute left-3 top-1.5 text-gray-500">
-                    $
-                  </span>
-                  <Input
-                    className="pl-7"
-                    value={quoteAmount}
-                    onChange={(e) => setQuoteAmount(e.target.value)}
-                    placeholder="0.00"
-                    type="number"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end pt-2">
-                <Button variant="outline" onClick={() => setIsQuoteOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={() => {
-                    alert(
-                      `Cotización simulada creada:\nTítulo: ${quoteTitle}\nCliente: ${quoteClient}\nImporte: ${quoteAmount}`
-                    );
-                    setIsQuoteOpen(false);
-                    setQuoteTitle("");
-                    setQuoteClient("");
-                    setQuoteAmount("");
-                  }}
-                  disabled={!quoteTitle.trim()}
-                >
-                  Generar PDF
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* ALERTA DE CONFIRMACIÓN DE ELIMINAR */}
-        <AlertDialog
-          open={!!projectToDelete}
-          onOpenChange={(open) => !open && setProjectToDelete(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar este proyecto?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta acción es irreversible. Se eliminará el proyecto y todo el
-                historial de tareas asociado para todos los usuarios.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>
-                Cancelar
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={(e) => {
-                  e.preventDefault();
-                  confirmDelete();
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white"
-                disabled={isDeleting}
-              >
-                {isDeleting ? "Eliminando..." : "Sí, eliminar definitivamente"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          <div className="flex-1 overflow-y-auto bg-white">
+            <ProjectDetail />
+          </div>
+        </div>
       </div>
+
+      {/* Modal de Proyecto */}
+      <Dialog open={isProjectModalOpen} onOpenChange={setIsProjectModalOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingProject ? "Editar Proyecto" : "Nuevo Proyecto"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Título del Proyecto
+              </label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ej. Casa Gómez - Remodelación"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">
+                Descripción (opcional)
+              </label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Detalles clave del proyecto..."
+                rows={3}
+              />
+            </div>
+
+            <div className="pt-2">
+              <label className="block text-sm font-medium mb-1">
+                Asignar Equipo
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Selecciona áreas completas o usuarios específicos.
+              </p>
+
+              <div className="max-h-52 overflow-y-auto border rounded-md bg-gray-50/50">
+                {allAreas.map((area) => {
+                  const areaSeleccionada = asignaciones.some(
+                    (a) => a.tipo === "area" && a.id === area
+                  );
+                  const usuariosDelArea = allUsers.filter(
+                    (u) => u.role === area
+                  );
+
+                  return (
+                    <div
+                      key={area}
+                      className="border-b last:border-b-0 bg-white"
+                    >
+                      <div className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-gray-50">
+                        <label className="flex items-center gap-3 text-sm font-medium flex-grow cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                            checked={areaSeleccionada}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setAsignaciones((prev) => {
+                                const filtrados = prev.filter(
+                                  (a) =>
+                                    !(a.tipo === "area" && a.id === area) &&
+                                    !(
+                                      a.tipo === "usuario" &&
+                                      usuariosDelArea.some((u) => u.id === a.id)
+                                    )
+                                );
+                                if (checked) {
+                                  return [
+                                    ...filtrados,
+                                    { tipo: "area", id: area },
+                                  ];
+                                }
+                                return filtrados;
+                              });
+                            }}
+                          />
+                          <span className="capitalize">Área: {area}</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAreaAbierta(areaAbierta === area ? null : area)
+                          }
+                          className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
+                        >
+                          {areaAbierta === area ? "Ocultar" : "Ver usuarios"}
+                        </button>
+                      </div>
+
+                      {areaAbierta === area && (
+                        <div className="pl-9 pr-3 pb-2 bg-gray-50/50 border-t border-dashed">
+                          {usuariosDelArea.map((u) => {
+                            const usuarioSeleccionado = asignaciones.some(
+                              (a) => a.tipo === "usuario" && a.id === u.id
+                            );
+
+                            return (
+                              <label
+                                key={u.id}
+                                className="flex items-center gap-2 py-2 text-sm hover:text-blue-600 cursor-pointer"
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                                  disabled={areaSeleccionada}
+                                  checked={
+                                    usuarioSeleccionado || areaSeleccionada
+                                  }
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setAsignaciones((prev) => {
+                                      const filtrados = prev.filter(
+                                        (a) =>
+                                          !(
+                                            a.tipo === "usuario" &&
+                                            a.id === u.id
+                                          )
+                                      );
+                                      if (checked) {
+                                        return [
+                                          ...filtrados,
+                                          { tipo: "usuario", id: u.id },
+                                        ];
+                                      }
+                                      return filtrados;
+                                    });
+                                  }}
+                                />
+                                {u.name}
+                              </label>
+                            );
+                          })}
+                          {usuariosDelArea.length === 0 && (
+                            <span className="block py-2 text-xs text-gray-400 italic">
+                              No hay usuarios en esta área.
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setIsProjectModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveProject} disabled={!title.trim()}>
+                {editingProject ? "Guardar Cambios" : "Crear Proyecto"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Cotización */}
+      <Dialog open={isQuoteOpen} onOpenChange={setIsQuoteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crear Cotización</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Título</label>
+              <Input
+                value={quoteTitle}
+                onChange={(e) => setQuoteTitle(e.target.value)}
+                placeholder="Ej. Presupuesto Inicial"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Cliente</label>
+              <Input
+                value={quoteClient}
+                onChange={(e) => setQuoteClient(e.target.value)}
+                placeholder="Nombre del cliente"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Importe Total
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1.5 text-gray-500">$</span>
+                <Input
+                  className="pl-7"
+                  value={quoteAmount}
+                  onChange={(e) => setQuoteAmount(e.target.value)}
+                  placeholder="0.00"
+                  type="number"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => setIsQuoteOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  alert(
+                    `Cotización creada:\n${quoteTitle}\n${quoteClient}\n$${quoteAmount}`
+                  );
+                  setIsQuoteOpen(false);
+                  setQuoteTitle("");
+                  setQuoteClient("");
+                  setQuoteAmount("");
+                }}
+                disabled={!quoteTitle.trim()}
+              >
+                Generar PDF
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alert de Eliminación */}
+      <AlertDialog
+        open={!!projectToDelete}
+        onOpenChange={(open) => !open && setProjectToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este proyecto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es irreversible. Se eliminará el proyecto y todo su
+              contenido.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AuthGuard>
   );
 }

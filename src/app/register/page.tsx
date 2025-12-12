@@ -34,9 +34,7 @@ function AdminRegisterContent() {
     profile?.role === "Administrador" ||
     profile?.role === "Aux. Admin"; // 2.CONTROL DE ELEVACIÓN: Define quién tiene el permiso para marcar 'isAreaChief'. // El Administrador (isAdmin) tiene este permiso por definición, pero lo extendemos al Director y Aux. Admin.
   const canSetAreaChief =
-    isAdmin ||
-    profile?.role === "Director" ||
-    profile?.role === "Aux. Admin";
+    isAdmin || profile?.role === "Director" || profile?.role === "Aux. Admin";
 
   useEffect(() => {
     if (loading) return;
