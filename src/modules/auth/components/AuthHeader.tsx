@@ -51,8 +51,9 @@ const roleToAreaLink: Record<UserRole, { href: string; label: string } | null> =
     Usuario: null,
   };
 
-// Áreas que el Director puede ver (todas las áreas técnicas)
+// Áreas que el Director puede ver (todas las áreas técnicas y Aux. Admin)
 const directorAreas: { href: string; label: string }[] = [
+  { href: "/aux-admin", label: "Aux. Admin" },
   { href: "/arquitectura", label: "Arquitectura" },
   { href: "/diseno", label: "Diseño" },
   { href: "/gerencia", label: "Gerencia" },
@@ -104,7 +105,7 @@ export function AuthHeader() {
   // Clases responsivas para los enlaces de navegación
   const navLinkClassName =
     "h-9 px-2 py-2 text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap leading-tight lg:px-2.5 xl:px-3 xl:text-sm 2xl:px-4";
-  
+
   // Clases para las áreas del Director (más compactas)
   const areaLinkClassName =
     "h-8 px-2 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-blue-50 rounded-md transition-colors inline-flex items-center whitespace-nowrap border border-transparent hover:border-blue-200 lg:px-2 xl:px-2.5 xl:text-xs 2xl:px-3";
@@ -180,15 +181,16 @@ export function AuthHeader() {
                 )}
 
                 {/* Áreas directas - Solo para Director */}
-                {isDirector && directorAreas.map((area) => (
-                  <NavigationMenuItem key={area.href}>
-                    <NavigationMenuLink asChild>
-                      <Link href={area.href} className={areaLinkClassName}>
-                        {area.label}
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                ))}
+                {isDirector &&
+                  directorAreas.map((area) => (
+                    <NavigationMenuItem key={area.href}>
+                      <NavigationMenuLink asChild>
+                        <Link href={area.href} className={areaLinkClassName}>
+                          {area.label}
+                        </Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  ))}
               </NavigationMenuList>
             </NavigationMenu>
           </div>

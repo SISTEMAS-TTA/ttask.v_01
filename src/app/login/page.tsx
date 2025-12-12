@@ -6,7 +6,7 @@ import Login from "@/modules/auth/components/Login";
 
 export default function LoginPage() {
   return (
-    <div className="fixed inset-0 top-16 overflow-y-auto">
+    <div className="fixed inset-0 top-10 overflow-y-auto">
       {/* Imagen de fondo */}
       <Image
         src="/wpp_sketches.jpg"

@@ -39,45 +39,6 @@ interface UITask {
 
 const initialTasks: UITask[] = [];
 
-// [NUEVO]: Componente de pie de página para Tareas Asignadas
-const AssignedTaskFooter = ({
-  task,
-  getUserName,
-}: {
-  task: UITask;
-  getUserName: (uid: string) => string;
-}) => {
-  // Obtenemos el nombre usando el hook de mapa de usuarios
-  const assigneeName = task.assigneeId
-    ? getUserName(task.assigneeId)
-    : "Sin asignar";
-
-  return (
-    <div className="text-sm text-gray-500 mt-1 border-t border-blue-200/50 pt-2">
-      <div className="flex justify-between items-center">
-        <span className="text-xs font-medium text-gray-400">Para:</span>
-        <span
-          className="text-xs font-semibold text-gray-700 truncate max-w-[120px]"
-          title={assigneeName}
-        >
-          {assigneeName}
-        </span>
-      </div>
-      <p className="text-[10px] text-right mt-1 text-gray-400">
-        {task.createdAt.toLocaleString("es-MX", {
-          day: "2-digit",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </p>
-    </div>
-  );
-};
-
-// Tipos de vista compatibles con el modal
-// type ViewValue = "all" | "viewed" | "completed" | "favorites";
-
 export function TasksColumn() {
   const { user, loading: userLoading } = useUser();
   const { getUserName } = useUsersMap();
@@ -91,6 +52,11 @@ export function TasksColumn() {
     project?: string;
     view?: string;
   }>({});
+
+  // Estado para los acordeones de historial
+  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     if (userLoading) return;
@@ -117,10 +83,6 @@ export function TasksColumn() {
             ? d.lastSeenByAssignerAt.toDate()
             : undefined,
         }));
-        console.debug(
-          "subscribeToTasksAssignedBy -> received docs:",
-          mapped.map((m) => ({ id: m.id, favorite: m.favorite }))
-        );
         setTasks(mapped);
       },
       () => setTasks([])
@@ -129,7 +91,7 @@ export function TasksColumn() {
     return () => unsubscribe();
   }, [user, userLoading]);
 
-  // Mantener activeTask en sync con la lista de tasks para reflejar cambios guardados
+  // Mantener activeTask en sync
   useEffect(() => {
     if (!activeTask) return;
     const latest = tasks.find((t) => t.id === activeTask.id);
@@ -145,7 +107,6 @@ export function TasksColumn() {
   }) => {
     if (!user) return;
 
-    // Construir el payload con soporte para múltiples destinatarios
     const payload: NewTaskInput = {
       title: task.title,
       project: task.project,
@@ -159,24 +120,16 @@ export function TasksColumn() {
 
     try {
       await createTask(user.uid, payload);
-      // No necesitamos actualizar el estado local manualmente,
-      // la suscripción (onSnapshot) lo hará automáticamente.
     } catch (error) {
       console.error("Error creating task:", error);
       alert("Hubo un error al crear la tarea.");
     }
   };
 
-  // --- Funcion para elimminar la tarea ---
   const handleDeleteTask = async (taskId: string) => {
     try {
-      // 1. Borrar de Firebase
       await deleteTask(taskId);
-
-      // 2. Actualizar la lista visualmente (para que desaparezca al instante)
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
-
-      // 3. Cerrar el modal y limpiar selección
       setIsViewModalOpen(false);
       setActiveTask(null);
     } catch (error) {
@@ -185,7 +138,7 @@ export function TasksColumn() {
     }
   };
 
-  // Aplicar filtros
+  // Filtros y Ordenamiento
   const filteredTasks = tasks.filter((task) => {
     if (filter.user && task.assigneeId !== filter.user) return false;
     if (filter.project && task.project !== filter.project) return false;
@@ -193,23 +146,14 @@ export function TasksColumn() {
     if (filter.view === "favorites" && !task.favorite) return false;
     return true;
   });
-  // (nota: descomentaba vistas separadas si se necesitan más adelante)
 
-  // Orden: no vistas primero, luego favoritas arriba
   const orderedTasks = filteredTasks.slice().sort((a, b) => {
-    // Primero ordenar por viewed (no vistas primero)
     if (a.viewed !== b.viewed) return a.viewed ? 1 : -1;
-    // Luego por favoritas
     if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
     return 0;
   });
 
   // --- LÓGICA DE HISTORIAL Y AGRUPACIÓN ---
-
-  // 1. Estado para los acordeones (qué meses están abiertos)
-  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
-    new Set()
-  );
 
   const toggleCompletedGroup = (monthYear: string) => {
     setOpenCompletedGroups((prev) => {
@@ -220,18 +164,15 @@ export function TasksColumn() {
     });
   };
 
-  // 2. Separar tareas
   const activeTasks = orderedTasks.filter((t) => !t.completed);
   const completedTasks = orderedTasks.filter((t) => t.completed);
 
-  // 3. Helpers de Fecha
   const getTaskDate = (task: UITask) => task.createdAt;
   
   const formatMonthYear = (date: Date) => 
     date.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
         .replace(/^\w/, (c) => c.toUpperCase());
 
-  // 4. Agrupar Matemáticamente
   const groupedCompletedTasks = completedTasks.reduce((groups, task) => {
     const date = getTaskDate(task);
     const monthYear = formatMonthYear(date);
@@ -242,15 +183,11 @@ export function TasksColumn() {
     return groups;
   }, {} as Record<string, UITask[]>);
 
-  // 5. Ordenar los grupos (Mes más reciente primero)
   const sortedGroups = Object.entries(groupedCompletedTasks).sort((a, b) => {
-    // Tomamos la fecha de la primera tarea de cada grupo para comparar
     const dateA = getTaskDate(a[1][0]).getTime();
     const dateB = getTaskDate(b[1][0]).getTime();
     return dateB - dateA;
   });
-
-  // --- FIN LÓGICA HISTORIAL ---
 
   return (
     <div className="w-full bg-blue-100 flex flex-col h-[500px] md:h-full">
@@ -306,7 +243,7 @@ export function TasksColumn() {
                   )}
                 <Star
                   className={`h-5 w-5 ${
-                    task.viewed ? "text-yellow-600 fill-current" : "text-gray-400"
+                    task.favorite ? "text-yellow-600 fill-current" : "text-gray-400"
                   }`}
                 />
                 <Circle className="h-5 w-5 text-gray-400" />
@@ -315,9 +252,23 @@ export function TasksColumn() {
             {task.description && (
               <p className="text-sm text-gray-600 mb-2 line-clamp-2">{task.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
-              Asignado a: {getUserName(task.assigneeId)}
-            </p>
+            
+            {/* --- SECCIÓN DE FECHA ACTUALIZADA CON HORA --- */}
+            <div className="mt-2 pt-2 border-t border-blue-300/30">
+              <p className="text-xs text-gray-600">
+                Asignado a: <span className="font-medium">{getUserName(task.assigneeId)}</span>
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Asignado: {task.createdAt.toLocaleString("es-MX", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true
+                })}
+              </p>
+            </div>
           </Card>
         ))}
 
