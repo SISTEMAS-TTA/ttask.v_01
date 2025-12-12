@@ -13,6 +13,7 @@ import type {
   ProjectSection,
   ProjectTask,
   UserRole,
+  ProjectRole,
 } from "@/modules/types";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import { listAllUsers } from "@/lib/firebase/firestore";
 import {
   createProject,
   subscribeToProjectsForUser,
+  updateProjectAssignments,
 } from "@/lib/firebase/projects";
 import { useRouter } from "next/navigation";
 
@@ -176,6 +178,12 @@ export default function DirectorPage() {
   const [quoteClient, setQuoteClient] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
 
+  // Estados para editar proyecto
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingProject, setEditingProject] = useState<ProjectDoc | null>(null);
+  const [editAsignaciones, setEditAsignaciones] = useState<Asignacion[]>([]);
+  const [editAreaAbierta, setEditAreaAbierta] = useState<string | null>(null);
+
   const router = useRouter();
 
   // --- INICIO Bloque 3: Función de Guardar ---
@@ -201,31 +209,83 @@ export default function DirectorPage() {
   };
   // --- FIN Bloque 3 ---
 
+  // --- Funciones para editar proyecto ---
+  const openEditModal = (project: ProjectDoc) => {
+    setEditingProject(project);
+    // Reconstruir asignaciones desde rolesAllowed y members
+    const asig: Asignacion[] = [];
+    // Agregar áreas (roles)
+    project.rolesAllowed.forEach((role) => {
+      asig.push({ tipo: "area", id: role });
+    });
+    // Agregar usuarios individuales que no pertenezcan a un área ya asignada
+    project.members.forEach((memberId) => {
+      const memberUser = allUsers.find((u) => u.id === memberId);
+      if (memberUser && !project.rolesAllowed.includes(memberUser.role as ProjectRole)) {
+        asig.push({ tipo: "usuario", id: memberId });
+      }
+    });
+    setEditAsignaciones(asig);
+    setIsEditing(true);
+  };
+
+  const saveEditedProject = async () => {
+    if (!editingProject) return;
+    await updateProjectAssignments(editingProject.id, editAsignaciones);
+    setIsEditing(false);
+    setEditingProject(null);
+    setEditAsignaciones([]);
+    setEditAreaAbierta(null);
+  };
+  // --- FIN Funciones para editar proyecto ---
+
   return (
     <AuthGuard>
-      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold text-gray-900">Proyectos</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => setIsQuoteOpen(true)}>
-              Cotización (simulado)
-            </Button>
-            {canRegister && (
-              <Button
-                variant="outline"
-                onClick={() => router.push("/register")}
-              >
-                Registrar Usuario
-              </Button>
-            )}
-            {canCreate && (
-              <Button onClick={() => setIsCreating(true)}>
-                Nuevo Proyecto
-              </Button>
-            )}
-          </div>
+      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-gray-900">Panel de Dirección</h1>
+        </div>
+
+        {/* Acciones rápidas en formato lista horizontal */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card 
+            className="p-4 cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-amber-500"
+            onClick={() => setIsQuoteOpen(true)}
+          >
+            <div className="flex flex-col">
+              <h3 className="font-medium text-gray-900">Cotización</h3>
+              <p className="text-sm text-gray-500">Crear nueva cotización</p>
+            </div>
+          </Card>
+
+          {canRegister && (
+            <Card 
+              className="p-4 cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-green-500"
+              onClick={() => router.push("/register")}
+            >
+              <div className="flex flex-col">
+                <h3 className="font-medium text-gray-900">Registrar Usuario</h3>
+                <p className="text-sm text-gray-500">Agregar nuevo usuario al sistema</p>
+              </div>
+            </Card>
+          )}
+
+          {canCreate && (
+            <Card 
+              className="p-4 cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-blue-500"
+              onClick={() => setIsCreating(true)}
+            >
+              <div className="flex flex-col">
+                <h3 className="font-medium text-gray-900">Nuevo Proyecto</h3>
+                <p className="text-sm text-gray-500">Iniciar un proyecto nuevo</p>
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* Título de sección de proyectos */}
+        <div className="flex items-center gap-2 pt-4 border-t">
+          <h2 className="text-xl font-semibold text-gray-800">Mis Proyectos</h2>
         </div>
 
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
@@ -444,28 +504,229 @@ export default function DirectorPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Registrar redirige a la página de registro centralizada */}
-
-        {/* Grid móvil con mínimo 2 columnas */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          {visible.map((p) => (
-            <Card key={p.id} className="p-4 flex items-center justify-between">
+        {/* Modal: Editar Proyecto */}
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                Editar integrantes: {editingProject?.title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
               <div>
-                <h3 className="font-medium">{p.title}</h3>
-                {p.description && (
-                  <p className="text-sm text-gray-600">{p.description}</p>
-                )}
+                <label className="block text-sm font-medium mb-1">
+                  Integrantes y Áreas
+                </label>
+
+                <div className="max-h-60 overflow-y-auto border rounded">
+                  {allAreas.map((area) => {
+                    const areaSeleccionada = editAsignaciones.some(
+                      (a) => a.tipo === "area" && a.id === area
+                    );
+
+                    const usuariosDelArea = allUsers.filter(
+                      (u) => u.role === area
+                    );
+
+                    return (
+                      <div key={area} className="border-b last:border-b-0">
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100">
+                          <label className="flex items-center gap-2 text-sm font-medium flex-grow">
+                            <input
+                              type="checkbox"
+                              checked={areaSeleccionada}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setEditAsignaciones((prev) => {
+                                  const filtrados = prev.filter(
+                                    (a) =>
+                                      !(a.tipo === "area" && a.id === area) &&
+                                      !(
+                                        a.tipo === "usuario" &&
+                                        usuariosDelArea.some(
+                                          (u) => u.id === a.id
+                                        )
+                                      )
+                                  );
+                                  if (checked) {
+                                    return [
+                                      ...filtrados,
+                                      { tipo: "area", id: area },
+                                    ];
+                                  }
+                                  return filtrados;
+                                });
+                              }}
+                            />
+                            Toda el área: {area}
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditAreaAbierta(
+                                editAreaAbierta === area ? null : area
+                              )
+                            }
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            {editAreaAbierta === area ? "Ocultar" : "Ver"}
+                          </button>
+                        </div>
+
+                        {editAreaAbierta === area && (
+                          <div className="pl-6 bg-white">
+                            {usuariosDelArea.map((user) => {
+                              const usuarioSeleccionado = editAsignaciones.some(
+                                (a) => a.tipo === "usuario" && a.id === user.id
+                              );
+
+                              return (
+                                <label
+                                  key={user.id}
+                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    disabled={areaSeleccionada}
+                                    checked={
+                                      usuarioSeleccionado || areaSeleccionada
+                                    }
+                                    onChange={(e) => {
+                                      const checked = e.target.checked;
+                                      setEditAsignaciones((prev) => {
+                                        const filtrados = prev.filter(
+                                          (a) =>
+                                            !(
+                                              a.tipo === "usuario" &&
+                                              a.id === user.id
+                                            )
+                                        );
+                                        if (checked) {
+                                          return [
+                                            ...filtrados,
+                                            { tipo: "usuario", id: user.id },
+                                          ];
+                                        }
+                                        return filtrados;
+                                      });
+                                    }}
+                                  />
+                                  {user.name}
+                                </label>
+                              );
+                            })}
+                            {usuariosDelArea.length === 0 && (
+                              <span className="block px-3 py-2 text-sm text-gray-500">
+                                No hay usuarios en esta área.
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <Link
-                href={`/projects/${p.id}`}
-                className="text-blue-600 hover:underline text-sm"
-              >
-                Ver
-              </Link>
-            </Card>
-          ))}
+              <div className="flex gap-2 justify-end pt-1">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditingProject(null);
+                    setEditAsignaciones([]);
+                    setEditAreaAbierta(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={saveEditedProject}>Guardar cambios</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Grid de proyectos */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {visible.map((p) => {
+            // Calcular progreso del proyecto
+            const tasks = p.tasks || [];
+            const effective = tasks.filter((t) => !t.na);
+            const progress = effective.length
+              ? Math.round(
+                  (effective.filter((t) => t.completed).length /
+                    effective.length) *
+                    100
+                )
+              : 0;
+
+            return (
+              <Card key={p.id} className="p-4 space-y-3">
+                <div>
+                  <h3 className="font-medium text-gray-900">{p.title}</h3>
+                  {p.description && (
+                    <p className="text-sm text-gray-500">{p.description}</p>
+                  )}
+                </div>
+
+                {/* Barra de progreso */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Avance</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-200 rounded-full">
+                    <div
+                      className={`h-2 rounded-full transition-all ${
+                        progress === 100
+                          ? "bg-green-500"
+                          : progress > 50
+                          ? "bg-blue-500"
+                          : progress > 0
+                          ? "bg-amber-500"
+                          : "bg-gray-300"
+                      }`}
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Áreas asignadas */}
+                {p.rolesAllowed.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {p.rolesAllowed.map((role) => (
+                      <span
+                        key={role}
+                        className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full"
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Botones de acción */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Link
+                    href={`/projects/${p.id}`}
+                    className="text-blue-600 hover:underline text-sm"
+                  >
+                    Ver detalles
+                  </Link>
+                  {canCreate && (
+                    <button
+                      onClick={() => openEditModal(p)}
+                      className="text-gray-600 hover:underline text-sm ml-auto"
+                    >
+                      Editar integrantes
+                    </button>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
           {visible.length === 0 && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 col-span-full">
               No hay proyectos disponibles.
             </p>
           )}

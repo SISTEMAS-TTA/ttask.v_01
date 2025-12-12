@@ -33,8 +33,8 @@ function AdminRegisterContent() {
   const canAccessRegister =
     profile?.role === "Director" || profile?.role === "Administrador";
 
-  // 🔑 DEFINIMOS SI EL USUARIO ACTUAL ES UN ADMINISTRADOR PARA PASAR EL PERMISO
-  const isCurrentUserAdmin = isAdmin;
+  // 🔑 Director y Administrador pueden asignar jefes de área
+  const canAssignAreaChief = profile?.role === "Director" || profile?.role === "Administrador";
 
   useEffect(() => {
     if (loading) return;
@@ -80,11 +80,10 @@ function AdminRegisterContent() {
       {/* Contenido */}     {" "}
       <div className="relative z-20 pt-24 sm:pt-28 md:pt-32">
                {" "}
-        {/* 🔑 CAMBIO CLAVE: Pasamos el rol forzado Y el permiso de administrador */}
-               {" "}
+        {/* 🔑 CAMBIO CLAVE: Pasamos el rol forzado Y el permiso de asignar jefe de área */}
         <Register
           forcedRole={forcedRole}
-          isCurrentUserAdmin={isCurrentUserAdmin} // 🔑 NUEVO PROP
+          isCurrentUserAdmin={canAssignAreaChief} // 🔑 Director y Admin pueden asignar jefes de área
         />
              {" "}
       </div>
