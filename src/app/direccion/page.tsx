@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import useUser from "@/modules/auth/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,19 +34,28 @@ import {
   updateProjectAssignments,
 } from "@/lib/firebase/projects";
 import { useRouter } from "next/navigation";
+import {
+  Loader2,
+  Plus,
+  FileText,
+  UserPlus,
+  LayoutDashboard,
+} from "lucide-react";
 
-// Firestore-backed projects for current user (owner, member, role allowed)
+// Firestore-backed projects for current user
 function useProjects(userId?: string, role?: UserRole) {
   const [projects, setProjects] = useState<ProjectDoc[]>([]);
+
   useEffect(() => {
     if (!userId || !role) return;
     const unsub = subscribeToProjectsForUser(userId, role, setProjects);
     return () => unsub();
   }, [userId, role]);
-  return { projects } as const;
+
+  return { projects, setProjects } as const;
 }
 
-// Plantilla resumida (puedes expandirla luego 1:1 con tu checklist)
+// Plantilla de secciones y tareas iniciales
 function buildTemplate() {
   const sections: ProjectSection[] = [
     { id: "sec-2", title: "Proyecto Arquitectónico", order: 1 },
@@ -119,59 +134,31 @@ function buildTemplate() {
   return { sections, tasks };
 }
 
+// Definimos el tipo aquí para reusarlo
+type Asignacion =
+  | { tipo: "area"; id: string }
+  | { tipo: "usuario"; id: string };
+
 export default function DirectorPage() {
-  const { user, profile } = useUser();
-  const { projects } = useProjects(user?.uid, profile?.role);
-  const [isCreating, setIsCreating] = useState(false);
+  const { user, profile, loading: userLoading } = useUser();
+  const { projects, setProjects } = useProjects(user?.uid, profile?.role);
+
+  // --- ESTADOS DEL MODAL DE PROYECTO (CREAR) ---
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
 
-  // Nuevos estados para manejar áreas, usuarios y la selección
+  // Estados para manejar áreas, usuarios y la selección
   const [allAreas, setAllAreas] = useState<string[]>([]);
   const [allUsers, setAllUsers] = useState<
     Array<{ id: string; name: string; role: string }>
   >([]);
-  type Asignacion =
-    | { tipo: "area"; id: string }
-    | { tipo: "usuario"; id: string };
-  const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
 
-  // Nuevo estado para controlar qué área está expandida (el acordeón)
+  // Estado para controlar qué área está expandida (acordeón)
   const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
-  // --- FIN Bloque 1 ---
 
-  // --- INICIO Bloque 2: Carga de Datos ---
-  useEffect(() => {
-    // Cargar TODOS los usuarios y TODAS las áreas
-    (async () => {
-      try {
-        // 1. listAllUsers() ya nos da todos los usuarios
-        const users = await listAllUsers();
-
-        // 2. Guardamos todos los usuarios formateados (no solo 'Diseno')
-        const formattedUsers = users.map((u) => ({
-          id: u.id,
-          name: u.fullName || `${u.firstName} ${u.lastName}`.trim() || u.email,
-          role: u.role, // Guardamos el rol para poder agruparlos
-        }));
-        setAllUsers(formattedUsers);
-
-        // 3. Creamos una lista única de todas las "Areas" (roles)
-        // Usamos Set para eliminar duplicados
-        const areas = [...new Set(users.map((u) => u.role))].filter(Boolean); // filter(Boolean) elimina roles vacíos
-        setAllAreas(areas);
-      } catch (e) {
-        console.warn("No se pudieron cargar usuarios o areas", e);
-      }
-    })();
-  }, []);
-  // --- FIN Bloque 2 ---
-
-  const canCreate = profile?.role === "Director";
-  const canRegister =
-    profile?.role === "Director" || profile?.role === "Administrador";
-
-  const visible = projects; // ya vienen filtrados por la suscripción
   // Estados para cotización simulada
   const [isQuoteOpen, setIsQuoteOpen] = useState(false);
   const [quoteTitle, setQuoteTitle] = useState("");
@@ -186,28 +173,88 @@ export default function DirectorPage() {
 
   const router = useRouter();
 
-  // --- INICIO Bloque 3: Función de Guardar ---
-  const createProjectAction = async () => {
+  // Cargar usuarios y áreas
+  useEffect(() => {
+    (async () => {
+      try {
+        const users = await listAllUsers();
+        const formattedUsers = users.map((u) => ({
+          id: u.id,
+          name: u.fullName || `${u.firstName} ${u.lastName}`.trim() || u.email,
+          role: u.role,
+        }));
+        setAllUsers(formattedUsers);
+        const areas = [...new Set(users.map((u) => u.role))].filter(Boolean);
+        setAllAreas(areas);
+      } catch (e) {
+        console.warn("No se pudieron cargar usuarios o areas", e);
+      }
+    })();
+  }, []);
+
+  // Verificar permisos
+  const canAccess = profile?.role === "Director";
+
+  const canCreate = profile?.role === "Director";
+
+  const canRegister = profile?.role === "Director";
+
+  // --- FUNCIÓN PARA ABRIR EL MODAL ---
+
+  const openCreateModal = () => {
+    setTitle("");
+    setDescription("");
+    setAsignaciones([]);
+    setIsProjectModalOpen(true);
+  };
+
+  // --- FUNCIÓN DE GUARDAR (CREAR) ---
+  const handleSaveProject = async () => {
     if (!user) return;
+
+    // MODO CREAR
     const base = buildTemplate();
     await createProject(user.uid, {
       title: title.trim(),
       description: description.trim() || undefined,
-
-      // members, // BORRADO
-      // rolesAllowed: ["Diseno"], // BORRADO
-      asignaciones: asignaciones, // NUEVO: Pasamos nuestro nuevo array
-
+      asignaciones: asignaciones,
       sections: base.sections,
       tasks: base.tasks,
     });
-    setIsCreating(false);
+
+    // Limpiar y cerrar
+    setIsProjectModalOpen(false);
     setTitle("");
     setDescription("");
-    // setMembers([]); // BORRADO
-    setAsignaciones([]); // NUEVO: Limpiamos el nuevo estado
+    setAsignaciones([]);
   };
-  // --- FIN Bloque 3 ---
+
+  if (userLoading) {
+    return (
+      <AuthGuard>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      </AuthGuard>
+    );
+  }
+
+  if (!canAccess) {
+    return (
+      <AuthGuard>
+        <div className="max-w-5xl mx-auto p-4 md:p-6">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+              Acceso restringido
+            </h1>
+            <p className="text-gray-600">
+              No tienes permisos para ver esta página.
+            </p>
+          </div>
+        </div>
+      </AuthGuard>
+    );
+  }
 
   // --- Funciones para editar proyecto ---
   const openEditModal = (project: ProjectDoc) => {
@@ -241,6 +288,7 @@ export default function DirectorPage() {
 
   return (
     <AuthGuard>
+<<<<<<< HEAD
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-semibold text-gray-900">Panel de Dirección</h1>
@@ -286,61 +334,189 @@ export default function DirectorPage() {
         {/* Título de sección de proyectos */}
         <div className="flex items-center gap-2 pt-4 border-t">
           <h2 className="text-xl font-semibold text-gray-800">Mis Proyectos</h2>
+=======
+      <div className="max-w-7xl mx-auto p-4 md:p-6">
+        {/* --- TÍTULO PRINCIPAL --- */}
+        <div className="flex flex-col items-center justify-center space-y-2 mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 text-center">
+            Dirección - Gestión de Proyectos
+          </h1>
+          <p className="text-gray-500 text-center"></p>
+>>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
         </div>
 
-        <Dialog open={isCreating} onOpenChange={setIsCreating}>
-          <DialogContent className="sm:max-w-lg">
+        {/* LAYOUT PRINCIPAL: FLEXIBLE */}
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          {/* --- IZQUIERDA: BARRA LATERAL DE ACCIONES --- */}
+          <aside className="w-full md:w-64 shrink-0 space-y-4">
+            {/* Tarjeta de Acciones Principales */}
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Acciones</CardTitle>
+                <CardDescription>Gestión rápida</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {canCreate && (
+                  <Button
+                    onClick={openCreateModal}
+                    className="w-full justify-start font-medium"
+                    size="lg"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Nuevo Proyecto
+                  </Button>
+                )}
+
+                <Button
+                  onClick={() => setIsQuoteOpen(true)}
+                  variant="secondary"
+                  className="w-full justify-start"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Cotización
+                </Button>
+
+                {canRegister && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => router.push("/register")}
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Registrar Usuario
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </aside>
+
+          {/* --- DERECHA: CONTENIDO PRINCIPAL (GRID) --- */}
+          <main className="flex-1">
+            {/* Grid de proyectos */}
+            <div className="grid grid-cols-3 lg:grid-cols-3 gap-3">
+              {projects.map((p) => (
+                <Card
+                  key={p.id}
+                  className="relative flex flex-col justify-between min-h-[200px] group hover:shadow-lg transition-all duration-300 border-gray-200"
+                >
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <FileText className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 leading-tight mb-2">
+                      {p.title}
+                    </h3>
+                    {p.description ? (
+                      <p className="text-sm text-gray-500 line-clamp-2 px-2">
+                        {p.description}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic">
+                        Sin descripción
+                      </p>
+                    )}
+                  </div>
+
+                  {/* --- BOTÓN INFERIOR: VER DETALLES (Solo lectura) --- */}
+                  <div className="w-full border-t border-gray-100">
+                    <Link href={`/direccion/${p.id}`}>
+                      <Button
+                        variant="ghost"
+                        className="w-full h-auto py-3 text-sm font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors rounded-none rounded-b-xl"
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        Ver Detalles
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              ))}
+
+              {/* Estado vacío con diseño amigable */}
+              {projects.length === 0 && (
+                <div className="col-span-full py-16 text-center bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center">
+                  <div className="bg-white p-3 rounded-full mb-3 shadow-sm">
+                    <LayoutDashboard className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    No hay proyectos
+                  </h3>
+                  <p className="text-gray-500 max-w-sm mt-1 mb-4">
+                    Comienza creando un nuevo proyecto desde el menú lateral.
+                  </p>
+                  <Button variant="outline" onClick={openCreateModal}>
+                    Crear mi primer proyecto
+                  </Button>
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+
+        {/* --- MODALES (Fuera del layout para evitar z-index issues) --- */}
+
+        {/* Modal: Crear Proyecto */}
+        <Dialog open={isProjectModalOpen} onOpenChange={setIsProjectModalOpen}>
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Nuevo proyecto</DialogTitle>
+              <DialogTitle>Nuevo Proyecto</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Título</label>
+                <label className="block text-sm font-medium mb-1.5">
+                  Título del Proyecto
+                </label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Casa Gómez"
+                  placeholder="Ej. Casa Gómez - Remodelación"
+                  className="w-full"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium mb-1.5">
                   Descripción (opcional)
                 </label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Detalles clave del proyecto..."
+                  rows={3}
                 />
               </div>
-              {/* --- INICIO Bloque 4: Interfaz de Integrantes --- */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Integrantes y Áreas
-                </label>
 
-                <div className="max-h-60 overflow-y-auto border rounded">
+              {/* Selector de Integrantes y Áreas */}
+              <div className="pt-2">
+                <label className="block text-sm font-medium mb-1">
+                  Asignar Equipo
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Selecciona áreas completas o usuarios específicos.
+                </p>
+
+                <div className="max-h-52 overflow-y-auto border rounded-md bg-gray-50/50">
                   {allAreas.map((area) => {
-                    // Comprobamos si el ÁREA ENTERA está seleccionada
                     const areaSeleccionada = asignaciones.some(
                       (a) => a.tipo === "area" && a.id === area
                     );
-
-                    // Obtenemos los usuarios que pertenecen a esta área
                     const usuariosDelArea = allUsers.filter(
                       (u) => u.role === area
                     );
 
                     return (
-                      <div key={area} className="border-b last:border-b-0">
-                        {/* Fila del Área (para seleccionar TODA el área) */}
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100">
-                          <label className="flex items-center gap-2 text-sm font-medium flex-grow">
+                      <div
+                        key={area}
+                        className="border-b last:border-b-0 bg-white"
+                      >
+                        <div className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors">
+                          <label className="flex items-center gap-3 text-sm font-medium grow cursor-pointer select-none">
                             <input
                               type="checkbox"
+                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               checked={areaSeleccionada}
                               onChange={(e) => {
                                 const checked = e.target.checked;
                                 setAsignaciones((prev) => {
-                                  // Primero, quitamos esta área y todos sus usuarios individuales
                                   const filtrados = prev.filter(
                                     (a) =>
                                       !(a.tipo === "area" && a.id === area) &&
@@ -351,49 +527,44 @@ export default function DirectorPage() {
                                         )
                                       )
                                   );
-                                  // Si se marcó, agregamos el área
                                   if (checked) {
                                     return [
                                       ...filtrados,
                                       { tipo: "area", id: area },
                                     ];
                                   }
-                                  // Si se desmarcó, solo devolvemos los filtrados
                                   return filtrados;
                                 });
                               }}
                             />
-                            Toda el área: {area}
+                            <span className="capitalize">Área: {area}</span>
                           </label>
-
-                          {/* Botón para expandir/colapsar y ver usuarios */}
                           <button
                             type="button"
                             onClick={() =>
                               setAreaAbierta(areaAbierta === area ? null : area)
                             }
-                            className="text-sm text-blue-600 hover:underline"
+                            className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
                           >
-                            {areaAbierta === area ? "Ocultar" : "Ver"}
+                            {areaAbierta === area ? "Ocultar" : "Ver usuarios"}
                           </button>
                         </div>
 
-                        {/* Lista de Usuarios (si está expandida) */}
                         {areaAbierta === area && (
-                          <div className="pl-6 bg-white">
-                            {usuariosDelArea.map((user) => {
+                          <div className="pl-9 pr-3 pb-2 bg-gray-50/50 border-t border-dashed">
+                            {usuariosDelArea.map((u) => {
                               const usuarioSeleccionado = asignaciones.some(
-                                (a) => a.tipo === "usuario" && a.id === user.id
+                                (a) => a.tipo === "usuario" && a.id === u.id
                               );
 
                               return (
                                 <label
-                                  key={user.id}
-                                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50"
+                                  key={u.id}
+                                  className="flex items-center gap-2 py-2 text-sm hover:text-blue-600 cursor-pointer select-none"
                                 >
                                   <input
                                     type="checkbox"
-                                    // Deshabilitado si el área entera ya está seleccionada
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                     disabled={areaSeleccionada}
                                     checked={
                                       usuarioSeleccionado || areaSeleccionada
@@ -405,26 +576,26 @@ export default function DirectorPage() {
                                           (a) =>
                                             !(
                                               a.tipo === "usuario" &&
-                                              a.id === user.id
+                                              a.id === u.id
                                             )
                                         );
                                         if (checked) {
                                           return [
                                             ...filtrados,
-                                            { tipo: "usuario", id: user.id },
+                                            { tipo: "usuario", id: u.id },
                                           ];
                                         }
                                         return filtrados;
                                       });
                                     }}
                                   />
-                                  {user.name}
+                                  {u.name}
                                 </label>
                               );
                             })}
                             {usuariosDelArea.length === 0 && (
-                              <span className="block px-3 py-2 text-sm text-gray-500">
-                                No hay usuarios en esta área.
+                              <span className="block py-2 text-xs text-gray-400 italic">
+                                No hay usuarios registrados en esta área.
                               </span>
                             )}
                           </div>
@@ -434,13 +605,16 @@ export default function DirectorPage() {
                   })}
                 </div>
               </div>
-              {/* --- FIN Bloque 4 --- */}
-              <div className="flex gap-2 justify-end pt-1">
-                <Button variant="outline" onClick={() => setIsCreating(false)}>
+
+              <div className="flex gap-3 justify-end pt-4 border-t mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsProjectModalOpen(false)}
+                >
                   Cancelar
                 </Button>
-                <Button onClick={createProjectAction} disabled={!title.trim()}>
-                  Crear
+                <Button onClick={handleSaveProject} disabled={!title.trim()}>
+                  Crear Proyecto
                 </Button>
               </div>
             </div>
@@ -453,12 +627,13 @@ export default function DirectorPage() {
             <DialogHeader>
               <DialogTitle>Crear Cotización (simulado)</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Título</label>
                 <Input
                   value={quoteTitle}
                   onChange={(e) => setQuoteTitle(e.target.value)}
+                  placeholder="Ej. Presupuesto Inicial"
                 />
               </div>
               <div>
@@ -468,25 +643,32 @@ export default function DirectorPage() {
                 <Input
                   value={quoteClient}
                   onChange={(e) => setQuoteClient(e.target.value)}
+                  placeholder="Nombre del cliente"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Importe
+                  Importe Total
                 </label>
-                <Input
-                  value={quoteAmount}
-                  onChange={(e) => setQuoteAmount(e.target.value)}
-                  placeholder="0.00"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1.5 text-gray-500">
+                    $
+                  </span>
+                  <Input
+                    className="pl-7"
+                    value={quoteAmount}
+                    onChange={(e) => setQuoteAmount(e.target.value)}
+                    placeholder="0.00"
+                    type="number"
+                  />
+                </div>
               </div>
-              <div className="flex gap-2 justify-end pt-1">
+              <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={() => setIsQuoteOpen(false)}>
                   Cancelar
                 </Button>
                 <Button
                   onClick={() => {
-                    // Simulación: mostramos alerta y cerramos modal
                     alert(
                       `Cotización simulada creada:\nTítulo: ${quoteTitle}\nCliente: ${quoteClient}\nImporte: ${quoteAmount}`
                     );
@@ -497,12 +679,13 @@ export default function DirectorPage() {
                   }}
                   disabled={!quoteTitle.trim()}
                 >
-                  Crear (simulado)
+                  Generar PDF
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
+<<<<<<< HEAD
 
         {/* Modal: Editar Proyecto */}
         <Dialog open={isEditing} onOpenChange={setIsEditing}>
@@ -731,6 +914,8 @@ export default function DirectorPage() {
             </p>
           )}
         </div>
+=======
+>>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
       </div>
     </AuthGuard>
   );

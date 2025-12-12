@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { ProjectDoc, ProjectTask, ProjectRole } from "@/modules/types";
 import { Star } from "lucide-react";
 import { db } from "@/lib/firebase/config";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string | string[] }>();
@@ -78,41 +78,12 @@ export default function ProjectDetailPage() {
     return Math.round((done / effective.length) * 100);
   }, [project]);
 
-  const toggleCompleted = async (taskId: string) => {
-    if (!project) return;
-    const updated = project.tasks.map((t) =>
-      t.id === taskId ? { ...t, completed: !t.completed } : t
-    );
-    setProject({ ...project, tasks: updated });
-    await updateDoc(doc(db, "projects", project.id), { tasks: updated });
-  };
-
-  const toggleNA = async (taskId: string) => {
-    if (!project) return;
-    const updated = project.tasks.map((t) =>
-      t.id === taskId
-        ? { ...t, na: !t.na, completed: t.na ? t.completed : false }
-        : t
-    );
-    setProject({ ...project, tasks: updated });
-    await updateDoc(doc(db, "projects", project.id), { tasks: updated });
-  };
-
-  const toggleFavorite = async (taskId: string) => {
-    if (!project) return;
-    const updated = project.tasks.map((t) =>
-      t.id === taskId ? { ...t, favorite: !t.favorite } : t
-    );
-    setProject({ ...project, tasks: updated });
-    await updateDoc(doc(db, "projects", project.id), { tasks: updated });
-  };
-
   if (!project) {
     return (
       <AuthGuard>
         <div className="max-w-4xl mx-auto p-4">
           <p className="text-sm text-gray-600">Proyecto no encontrado.</p>
-          <Button className="mt-3" onClick={() => router.push("/projects")}>
+          <Button className="mt-3" onClick={() => router.push("/direccion")}>
             Volver
           </Button>
         </div>
@@ -123,8 +94,17 @@ export default function ProjectDetailPage() {
   return (
     <AuthGuard>
       <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
+        {/* Header con botón de volver */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/direccion")}
+            className="h-10 w-10"
+          >
+            {/* <ArrowLeft className="h-5 w-5" /> */}
+          </Button>
+          <div className="flex-1">
             <h1 className="text-2xl font-semibold text-gray-900">
               {project.title}
             </h1>
@@ -133,11 +113,11 @@ export default function ProjectDetailPage() {
             )}
           </div>
           <div className="text-right">
-            <div className="text-sm text-gray-700">Avance</div>
+            <div className="text-sm text-gray-700 mb-1">Avance General</div>
             <div className="flex items-center gap-2">
               <div className="w-40 h-2 bg-gray-200 rounded">
                 <div
-                  className="h-2 bg-green-500 rounded"
+                  className="h-2 bg-green-500 rounded transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -146,62 +126,88 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {sections.map((sec) => (
-          <Card key={sec.id} className="p-4 space-y-3">
-            <h2 className="text-lg font-medium">{sec.title}</h2>
-            <ul className="space-y-2">
-              {(tasksBySection[sec.id] || []).map((t) => (
-                <li
-                  key={t.id}
-                  className={`flex items-center justify-between rounded-md border p-2 transition-colors ${
-                    t.na
-                      ? "bg-red-100 border-red-300 text-red-700 opacity-60"
-                      : t.completed
-                      ? "bg-green-100 border-green-300 text-green-700"
-                      : t.favorite
-                      ? "bg-yellow-100 border-yellow-300 text-yellow-800"
-                      : "bg-white border-gray-200"
-                  }`}
-                >
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={t.completed}
-                      disabled={t.na}
-                      onChange={() => toggleCompleted(t.id)}
+        {/* Nota informativa de solo lectura */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-sm text-blue-800">
+            <strong>Vista de solo lectura:</strong> Puedes ver el estado y
+            avance de todas las tareas del proyecto, pero no puedes
+            modificarlas.
+          </p>
+        </div>
+
+        {sections.map((sec) => {
+          // Calcular progreso de la sección
+          const sectionTasks = tasksBySection[sec.id] || [];
+          const effectiveTasks = sectionTasks.filter((t) => !t.na);
+          const completedTasks = effectiveTasks.filter((t) => t.completed);
+          const sectionProgress =
+            effectiveTasks.length > 0
+              ? Math.round(
+                  (completedTasks.length / effectiveTasks.length) * 100
+                )
+              : 0;
+
+          return (
+            <Card key={sec.id} className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">{sec.title}</h2>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-2 bg-gray-200 rounded">
+                    <div
+                      className="h-2 bg-green-500 rounded transition-all duration-300"
+                      style={{ width: `${sectionProgress}%` }}
                     />
-                    <span
-                      className={
-                        t.completed ? "line-through text-gray-500" : ""
-                      }
-                    >
-                      {t.title}
-                    </span>
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <Star
-                      className={`h-4 w-4 transition-colors ${
-                        t.favorite
-                          ? "text-yellow-200 fill-yellow-200"
-                          : "text-gray-400 fill-transparent"
-                      }`}
-                      onClick={() => toggleFavorite(t.id)}
-                      style={{ cursor: "pointer" }}
-                    />
-                    <button
-                      className={`text-xs px-2 py-1 rounded-full border ${
-                        t.na ? "bg-gray-200" : "bg-gray-50"
-                      }`}
-                      onClick={() => toggleNA(t.id)}
-                    >
-                      {"N/A"}
-                    </button>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        ))}
+                  <span className="text-xs font-medium text-gray-600">
+                    {sectionProgress}%
+                  </span>
+                </div>
+              </div>
+              <ul className="space-y-2">
+                {sectionTasks.map((t) => (
+                  <li
+                    key={t.id}
+                    className={`flex items-center justify-between rounded-md border p-3 transition-colors ${
+                      t.na
+                        ? "bg-red-50 border-red-200 text-red-700 opacity-70"
+                        : t.completed
+                        ? "bg-green-50 border-green-200 text-green-700"
+                        : t.favorite
+                        ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+                        : "bg-white border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 text-sm flex-1">
+                      <input
+                        type="checkbox"
+                        checked={t.completed}
+                        disabled={true}
+                        className="h-4 w-4 rounded border-gray-300 cursor-not-allowed"
+                      />
+                      <span
+                        className={
+                          t.completed ? "line-through text-gray-500" : ""
+                        }
+                      >
+                        {t.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {t.favorite && (
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
+                      {t.na && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">
+                          N/A
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          );
+        })}
       </div>
     </AuthGuard>
   );

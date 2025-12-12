@@ -22,19 +22,28 @@ export default function RegisterPage() {
 }
 
 function AdminRegisterContent() {
-  // Obtiene el estado de autenticación y si es Administrador
+  // Obtiene el estado de autenticación y si es Administrador (rol fijo "Administrador")
   const { isAdmin, isAuthenticated, loading: adminLoading } = useAdmin();
   const { profile, loading: userProfileLoading } = useUser();
   const router = useRouter();
 
-  const loading = adminLoading || userProfileLoading;
-
-  // Solo Director y Administrador pueden acceder a esta página
+  //SE MODIFICO ESTA PARTE
+  const loading = adminLoading || userProfileLoading; // 1.CONTROL DE ACCESO: Permite acceso si es Director, Administrador o Aux. Admin.
   const canAccessRegister =
+<<<<<<< HEAD
     profile?.role === "Director" || profile?.role === "Administrador";
 
   // 🔑 Director y Administrador pueden asignar jefes de área
   const canAssignAreaChief = profile?.role === "Director" || profile?.role === "Administrador";
+=======
+    profile?.role === "Director" ||
+    profile?.role === "Administrador" ||
+    profile?.role === "Aux. Admin"; // 2.CONTROL DE ELEVACIÓN: Define quién tiene el permiso para marcar 'isAreaChief'. // El Administrador (isAdmin) tiene este permiso por definición, pero lo extendemos al Director y Aux. Admin.
+  const canSetAreaChief =
+    isAdmin ||
+    profile?.role === "Director" ||
+    profile?.role === "Aux. Admin";
+>>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
 
   useEffect(() => {
     if (loading) return;
@@ -44,7 +53,7 @@ function AdminRegisterContent() {
       return;
     }
 
-    // Solo Director y Administrador pueden registrar usuarios
+    // Solo Director, Administrador y Aux. Admin pueden registrar usuarios
     if (!canAccessRegister) {
       router.replace("/");
     }
@@ -57,7 +66,7 @@ function AdminRegisterContent() {
   if (loading || !isAuthenticated || !canAccessRegister) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />     {" "}
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -77,17 +86,23 @@ function AdminRegisterContent() {
       <div className="absolute inset-0 bg-black/20 z-10" />
       {/* Encabezado con logotipo */}
       <AuthHeader />
-      {/* Contenido */}     {" "}
+      {/* Contenido */}
       <div className="relative z-20 pt-24 sm:pt-28 md:pt-32">
+<<<<<<< HEAD
                {" "}
         {/* 🔑 CAMBIO CLAVE: Pasamos el rol forzado Y el permiso de asignar jefe de área */}
         <Register
           forcedRole={forcedRole}
           isCurrentUserAdmin={canAssignAreaChief} // 🔑 Director y Admin pueden asignar jefes de área
+=======
+        {/* Pasamos el rol forzado Y el permiso de administrador */}
+        <Register
+          forcedRole={forcedRole}
+          //SE MODIFICO ESTA PARTE sirve para forzar el rol si es Jefe de area
+          isCurrentUserAdmin={canSetAreaChief}
+>>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
         />
-             {" "}
       </div>
-         {" "}
     </div>
   );
 }
