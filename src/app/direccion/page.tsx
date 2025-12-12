@@ -53,7 +53,6 @@ function useProjects(userId?: string, role?: UserRole) {
   return { projects, setProjects } as const;
 }
 
-// Plantilla de secciones y tareas iniciales
 function buildTemplate() {
   const sections: ProjectSection[] = [
     { id: "sec-2", title: "Proyecto Arquitectónico", order: 1 },
@@ -63,14 +62,26 @@ function buildTemplate() {
     { id: "sec-6", title: "Instalaciones Especiales", order: 5 },
     { id: "sec-7", title: "Tablaroca", order: 6 },
   ];
+
   const tasks: ProjectTask[] = [
+    // --- SECCIÓN 2: PROYECTO ARQUITECTÓNICO ---
+
+    // 2.1 Información Arquitectónica (Order bajo para el primer subgrupo)
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-2",
+      title: "Planta de conjunto",
+      completed: false,
+      favorite: false,
+      order: 100,
+    },
     {
       id: crypto.randomUUID(),
       sectionId: "sec-2",
       title: "Plantas arquitectónicas",
       completed: false,
       favorite: false,
-      order: 1024,
+      order: 200,
     },
     {
       id: crypto.randomUUID(),
@@ -78,7 +89,45 @@ function buildTemplate() {
       title: "Fachadas arquitectónicas",
       completed: false,
       favorite: false,
-      order: 2048,
+      order: 300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-2",
+      title: "Secciones longitudinales",
+      completed: false,
+      favorite: false,
+      order: 400,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-2",
+      title: "Secciones transversales",
+      completed: false,
+      favorite: false,
+      order: 500,
+    },
+
+    // 2.2 Material de Presentación (Separación de orden para el nuevo subgrupo)
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-2",
+      title: "Visualización digital (Vista exterior e interior)",
+      completed: false,
+      favorite: false,
+      order: 1000, // Salto de orden de 500 a 1000
+    },
+
+    // --- SECCIÓN 3: PROYECTO EJECUTIVO ARQUITECTÓNICO ---
+
+    // 3.1 Información Constructiva (Order bajo para el primer subgrupo)
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Detalles de cancelería",
+      completed: false,
+      favorite: false,
+      order: 100,
     },
     {
       id: crypto.randomUUID(),
@@ -86,7 +135,7 @@ function buildTemplate() {
       title: "Detalles de carpintería",
       completed: false,
       favorite: false,
-      order: 1024,
+      order: 200,
     },
     {
       id: crypto.randomUUID(),
@@ -94,41 +143,375 @@ function buildTemplate() {
       title: "Detalles de herrería",
       completed: false,
       favorite: false,
-      order: 2048,
+      order: 300,
     },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Detalles constructivos arquitectónicos",
+      completed: false,
+      favorite: false,
+      order: 400,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Plano de albañilería",
+      completed: false,
+      favorite: false,
+      order: 500,
+    },
+
+    // 3.2 Acabados (Separación de orden para el nuevo subgrupo)
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Plano de referencias de acabados",
+      completed: false,
+      favorite: false,
+      order: 1000, // Salto de orden de 500 a 1000
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Plantas de acabados",
+      completed: false,
+      favorite: false,
+      order: 1100,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Despiece de pisos y lambrines",
+      completed: false,
+      favorite: false,
+      order: 1200,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Accesorios y equipos",
+      completed: false,
+      favorite: false,
+      order: 1300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Detalles accesorios y equipos",
+      completed: false,
+      favorite: false,
+      order: 1400,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-3",
+      title: "Plano de mármol",
+      completed: false,
+      favorite: false,
+      order: 1500,
+    },
+
+    // --- SECCIÓN 4: DISEÑO ESTRUCTURAL ---
+    // (Esta sección no tenía subgrupos, solo se limpian los números)
     {
       id: crypto.randomUUID(),
       sectionId: "sec-4",
       title: "Planos de especificaciones generales",
       completed: false,
       favorite: false,
-      order: 1024,
+      order: 100,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-4",
+      title: "Planta estructural de cimentación",
+      completed: false,
+      favorite: false,
+      order: 200,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-4",
+      title: "Plantas estructuradas de losas por nivel",
+      completed: false,
+      favorite: false,
+      order: 300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-4",
+      title: "Secciones estructurales de refuerzo",
+      completed: false,
+      favorite: false,
+      order: 400,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-4",
+      title: "Secciones esquemáticas de niveles",
+      completed: false,
+      favorite: false,
+      order: 500,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-4",
+      title: "Memoria de cálculo",
+      completed: false,
+      favorite: false,
+      order: 600,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-4",
+      title: "Mecánica de suelos",
+      completed: false,
+      favorite: false,
+      order: 700,
+    },
+
+    // --- SECCIÓN 5: INGENIERÍAS ---
+
+    // 5.1 Hidráulica
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Hidráulica: Acometida general, cisterna y líneas",
+      completed: false,
+      favorite: false,
+      order: 100,
     },
     {
       id: crypto.randomUUID(),
       sectionId: "sec-5",
-      title: "Hidráulica: acometida general",
+      title: "Hidráulica: Instalación de líneas por nivel",
       completed: false,
       favorite: false,
-      order: 1024,
+      order: 200,
     },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Hidráulica: Isométricos generales",
+      completed: false,
+      favorite: false,
+      order: 300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Hidráulica: Especificaciones y detalles",
+      completed: false,
+      favorite: false,
+      order: 400,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Hidráulica: Memoria descriptiva",
+      completed: false,
+      favorite: false,
+      order: 500,
+    },
+
+    // 5.2 Sanitaria
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Sanitaria: Descargas generales y drenajes residuales",
+      completed: false,
+      favorite: false,
+      order: 1000, // Salto de orden
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Sanitaria: Sistema de captación pluvial e interconexión",
+      completed: false,
+      favorite: false,
+      order: 1100,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Sanitaria: Plantas e isométricos de instalación",
+      completed: false,
+      favorite: false,
+      order: 1200,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Sanitaria: Especificaciones y detalles sanitarios",
+      completed: false,
+      favorite: false,
+      order: 1300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Sanitaria: Memoria descriptiva",
+      completed: false,
+      favorite: false,
+      order: 1400,
+    },
+
+    // 5.3 Gas
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Gas: Diseño de red de conducción",
+      completed: false,
+      favorite: false,
+      order: 2000, // Salto de orden
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Gas: Líneas de alimentación",
+      completed: false,
+      favorite: false,
+      order: 2100,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Gas: Equipos de consumo",
+      completed: false,
+      favorite: false,
+      order: 2200,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Gas: Conjunto de abastecimiento, distribución y regulación",
+      completed: false,
+      favorite: false,
+      order: 2300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Gas: Memoria descriptiva",
+      completed: false,
+      favorite: false,
+      order: 2400,
+    },
+
+    // 5.4 Eléctrica
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Eléctrica: Iluminación por nivel",
+      completed: false,
+      favorite: false,
+      order: 3000, // Salto de orden
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Eléctrica: Contactos por nivel",
+      completed: false,
+      favorite: false,
+      order: 3100,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Eléctrica: Diagrama unifilar",
+      completed: false,
+      favorite: false,
+      order: 3200,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Eléctrica: Cuadros y resúmenes de cargas",
+      completed: false,
+      favorite: false,
+      order: 3300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Eléctrica: Especificaciones y detalles eléctricos",
+      completed: false,
+      favorite: false,
+      order: 3400,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-5",
+      title: "Eléctrica: Memoria descriptiva",
+      completed: false,
+      favorite: false,
+      order: 3500,
+    },
+
+    // --- SECCIÓN 6: INSTALACIONES ESPECIALES ---
+    // (Sin subgrupos)
     {
       id: crypto.randomUUID(),
       sectionId: "sec-6",
       title: "Domótica",
       completed: false,
       favorite: false,
-      order: 1024,
+      order: 100,
     },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-6",
+      title: "Aire Acondicionado",
+      completed: false,
+      favorite: false,
+      order: 200,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-6",
+      title: "Voz y Datos",
+      completed: false,
+      favorite: false,
+      order: 300,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-6",
+      title: "Sistema de Riego",
+      completed: false,
+      favorite: false,
+      order: 400,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-6",
+      title: "CCTV",
+      completed: false,
+      favorite: false,
+      order: 500,
+    },
+
+    // --- SECCIÓN 7: TABLAROCA ---
+    // 7.1 Planos (Usamos el orden para dar un salto de subgrupo)
     {
       id: crypto.randomUUID(),
       sectionId: "sec-7",
       title: "Plano de plafones",
       completed: false,
       favorite: false,
-      order: 1024,
+      order: 100,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-7",
+      title: "Plano muros de tablaroca",
+      completed: false,
+      favorite: false,
+      order: 200,
     },
   ];
+
   return { sections, tasks };
 }
 
