@@ -192,6 +192,48 @@ async function calculatePermissions(asignaciones: Asignacion[]) {
 
 // --- SUSCRIPCIONES (READ) ---
 
+// --- Función para actualizar asignaciones de un proyecto ---
+export async function updateProjectAssignments(
+  projectId: string,
+  asignaciones: Asignacion[]
+) {
+  // PASO 1: Obtener todos los usuarios del sistema
+  const allUsers = await getAllUserProfiles();
+
+  // PASO 2: Calcular miembros finales y roles permitidos a partir de asignaciones
+  const finalMembers = new Set<string>();
+  const allowedRoles = new Set<ProjectRole>();
+
+  asignaciones.forEach((assignment) => {
+    if (assignment.tipo === "usuario") {
+      if (assignment.id) {
+        finalMembers.add(assignment.id);
+      }
+    } else if (assignment.tipo === "area") {
+      if (assignment.id) {
+        allowedRoles.add(assignment.id as ProjectRole);
+      }
+
+      allUsers
+        .filter((user) => user.role === assignment.id)
+        .forEach((user) => {
+          if (user.id) {
+            finalMembers.add(user.id);
+          }
+        });
+    }
+  });
+
+  // PASO 3: Actualizar el documento
+  const projectRef = doc(db, PROJECTS_COLLECTION, projectId);
+  await updateDoc(projectRef, {
+    asignaciones: asignaciones,
+    members: Array.from(finalMembers),
+    rolesAllowed: Array.from(allowedRoles),
+  });
+}
+
+// Merge three queries: createdBy, members contains uid, rolesAllowed contains role
 export function subscribeToProjectsForUser(
   userId: string,
   role: ProjectRole,
