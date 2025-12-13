@@ -7,12 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type {
-  ProjectDoc,
-  UserRole,
-  ProjectSection,
-  ProjectTask,
-} from "@/modules/types";
+import type { ProjectDoc, UserRole } from "@/modules/types";
 import {
   Dialog,
   DialogContent,
@@ -76,11 +71,20 @@ function buildTemplate() {
   ];
 
   const tasks = [
-    // --- PROYECTO ARQUITECTÓNICO ---
+    // --- 2. PROYECTO ARQUITECTÓNICO ---
+    // 2.1 INFORMACIÓN ARQUITECTÓNICA
     {
       id: crypto.randomUUID(),
       sectionId: "sec-arq",
-      title: "Planta de conjunto",
+      title: "2.1 INFORMACIÓN ARQUITECTÓNICA",
+      completed: false,
+      favorite: false,
+      order: 50,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-arq",
+      title: "2.1.1 Planta de conjunto",
       completed: false,
       favorite: false,
       order: 100,
@@ -88,7 +92,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-arq",
-      title: "Plantas arquitectónicas",
+      title: "2.1.2 Plantas arquitectónicas",
       completed: false,
       favorite: false,
       order: 200,
@@ -96,7 +100,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-arq",
-      title: "Fachadas arquitectónicas",
+      title: "2.1.3 Fachadas arquitectónicas",
       completed: false,
       favorite: false,
       order: 300,
@@ -104,7 +108,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-arq",
-      title: "Secciones longitudinales",
+      title: "2.1.4 Secciones longitudinales",
       completed: false,
       favorite: false,
       order: 400,
@@ -112,26 +116,43 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-arq",
-      title: "Secciones transversales",
+      title: "2.1.5 Secciones transversales",
       completed: false,
       favorite: false,
       order: 500,
     },
+    // 2.2 MATERIAL DE PRESENTACIÓN
     {
       id: crypto.randomUUID(),
       sectionId: "sec-arq",
-      title: "Visualización digital (Vista exterior e interior)",
+      title: "2.2 MATERIAL DE PRESENTACIÓN",
+      completed: false,
+      favorite: false,
+      order: 550,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-arq",
+      title: "2.2.1 Visualización digital (Vista exterior e interior)",
       completed: false,
       favorite: false,
       order: 600,
     },
 
-    // --- PROYECTO EJECUTIVO ARQUITECTÓNICO ---
-    // Información Constructiva
+    // --- 3. PROYECTO EJECUTIVO ARQUITECTÓNICO ---
+    // 3.1 INFORMACIÓN CONSTRUCTIVA
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Detalles de cancelería",
+      title: "3.1 INFORMACIÓN CONSTRUCTIVA",
+      completed: false,
+      favorite: false,
+      order: 50,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-eje",
+      title: "3.1.1 Detalles de cancelería",
       completed: false,
       favorite: false,
       order: 100,
@@ -139,7 +160,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Detalles de carpintería",
+      title: "3.1.2 Detalles de carpintería",
       completed: false,
       favorite: false,
       order: 200,
@@ -147,7 +168,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Detalles de herrería",
+      title: "3.1.3 Detalles de herrería",
       completed: false,
       favorite: false,
       order: 300,
@@ -155,7 +176,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Detalles constructivos arquitectónicos",
+      title: "3.1.4 Detalles constructivos arquitectónicos",
       completed: false,
       favorite: false,
       order: 400,
@@ -163,16 +184,24 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Plano de albañilería",
+      title: "3.1.5 Plano de albañilería",
       completed: false,
       favorite: false,
       order: 500,
     },
-    // Acabados
+    // 3.2 ACABADOS
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Plano de referencias de acabados",
+      title: "3.2 ACABADOS",
+      completed: false,
+      favorite: false,
+      order: 550,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-eje",
+      title: "3.2.1 Plano de referencias de acabados",
       completed: false,
       favorite: false,
       order: 600,
@@ -180,7 +209,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Plantas de acabados",
+      title: "3.2.2 Plantas de acabados",
       completed: false,
       favorite: false,
       order: 700,
@@ -188,7 +217,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Despiece de pisos y lambrines",
+      title: "3.2.3 Despiece de pisos y lambrines",
       completed: false,
       favorite: false,
       order: 800,
@@ -196,7 +225,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Accesorios y equipos (incluye detalles)",
+      title: "3.2.4 Accesorios y equipos",
       completed: false,
       favorite: false,
       order: 900,
@@ -204,17 +233,25 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-eje",
-      title: "Plano de mármol",
+      title: "3.2.4.1 Detalles accesorios y equipos",
+      completed: false,
+      favorite: false,
+      order: 950,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-eje",
+      title: "3.2.5 Plano de mármol",
       completed: false,
       favorite: false,
       order: 1000,
     },
 
-    // --- DISEÑO ESTRUCTURAL ---
+    // --- 4. DISEÑO ESTRUCTURAL ---
     {
       id: crypto.randomUUID(),
       sectionId: "sec-est",
-      title: "Planos de especificaciones generales",
+      title: "4.1 Planos de especificaciones generales",
       completed: false,
       favorite: false,
       order: 100,
@@ -222,7 +259,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-est",
-      title: "Planta estructural de cimentación",
+      title: "4.2 Planta estructural de cimentación",
       completed: false,
       favorite: false,
       order: 200,
@@ -230,7 +267,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-est",
-      title: "Plantas estructuradas de losas por nivel",
+      title: "4.3 Plantas estructuradas de losas por nivel",
       completed: false,
       favorite: false,
       order: 300,
@@ -238,7 +275,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-est",
-      title: "Secciones estructurales de refuerzo",
+      title: "4.4 Secciones estructurales de refuerzo",
       completed: false,
       favorite: false,
       order: 400,
@@ -246,7 +283,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-est",
-      title: "Secciones esquemáticas de niveles",
+      title: "4.5 Secciones esquemáticas de niveles",
       completed: false,
       favorite: false,
       order: 500,
@@ -254,7 +291,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-est",
-      title: "Memoria de cálculo",
+      title: "4.6 Memoria de cálculo",
       completed: false,
       favorite: false,
       order: 600,
@@ -262,18 +299,26 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-est",
-      title: "Mecánica de suelos",
+      title: "4.7 Mecánica de suelos",
       completed: false,
       favorite: false,
       order: 700,
     },
 
-    // --- INGENIERÍAS ---
-    // Hidráulica
+    // --- 5. INGENIERÍAS ---
+    // 5.1 INGENIERÍA HIDRÁULICA
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Hidráulica: Acometida general, cisterna y líneas",
+      title: "5.1 INGENIERÍA HIDRÁULICA",
+      completed: false,
+      favorite: false,
+      order: 50,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-ing",
+      title: "5.1.1 Acometida general, cisterna y líneas generales",
       completed: false,
       favorite: false,
       order: 100,
@@ -281,7 +326,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Hidráulica: Instalación de líneas por nivel",
+      title: "5.1.2 Instalación de líneas por nivel",
       completed: false,
       favorite: false,
       order: 200,
@@ -289,7 +334,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Hidráulica: Isométricos generales",
+      title: "5.1.3 Isométricos generales de instalación de agua",
       completed: false,
       favorite: false,
       order: 300,
@@ -297,7 +342,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Hidráulica: Especificaciones y detalles",
+      title: "5.1.4 Especificaciones y detalles hidráulicos",
       completed: false,
       favorite: false,
       order: 400,
@@ -305,16 +350,24 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Hidráulica: Memoria descriptiva",
+      title: "5.1.5 Memoria descriptiva",
       completed: false,
       favorite: false,
       order: 500,
     },
-    // Sanitaria
+    // 5.2 INGENIERÍA SANITARIA
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Sanitaria: Descargas generales y drenajes",
+      title: "5.2 INGENIERÍA SANITARIA",
+      completed: false,
+      favorite: false,
+      order: 550,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-ing",
+      title: "5.2.1 Descargas generales y drenajes residuales",
       completed: false,
       favorite: false,
       order: 600,
@@ -322,7 +375,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Sanitaria: Sistema de captación pluvial",
+      title: "5.2.2 Sistema de captación pluvial e interconexión a red",
       completed: false,
       favorite: false,
       order: 700,
@@ -330,7 +383,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Sanitaria: Plantas e isométricos de instalación",
+      title: "5.2.3 Plantas e isométricos de instalación",
       completed: false,
       favorite: false,
       order: 800,
@@ -338,7 +391,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Sanitaria: Especificaciones y detalles",
+      title: "5.2.4 Especificaciones y detalles sanitarios",
       completed: false,
       favorite: false,
       order: 900,
@@ -346,16 +399,24 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Sanitaria: Memoria descriptiva",
+      title: "5.2.5 Memoria descriptiva",
       completed: false,
       favorite: false,
       order: 1000,
     },
-    // Gas
+    // 5.3 INSTALACIÓN DE GAS
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Gas: Diseño de red de conducción",
+      title: "5.3 INSTALACIÓN DE GAS",
+      completed: false,
+      favorite: false,
+      order: 1050,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-ing",
+      title: "5.3.1 Diseño de red de conducción",
       completed: false,
       favorite: false,
       order: 1100,
@@ -363,7 +424,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Gas: Líneas de alimentación",
+      title: "5.3.2 Líneas de alimentación",
       completed: false,
       favorite: false,
       order: 1200,
@@ -371,7 +432,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Gas: Equipos de consumo",
+      title: "5.3.3 Equipos de consumo",
       completed: false,
       favorite: false,
       order: 1300,
@@ -379,7 +440,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Gas: Conjunto de abastecimiento",
+      title: "5.3.4 Conjunto de abastecimiento, distribución y regulación",
       completed: false,
       favorite: false,
       order: 1400,
@@ -387,16 +448,24 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Gas: Memoria descriptiva",
+      title: "5.3.5 Memoria descriptiva",
       completed: false,
       favorite: false,
       order: 1500,
     },
-    // Eléctrica
+    // 5.4 INGENIERÍA ELÉCTRICA
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Eléctrica: Iluminación por nivel",
+      title: "5.4 INGENIERÍA ELÉCTRICA",
+      completed: false,
+      favorite: false,
+      order: 1550,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-ing",
+      title: "5.4.1 Iluminación por nivel",
       completed: false,
       favorite: false,
       order: 1600,
@@ -404,7 +473,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Eléctrica: Contactos por nivel",
+      title: "5.4.2 Contactos por nivel",
       completed: false,
       favorite: false,
       order: 1700,
@@ -412,7 +481,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Eléctrica: Diagrama unifilar",
+      title: "5.4.3 Diagrama unifilar",
       completed: false,
       favorite: false,
       order: 1800,
@@ -420,7 +489,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Eléctrica: Cuadros y resúmenes de cargas",
+      title: "5.4.4 Cuadros y resúmenes de cargas",
       completed: false,
       favorite: false,
       order: 1900,
@@ -428,7 +497,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Eléctrica: Especificaciones y detalles",
+      title: "5.4.5 Especificaciones y detalles eléctricos",
       completed: false,
       favorite: false,
       order: 2000,
@@ -436,17 +505,17 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-ing",
-      title: "Eléctrica: Memoria descriptiva",
+      title: "5.4.6 Memoria descriptiva",
       completed: false,
       favorite: false,
       order: 2100,
     },
 
-    // --- INSTALACIONES ESPECIALES ---
+    // --- 6. INSTALACIONES ESPECIALES ---
     {
       id: crypto.randomUUID(),
       sectionId: "sec-esp",
-      title: "Domótica",
+      title: "6.1 Domótica",
       completed: false,
       favorite: false,
       order: 100,
@@ -454,7 +523,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-esp",
-      title: "Aire acondicionado",
+      title: "6.2 Aire acondicionado",
       completed: false,
       favorite: false,
       order: 200,
@@ -462,7 +531,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-esp",
-      title: "Voz y datos",
+      title: "6.3 Voz y datos",
       completed: false,
       favorite: false,
       order: 300,
@@ -470,7 +539,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-esp",
-      title: "Sistema de riego",
+      title: "6.4 Sistema de riego",
       completed: false,
       favorite: false,
       order: 400,
@@ -478,17 +547,25 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-esp",
-      title: "CCTV",
+      title: "6.5 CCTV",
       completed: false,
       favorite: false,
       order: 500,
     },
 
-    // --- TABLAROCA ---
+    // --- 7. TABLAROCA ---
     {
       id: crypto.randomUUID(),
       sectionId: "sec-tab",
-      title: "Plano de plafones",
+      title: "7.1 TABLAROCA",
+      completed: false,
+      favorite: false,
+      order: 50,
+    },
+    {
+      id: crypto.randomUUID(),
+      sectionId: "sec-tab",
+      title: "7.1.1 Plano de plafones",
       completed: false,
       favorite: false,
       order: 100,
@@ -496,7 +573,7 @@ function buildTemplate() {
     {
       id: crypto.randomUUID(),
       sectionId: "sec-tab",
-      title: "Plano muros de tablaroca",
+      title: "7.1.2 Plano muros de tablaroca",
       completed: false,
       favorite: false,
       order: 200,
