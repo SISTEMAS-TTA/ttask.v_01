@@ -25,6 +25,7 @@ import {
   Calculator,
   DollarSign,
   TrendingUp,
+  Users,
 } from "lucide-react";
 
 type DirectorOption = "cotizacion" | "corrida-financiera" | null;
@@ -466,14 +467,25 @@ export default function DirectorPage() {
 
           {/* Botón de acción */}
           <div className="px-4 py-3 bg-white border-b flex-shrink-0">
-            <Button
-              onClick={() => router.push("/register")}
-              size="sm"
-              className="w-full"
-            >
-              <UserPlus className="mr-2 h-4 w-4" />
-              Registrar Usuario
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={() => router.push("/register")}
+                size="sm"
+                className="w-full"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Registrar Usuario
+              </Button>
+              <Button
+                onClick={() => router.push("/admon")}
+                size="sm"
+                variant="outline"
+                className="w-full"
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Administrar Usuarios
+              </Button>
+            </div>
           </div>
 
           {/* Lista de proyectos */}
@@ -580,10 +592,20 @@ export default function DirectorPage() {
                 asignado{projects.length !== 1 ? "s" : ""}
               </p>
             </div>
-            <Button onClick={() => router.push("/register")} size="sm">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Registrar Usuario
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => router.push("/register")} size="sm">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Registrar Usuario
+              </Button>
+              <Button
+                onClick={() => router.push("/admon")}
+                size="sm"
+                variant="outline"
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Administrar Usuarios
+              </Button>
+            </div>
           </div>
         </div>
 

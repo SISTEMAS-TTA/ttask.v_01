@@ -532,14 +532,16 @@ export default function AreaProjectsPage({
   if (isMobile) {
     return (
       <AuthGuard>
-        <div className="h-screen flex flex-col bg-gray-50">
+        <div className="h-[calc(100vh-4rem)] relative overflow-hidden bg-gray-50">
           {/* Header fijo */}
-          <div className="px-4 py-3 border-b bg-white flex-shrink-0">
-            <h1 className="text-xl font-semibold text-gray-900">{areaName}</h1>
-            <p className="text-sm text-gray-500">
-              {projects.length} proyecto{projects.length !== 1 ? "s" : ""}{" "}
-              asignado{projects.length !== 1 ? "s" : ""}
-            </p>
+          <div className="px-4 py-4 border-b bg-white flex justify-between items-center shadow-sm z-10 flex-shrink-0">
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">{areaName}</h1>
+              <p className="text-xs text-gray-500">
+                {projects.length} proyecto{projects.length !== 1 ? "s" : ""}{" "}
+                asignado{projects.length !== 1 ? "s" : ""}
+              </p>
+            </div>
           </div>
 
           {error && (
@@ -614,14 +616,18 @@ export default function AreaProjectsPage({
   // VISTA DESKTOP/TABLET (Landscape) - Split View
   return (
     <AuthGuard>
-      <div className="h-[calc(100vh-5rem)] flex flex-col">
+      <div className="h-[calc(100vh-4rem)] flex flex-col bg-white">
         {/* Header */}
-        <div className="px-4 py-3 border-b bg-white flex-shrink-0">
-          <h1 className="text-xl font-semibold text-gray-900">{areaName}</h1>
-          <p className="text-sm text-gray-500">
-            {projects.length} proyecto{projects.length !== 1 ? "s" : ""}{" "}
-            asignado{projects.length !== 1 ? "s" : ""}
-          </p>
+        <div className="px-6 py-4 border-b flex justify-between items-center flex-shrink-0 bg-white shadow-sm">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              {areaName}
+            </h1>
+            <p className="text-xs text-gray-500 uppercase font-medium">
+              {projects.length} proyecto{projects.length !== 1 ? "s" : ""}{" "}
+              asignado{projects.length !== 1 ? "s" : ""}
+            </p>
+          </div>
         </div>
 
         {error && (
@@ -638,7 +644,7 @@ export default function AreaProjectsPage({
           </div>
 
           {/* Detalle del proyecto (Detail) */}
-          <div className="flex-1 overflow-y-auto bg-white">
+          <div className="flex-1 overflow-y-auto bg-gray-50/30">
             <ProjectDetail />
           </div>
         </div>

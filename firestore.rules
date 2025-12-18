@@ -58,14 +58,18 @@ service cloud.firestore {
       // Permitir actualizar propio perfil o admin; evitar que usuarios normales cambien su role
       allow update: if request.auth != null && (
         isAdmin()
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Director"
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Aux. Admin"
         || (
           request.auth.uid == userId
           && request.resource.data.role == resource.data.role
         )
       );
 
-      // Solo administradores pueden eliminar perfiles
-      allow delete: if isAdmin();
+      // Solo administradores, director y aux. admin pueden eliminar perfiles
+      allow delete: if isAdmin()
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Director"
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "Aux. Admin";
     }
     
     // Reglas para tareas

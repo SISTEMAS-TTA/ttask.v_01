@@ -1,5 +1,5 @@
 import { db } from "./config";
-import { collection, doc, setDoc, getDoc, getDocs, deleteDoc } from "firebase/firestore";
+import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, updateDoc } from "firebase/firestore";
 import { UserProfile } from "../../modules/types";
 
 const USERS_COLLECTION = "users";
@@ -59,6 +59,41 @@ export const getUsersMap = async (): Promise<Map<string, UserWithId>> => {
   const map = new Map<string, UserWithId>();
   users.forEach((u) => map.set(u.id, u));
   return map;
+};
+
+export const updateUserProfileFields = async (
+  userId: string,
+  updates: Partial<UserProfile>
+) => {
+  try {
+    const userRef = doc(db, USERS_COLLECTION, userId);
+
+    const payloadEntries = Object.entries(updates).filter(
+      ([, value]) => value !== undefined
+    );
+
+    if (payloadEntries.length === 0) {
+      return;
+    }
+
+    const payload = Object.fromEntries(payloadEntries) as Partial<UserProfile>;
+
+    if (
+      (updates.firstName || updates.lastName) &&
+      !updates.fullName &&
+      (updates.firstName !== undefined || updates.lastName !== undefined)
+    ) {
+      const composed = `${updates.firstName ?? ""} ${updates.lastName ?? ""}`.trim();
+      if (composed) {
+        payload.fullName = composed;
+      }
+    }
+
+    await updateDoc(userRef, payload);
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
 };
 
 export async function deleteUser(uid: string): Promise<void> {
