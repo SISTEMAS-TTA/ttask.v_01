@@ -12,8 +12,6 @@ import {
   where,
   QuerySnapshot,
   DocumentData,
-  doc,
-  updateDoc,
 } from "firebase/firestore";
 import type {
   ProjectDoc,
@@ -194,7 +192,6 @@ async function calculatePermissions(asignaciones: Asignacion[]) {
 
 // --- SUSCRIPCIONES (READ) ---
 
-<<<<<<< HEAD
 // --- Función para actualizar asignaciones de un proyecto ---
 export async function updateProjectAssignments(
   projectId: string,
@@ -237,8 +234,6 @@ export async function updateProjectAssignments(
 }
 
 // Merge three queries: createdBy, members contains uid, rolesAllowed contains role
-=======
->>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
 export function subscribeToProjectsForUser(
   userId: string,
   role: ProjectRole,

@@ -30,20 +30,11 @@ function AdminRegisterContent() {
   //SE MODIFICO ESTA PARTE
   const loading = adminLoading || userProfileLoading; // 1.CONTROL DE ACCESO: Permite acceso si es Director, Administrador o Aux. Admin.
   const canAccessRegister =
-<<<<<<< HEAD
-    profile?.role === "Director" || profile?.role === "Administrador";
-
-  // 🔑 Director y Administrador pueden asignar jefes de área
-  const canAssignAreaChief = profile?.role === "Director" || profile?.role === "Administrador";
-=======
     profile?.role === "Director" ||
     profile?.role === "Administrador" ||
     profile?.role === "Aux. Admin"; // 2.CONTROL DE ELEVACIÓN: Define quién tiene el permiso para marcar 'isAreaChief'. // El Administrador (isAdmin) tiene este permiso por definición, pero lo extendemos al Director y Aux. Admin.
   const canSetAreaChief =
-    isAdmin ||
-    profile?.role === "Director" ||
-    profile?.role === "Aux. Admin";
->>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
+    isAdmin || profile?.role === "Director" || profile?.role === "Aux. Admin";
 
   useEffect(() => {
     if (loading) return;
@@ -88,19 +79,11 @@ function AdminRegisterContent() {
       <AuthHeader />
       {/* Contenido */}
       <div className="relative z-20 pt-24 sm:pt-28 md:pt-32">
-<<<<<<< HEAD
-               {" "}
-        {/* 🔑 CAMBIO CLAVE: Pasamos el rol forzado Y el permiso de asignar jefe de área */}
-        <Register
-          forcedRole={forcedRole}
-          isCurrentUserAdmin={canAssignAreaChief} // 🔑 Director y Admin pueden asignar jefes de área
-=======
         {/* Pasamos el rol forzado Y el permiso de administrador */}
         <Register
           forcedRole={forcedRole}
           //SE MODIFICO ESTA PARTE sirve para forzar el rol si es Jefe de area
           isCurrentUserAdmin={canSetAreaChief}
->>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
         />
       </div>
     </div>

@@ -69,7 +69,7 @@ export interface ProjectTask {
   favorite?: boolean;
   na?: boolean; // No aplica
   order?: number; // para drag & drop
-  // weight?: number; // futuro: ponderación personalizada
+  isHeader?: boolean;
 }
 
 export interface ProjectSection {

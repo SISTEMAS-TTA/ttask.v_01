@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Circle, Star, Filter, CircleCheckBig, ChevronDown,ChevronRight,CircleCheck, } from "lucide-react";
+import { Circle, Star, Filter, CircleCheckBig, ChevronDown, ChevronRight, CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TaskViewModal } from "@/modules/tasks/components/TaskViewModal";
 import useUser from "@/modules/auth/hooks/useUser";
 import { subscribeToTasksAssignedTo, updateTask } from "@/lib/firebase/tasks";
 import { useUsersMap } from "@/hooks/useUsersMap";
+
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface ReceivedTask {
   id: string;
@@ -20,13 +26,8 @@ interface ReceivedTask {
   favorite: boolean;
   description?: string;
   createdAt: Date;
+  completedAt?: Date; // <--- 1. NUEVO CAMPO
 }
-
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 const initialReceivedTasks: ReceivedTask[] = [];
 
@@ -41,6 +42,11 @@ export function ReceivedTasksColumn() {
     assignedBy?: string;
     view?: "all" | "viewed" | "pending";
   }>({});
+
+  // 1. Estado para los acordeones
+  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     if (userLoading) return;
@@ -62,11 +68,8 @@ export function ReceivedTasksColumn() {
           completed: d.completed,
           favorite: Boolean(d.favorites?.[user!.uid]) || Boolean(d.favorite),
           createdAt: d.createdAt.toDate(),
+          completedAt: d.updatedAt ? d.updatedAt.toDate() : undefined, // <--- 2. MAPEAR FECHA DE COMPLETADO
         }));
-        console.debug(
-          "subscribeToTasksAssignedTo -> received docs:",
-          mapped.map((m) => ({ id: m.id, favorite: m.favorite }))
-        );
         setTasks(mapped);
       },
       () => setTasks([])
@@ -91,27 +94,16 @@ export function ReceivedTasksColumn() {
     const current = tasks.find((t) => t.id === id);
     if (!current || !user?.uid) return;
 
-    console.debug("toggleCompleted requested", {
-      id,
-      currentCompleted: current.completed,
-      user: user.uid,
-    });
-
-    // Optimista: actualizar UI inmediatamente marcando como completada
+    // Optimista
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
     );
 
     try {
-      // Marcar la tarea como completada
       await updateTask(id, { completed: !current.completed }, user.uid);
-      console.debug("updateTask completed succeeded", {
-        id,
-        newValue: !current.completed,
-      });
     } catch (err) {
       console.error("Error al actualizar tarea completada", err);
-      // Revertir en caso de error
+      // Revertir
       setTasks((prev) =>
         prev.map((t) =>
           t.id === id ? { ...t, completed: current.completed } : t
@@ -120,7 +112,7 @@ export function ReceivedTasksColumn() {
     }
   };
 
-  // Apply filters - INCLUIR tareas completadas
+  // Filtros
   const filteredTasks = tasks.filter((task) => {
     if (filter.assignedBy && task.assignedBy !== filter.assignedBy)
       return false;
@@ -131,27 +123,20 @@ export function ReceivedTasksColumn() {
         case "pending":
           return !task.viewed && !task.completed;
         default:
-          return true; // Mostrar todas incluyendo completadas
+          return true;
       }
     }
-    return true; // Mostrar todas incluyendo completadas
+    return true;
   });
 
-  // Orden: completadas al final, luego no vistas primero
+  // Orden
   const orderedTasks = filteredTasks.slice().sort((a, b) => {
-    // Primero ordenar por completadas (completadas al final)
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    // Luego ordenar por viewed (no vistas primero)
     if (a.viewed !== b.viewed) return a.viewed ? 1 : -1;
     return 0;
   });
 
-  // --- Logica del historial (Para Tareas Recibidas) ---
-
-  // 1. Estado para los acordeones
-  const [openCompletedGroups, setOpenCompletedGroups] = useState<Set<string>>(
-    new Set()
-  );
+  // --- Lógica del historial ---
 
   const toggleCompletedGroup = (monthYear: string) => {
     setOpenCompletedGroups((prev) => {
@@ -162,26 +147,24 @@ export function ReceivedTasksColumn() {
     });
   };
 
-  // 2. Clasificar Tareas
   const activeTasks = orderedTasks.filter(
     (task) => !task.completed && !task.viewed
   );
   const viewedTasks = orderedTasks.filter(
     (task) => task.viewed && !task.completed
   );
-  // Juntamos activas y vistas para la parte superior
   const allActiveList = [...activeTasks, ...viewedTasks]; 
   
   const completedTasks = orderedTasks.filter((task) => task.completed);
 
-  // 3. Helpers de Fecha
-  const getTaskDate = (task: ReceivedTask) => task.createdAt;
+  // Usamos completedAt si existe para agrupar, si no createdAt (fallback)
+  const getTaskDate = (task: ReceivedTask) => task.completedAt || task.createdAt;
   
   const formatMonthYear = (date: Date) => 
     date.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
         .replace(/^\w/, (c) => c.toUpperCase());
 
-  // 4. Agrupar Completadas
+  // Agrupar Completadas
   const groupedCompletedTasks = completedTasks.reduce((groups, task) => {
     const date = getTaskDate(task);
     const monthYear = formatMonthYear(date);
@@ -190,25 +173,25 @@ export function ReceivedTasksColumn() {
     return groups;
   }, {} as Record<string, ReceivedTask[]>);
 
-  // 5. Ordenar Grupos
+  // Ordenar Grupos
   const sortedGroups = Object.entries(groupedCompletedTasks).sort((a, b) => {
     const dateA = getTaskDate(a[1][0]).getTime();
     const dateB = getTaskDate(b[1][0]).getTime();
     return dateB - dateA;
   });
 
-  // Función auxiliar para renderizar el pie de página de la tarea
+  // Función auxiliar para renderizar el pie de página
   const TaskFooter = ({ task }: { task: ReceivedTask }) => {
     const assignedByName = getUserName(task.assignedBy);
 
     return (
-      <div className="text-sm text-gray-500 mt-1">
-        {/* Línea 1: Quién asignó */}
+      <div className="text-sm text-gray-500 mt-1 border-t border-red-300/30 pt-2">
         <p>
           Asignado por: <span className="font-semibold">{assignedByName}</span>
         </p>
-        {/* Línea 2: Fecha y Hora de Creación */}
-        <p className="text-xs mt-1">
+        
+        {/* Fecha de Recepción */}
+        <p className="text-xs mt-1 text-gray-500">
           Recibida:{" "}
           {task.createdAt.toLocaleString("es-MX", {
             day: "2-digit",
@@ -216,8 +199,24 @@ export function ReceivedTasksColumn() {
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
+            hour12: true
           })}
         </p>
+
+        {/* Fecha de Completado (Solo si está completada) */}
+        {task.completed && task.completedAt && (
+          <p className="text-xs mt-0.5 text-gray-400">
+            Completado:{" "}
+            {task.completedAt.toLocaleString("es-MX", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true
+            })}
+          </p>
+        )}
       </div>
     );
   };
@@ -240,7 +239,7 @@ export function ReceivedTasksColumn() {
       </div>
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
         
-        {/* 1. TAREAS ACTIVAS (Rojas y Rosas mezcladas según tu orden) */}
+        {/* 1. TAREAS ACTIVAS */}
         {allActiveList.map((task) => (
           <Card
             key={task.id}
@@ -252,7 +251,6 @@ export function ReceivedTasksColumn() {
               setIsViewModalOpen(true);
             }}
           >
-            {/* ... (Copia aquí el contenido de tu Card original para mantener diseño) ... */}
             <div className="flex items-start justify-between mb-2">
               <h3 className="font-semibold text-base sm:text-lg text-gray-800">
                 {task.title}
@@ -334,17 +332,11 @@ export function ReceivedTasksColumn() {
                       setIsViewModalOpen(true);
                     }}
                   >
-                    {/* Usamos la misma estructura que las notas activas: Título a la izq, Iconos a la der */}
                     <div className="flex items-start justify-between mb-2">
-                      
-                      {/* TÍTULO TACHADO */}
                       <h3 className="font-semibold text-sm text-gray-600 line-through decoration-gray-500 decoration-1">
                         {task.title}
                       </h3>
-                      
-                      {/* CONTENEDOR DE ICONOS (ESTRELLA + CHECK) */}
                       <div className="flex space-x-1">
-                        {/* 1. ESTRELLA (Recuperada) */}
                         <Star
                           className={`h-5 w-5 ${
                             task.viewed
@@ -357,8 +349,6 @@ export function ReceivedTasksColumn() {
                           }}
                           style={{ cursor: "pointer" }}
                         />
-
-                        {/* 2. CHECK VERDE (Para revivir) */}
                         <CircleCheckBig 
                           className="h-5 w-5 text-green-600 hover:text-green-700 hover:scale-110 transition-transform cursor-pointer"
                           onClick={(e) => {
@@ -368,7 +358,6 @@ export function ReceivedTasksColumn() {
                         />
                       </div>
                     </div>
-
                     <TaskFooter task={task} />
                   </Card>
                 ))}
@@ -376,7 +365,6 @@ export function ReceivedTasksColumn() {
             </CollapsibleContent>
           </Collapsible>
         ))}
-
       </div>
 
       <TaskViewModal

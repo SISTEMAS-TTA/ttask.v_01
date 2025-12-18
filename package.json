@@ -60,7 +60,7 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
-  "packageManager": "pnpm@10.22.0"
+  "packageManager": "pnpm@10.25.0"
 }

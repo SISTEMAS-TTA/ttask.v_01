@@ -40,6 +40,10 @@ declare module "lucide-react" {
   export const Calendar: LucideIcon;
   export const Layout: LucideIcon;
   export const LayoutDashboard: LucideIcon;
+  export const Calculator: LucideIcon;
+  export const DollarSign: LucideIcon;
+  export const TrendingUp: LucideIcon;
+  export const AlertTriangle: LucideIcon;
   const _default: LucideIcon;
   export default _default;
 }

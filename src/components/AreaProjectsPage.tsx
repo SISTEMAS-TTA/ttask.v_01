@@ -12,11 +12,7 @@ import {
   Circle,
   Star,
   ChevronRight,
-<<<<<<< HEAD
-  ChevronLeft,
-=======
   ArrowLeft,
->>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
 } from "lucide-react";
 import { db } from "@/lib/firebase/config";
 import { doc, updateDoc } from "firebase/firestore";
@@ -37,10 +33,6 @@ export default function AreaProjectsPage({
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null
   );
-<<<<<<< HEAD
-  // Estado para controlar la vista móvil (lista vs detalle)
-  const [showDetailOnMobile, setShowDetailOnMobile] = useState(false);
-=======
   const [isMobile, setIsMobile] = useState(false);
 
   // Detectar si es móvil (portrait)
@@ -53,7 +45,6 @@ export default function AreaProjectsPage({
     window.addEventListener("resize", checkIsMobile);
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
->>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
 
   useEffect(() => {
     if (!user) {
@@ -179,17 +170,6 @@ export default function AreaProjectsPage({
     if (!effective.length) return 0;
     const done = effective.filter((t) => t.completed).length;
     return Math.round((done / effective.length) * 100);
-  };
-
-  // Función para seleccionar proyecto (maneja móvil)
-  const handleSelectProject = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    setShowDetailOnMobile(true);
-  };
-
-  // Función para volver a la lista en móvil
-  const handleBackToList = () => {
-    setShowDetailOnMobile(false);
   };
 
   const canAccess =
@@ -349,64 +329,82 @@ export default function AreaProjectsPage({
                 <h3 className="text-base font-medium text-gray-800 mb-3 pb-2 border-b">
                   {sec.title}
                 </h3>
-                <ul className="space-y-2">
-                  {(tasksBySection[sec.id] || []).map((t) => (
-                    <li
-                      key={t.id}
-                      className={`flex items-center justify-between rounded-md border p-2.5 transition-colors ${
-                        t.na
-                          ? "bg-red-50 border-red-200 text-red-600 opacity-60"
-                          : t.completed
-                          ? "bg-green-50 border-green-200 text-green-700"
-                          : t.favorite
-                          ? "bg-yellow-50 border-yellow-200"
-                          : "bg-white border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      <label className="flex items-center gap-2.5 flex-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={t.completed}
-                          disabled={t.na}
-                          onChange={() => toggleCompleted(t.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span
-                          className={`text-sm ${
-                            t.completed
-                              ? "line-through text-gray-500"
-                              : "text-gray-700"
-                          }`}
+                <ul className="space-y-1">
+                  {" "}
+                  {/* Cambié space-y-2 a space-y-1 para que se vea más compacto */}
+                  {(tasksBySection[sec.id] || []).map((t) => {
+                    // --- LÓGICA NUEVA: SI ES HEADER ---
+                    if (t.isHeader) {
+                      return (
+                        <li
+                          key={t.id}
+                          className="mt-4 mb-2 px-1 text-xs font-bold text-gray-400 uppercase tracking-wider select-none border-b border-transparent"
                         >
                           {t.title}
-                        </span>
-                      </label>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => toggleFavorite(t.id)}
-                          className="p-1 hover:bg-gray-100 rounded transition-colors"
-                        >
-                          <Star
-                            className={`h-4 w-4 ${
-                              t.favorite
-                                ? "text-yellow-500 fill-yellow-500"
-                                : "text-gray-300"
-                            }`}
+                        </li>
+                      );
+                    }
+
+                    // --- LÓGICA EXISTENTE: SI ES TAREA NORMAL ---
+                    return (
+                      <li
+                        key={t.id}
+                        className={`flex items-center justify-between rounded-md border p-2.5 transition-colors ${
+                          t.na
+                            ? "bg-red-50 border-red-200 text-red-600 opacity-60"
+                            : t.completed
+                            ? "bg-green-50 border-green-200 text-green-700"
+                            : t.favorite
+                            ? "bg-yellow-50 border-yellow-200"
+                            : "bg-white border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        <label className="flex items-center gap-2.5 flex-1 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={t.completed}
+                            disabled={t.na}
+                            onChange={() => toggleCompleted(t.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                        </button>
-                        <button
-                          onClick={() => toggleNA(t.id)}
-                          className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                            t.na
-                              ? "bg-red-100 border-red-300 text-red-600"
-                              : "bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200"
-                          }`}
-                        >
-                          N/A
-                        </button>
-                      </div>
-                    </li>
-                  ))}
+                          <span
+                            className={`text-sm ${
+                              t.completed
+                                ? "line-through text-gray-500"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            {t.title}
+                          </span>
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => toggleFavorite(t.id)}
+                            className="p-1 hover:bg-gray-100 rounded transition-colors"
+                          >
+                            <Star
+                              className={`h-4 w-4 ${
+                                t.favorite
+                                  ? "text-yellow-500 fill-yellow-500"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          </button>
+                          <button
+                            onClick={() => toggleNA(t.id)}
+                            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                              t.na
+                                ? "bg-red-100 border-red-300 text-red-600"
+                                : "bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200"
+                            }`}
+                          >
+                            N/A
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {/* Mensaje si está vacío */}
                   {(!tasksBySection[sec.id] ||
                     tasksBySection[sec.id].length === 0) && (
                     <li className="text-sm text-gray-400 italic py-2">
@@ -543,266 +541,6 @@ export default function AreaProjectsPage({
 
         {/* Main content - Master Detail */}
         <div className="flex-1 flex overflow-hidden">
-<<<<<<< HEAD
-          {/* Lista de proyectos (Master) - Oculto en móvil cuando hay detalle visible */}
-          <div
-            className={`
-              ${showDetailOnMobile ? "hidden" : "flex"} 
-              md:flex
-              w-full md:w-72 lg:w-80 
-              border-r bg-gray-50 flex-col overflow-hidden
-            `}
-          >
-            <div className="p-3 border-b bg-white flex items-center gap-2">
-              <FolderOpen className="h-4 w-4 text-gray-500" />
-              <h2 className="text-sm font-medium text-gray-700">Proyectos</h2>
-              <span className="text-xs text-gray-400 ml-auto">
-                {projects.length} proyecto{projects.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {projects.length === 0 ? (
-                <div className="p-6 text-center">
-                  <FolderOpen className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm text-gray-500">No hay proyectos asignados</p>
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {projects.map((project) => {
-                    const projectProgress = getProjectProgress(project);
-                    const isSelected = selectedProjectId === project.id;
-
-                    return (
-                      <button
-                        key={project.id}
-                        onClick={() => handleSelectProject(project.id)}
-                        className={`w-full text-left p-4 hover:bg-gray-100 transition-colors ${
-                          isSelected
-                            ? "bg-blue-50 border-l-4 border-l-blue-500 md:border-l-4"
-                            : "border-l-4 border-l-transparent"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <FolderOpen
-                              className={`h-5 w-5 flex-shrink-0 ${
-                                isSelected ? "text-blue-600" : "text-gray-400"
-                              }`}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <span
-                                className={`text-sm font-medium block truncate ${
-                                  isSelected ? "text-blue-700" : "text-gray-800"
-                                }`}
-                              >
-                                {project.title}
-                              </span>
-                              {project.description && (
-                                <span className="text-xs text-gray-500 block truncate mt-0.5">
-                                  {project.description}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <ChevronRight
-                            className={`h-5 w-5 flex-shrink-0 ml-2 ${
-                              isSelected ? "text-blue-500" : "text-gray-300"
-                            }`}
-                          />
-                        </div>
-                        <div className="mt-3 flex items-center gap-2 pl-8">
-                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${
-                                projectProgress === 100
-                                  ? "bg-green-500"
-                                  : projectProgress > 50
-                                  ? "bg-blue-500"
-                                  : projectProgress > 0
-                                  ? "bg-amber-500"
-                                  : "bg-gray-300"
-                              }`}
-                              style={{ width: `${projectProgress}%` }}
-                            />
-                          </div>
-                          <span
-                            className={`text-xs font-medium w-10 text-right ${
-                              projectProgress === 100
-                                ? "text-green-600"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {projectProgress}%
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Detalle del proyecto (Detail) - Oculto en móvil cuando no hay detalle visible */}
-          <div
-            className={`
-              ${showDetailOnMobile ? "flex" : "hidden"} 
-              md:flex
-              flex-1 flex-col overflow-hidden bg-white
-            `}
-          >
-            {selectedProject ? (
-              <div className="flex-1 overflow-y-auto">
-                {/* Botón volver (solo móvil) */}
-                <div className="md:hidden sticky top-0 z-10 bg-white border-b px-4 py-3">
-                  <button
-                    onClick={handleBackToList}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                    Ver todos los proyectos
-                  </button>
-                </div>
-
-                <div className="p-4 md:p-6 space-y-4">
-                  {/* Encabezado del proyecto */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        {selectedProject.title}
-                      </h2>
-                      {selectedProject.description && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          {selectedProject.description}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-lg self-start sm:self-center">
-                      <div className="text-right">
-                        <div className="text-xs text-gray-500 uppercase tracking-wide">
-                          Avance
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {progress}%
-                        </div>
-                      </div>
-                      <div className="w-14 h-14 sm:w-16 sm:h-16">
-                        <svg viewBox="0 0 36 36" className="w-full h-full">
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke="#e5e7eb"
-                            strokeWidth="3"
-                          />
-                          <path
-                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                            fill="none"
-                            stroke={progress === 100 ? "#22c55e" : "#3b82f6"}
-                            strokeWidth="3"
-                            strokeDasharray={`${progress}, 100`}
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                {/* Checklist por secciones */}
-                <div className="space-y-4">
-                  {sections.map((sec) => (
-                    <Card key={sec.id} className="p-4">
-                      <h3 className="text-base font-medium text-gray-800 mb-3 pb-2 border-b">
-                        {sec.title}
-                      </h3>
-                      <ul className="space-y-2">
-                        {(tasksBySection[sec.id] || []).map((t) => (
-                          <li
-                            key={t.id}
-                            className={`flex items-center justify-between rounded-md border p-2.5 transition-colors ${
-                              t.na
-                                ? "bg-red-50 border-red-200 text-red-600 opacity-60"
-                                : t.completed
-                                ? "bg-green-50 border-green-200 text-green-700"
-                                : t.favorite
-                                ? "bg-yellow-50 border-yellow-200"
-                                : "bg-white border-gray-200 hover:bg-gray-50"
-                            }`}
-                          >
-                            <label className="flex items-center gap-2.5 flex-1 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={t.completed}
-                                disabled={t.na}
-                                onChange={() => toggleCompleted(t.id)}
-                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span
-                                className={`text-sm ${
-                                  t.completed
-                                    ? "line-through text-gray-500"
-                                    : "text-gray-700"
-                                }`}
-                              >
-                                {t.title}
-                              </span>
-                            </label>
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => toggleFavorite(t.id)}
-                                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                              >
-                                <Star
-                                  className={`h-4 w-4 ${
-                                    t.favorite
-                                      ? "text-yellow-500 fill-yellow-500"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              </button>
-                              <button
-                                onClick={() => toggleNA(t.id)}
-                                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                                  t.na
-                                    ? "bg-red-100 border-red-300 text-red-600"
-                                    : "bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200"
-                                }`}
-                              >
-                                N/A
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                        {(!tasksBySection[sec.id] ||
-                          tasksBySection[sec.id].length === 0) && (
-                          <li className="text-sm text-gray-400 italic py-2">
-                            Sin tareas en esta sección
-                          </li>
-                        )}
-                      </ul>
-                    </Card>
-                  ))}
-
-                  {sections.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <Circle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                      <p>Este proyecto no tiene secciones configuradas</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              </div>
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-500">
-                <div className="text-center p-4">
-                  <FolderOpen className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg">Selecciona un proyecto</p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    para ver el checklist y avance
-                  </p>
-                </div>
-              </div>
-            )}
-=======
           {/* Lista de proyectos (Master) */}
           <div className="w-72 lg:w-80 border-r bg-gray-50 flex flex-col overflow-hidden">
             <ProjectsList />
@@ -811,7 +549,6 @@ export default function AreaProjectsPage({
           {/* Detalle del proyecto (Detail) */}
           <div className="flex-1 overflow-y-auto bg-white">
             <ProjectDetail />
->>>>>>> a3a0992d4258e7862bb5a6cd3a1b2a588b7c975b
           </div>
         </div>
       </div>
