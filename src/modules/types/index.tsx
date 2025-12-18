@@ -16,6 +16,12 @@ export interface UserProfile {
   isAreaChief?: boolean;
 }
 
+export interface ActionMetadata {
+  uid: string;
+  name: string;
+  at: number;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -67,9 +73,11 @@ export interface ProjectTask {
   title: string;
   completed: boolean;
   favorite?: boolean;
-  na?: boolean; // No aplica
-  order?: number; // para drag & drop
-  // weight?: number; // futuro: ponderación personalizada
+  completedBy?: ActionMetadata;
+  favoriteBy?: ActionMetadata;
+  na?: boolean;
+  order?: number;
+  isHeader?: boolean;
 }
 
 export interface ProjectSection {
