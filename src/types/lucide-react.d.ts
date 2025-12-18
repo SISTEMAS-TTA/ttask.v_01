@@ -44,6 +44,7 @@ declare module "lucide-react" {
   export const DollarSign: LucideIcon;
   export const TrendingUp: LucideIcon;
   export const AlertTriangle: LucideIcon;
+  export const Info: LucideIcon;
   const _default: LucideIcon;
   export default _default;
 }

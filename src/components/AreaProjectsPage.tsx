@@ -4,7 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import useUser from "@/modules/auth/hooks/useUser";
 import { Card } from "@/components/ui/card";
-import type { ProjectDoc, UserRole, ProjectTask } from "@/modules/types";
+import type {
+  ProjectDoc,
+  UserRole,
+  ProjectTask,
+  ActionMetadata,
+} from "@/modules/types";
 import { subscribeToProjectsByRole } from "@/lib/firebase/projects";
 import {
   Loader2,
@@ -13,9 +18,48 @@ import {
   Star,
   ChevronRight,
   ArrowLeft,
+  Info,
 } from "lucide-react";
 import { db } from "@/lib/firebase/config";
 import { doc, updateDoc } from "firebase/firestore";
+
+// --- SUB-COMPONENTE PARA EL TOOLTIP ---
+// Muestra quién realizó la acción y la hora al hacer hover
+const ActionTooltip = ({
+  active,
+  metadata,
+  children,
+}: {
+  active: boolean;
+  metadata?: ActionMetadata;
+  children: React.ReactNode;
+}) => {
+  if (!active || !metadata) return <div className="relative">{children}</div>;
+
+  const dateStr = new Date(metadata.at).toLocaleDateString("es-MX", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+  const timeStr = new Date(metadata.at).toLocaleTimeString("es-MX", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <div className="group relative flex items-center justify-center">
+      {children}
+      {/* Tooltip Content */}
+      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max max-w-[150px] bg-gray-800 text-white text-[10px] rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none shadow-lg text-center leading-tight">
+        <p className="font-bold text-yellow-400 mb-0.5">{metadata.name}</p>
+        <p className="text-gray-300">
+          {dateStr} - {timeStr}
+        </p>
+        {/* Flechita del tooltip */}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+      </div>
+    </div>
+  );
+};
 
 interface AreaProjectsPageProps {
   areaRole: UserRole;
@@ -115,12 +159,58 @@ export default function AreaProjectsPage({
     return map;
   }, [selectedProject]);
 
-  // Funciones para modificar tareas
+  // --- LOGICA DE ACTUALIZACIÓN CON METADATA ---
+
   const toggleCompleted = async (taskId: string) => {
-    if (!selectedProject) return;
-    const updated = selectedProject.tasks.map((t) =>
-      t.id === taskId ? { ...t, completed: !t.completed } : t
+    if (!selectedProject || !user || !profile) return;
+
+    const updated = selectedProject.tasks.map((t) => {
+      if (t.id === taskId) {
+        const newStatus = !t.completed;
+        // Si se completa, guardamos quién lo hizo. Si se quita, borramos la metadata.
+        const metadata: ActionMetadata | undefined = newStatus
+          ? {
+              uid: user.uid,
+              name: profile.fullName || profile.firstName || "Usuario",
+              at: Date.now(),
+            }
+          : undefined;
+
+        return { ...t, completed: newStatus, completedBy: metadata };
+      }
+      return t;
+    });
+
+    // Actualización optimista
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === selectedProject.id ? { ...p, tasks: updated } : p
+      )
     );
+    await updateDoc(doc(db, "projects", selectedProject.id), {
+      tasks: updated,
+    });
+  };
+
+  const toggleFavorite = async (taskId: string) => {
+    if (!selectedProject || !user || !profile) return;
+
+    const updated = selectedProject.tasks.map((t) => {
+      if (t.id === taskId) {
+        const newStatus = !t.favorite;
+        const metadata: ActionMetadata | undefined = newStatus
+          ? {
+              uid: user.uid,
+              name: profile.fullName || profile.firstName || "Usuario",
+              at: Date.now(),
+            }
+          : undefined;
+
+        return { ...t, favorite: newStatus, favoriteBy: metadata };
+      }
+      return t;
+    });
+
     setProjects((prev) =>
       prev.map((p) =>
         p.id === selectedProject.id ? { ...p, tasks: updated } : p
@@ -135,23 +225,13 @@ export default function AreaProjectsPage({
     if (!selectedProject) return;
     const updated = selectedProject.tasks.map((t) =>
       t.id === taskId
-        ? { ...t, na: !t.na, completed: t.na ? t.completed : false }
+        ? {
+            ...t,
+            na: !t.na,
+            completed: t.na ? t.completed : false,
+            completedBy: undefined,
+          }
         : t
-    );
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === selectedProject.id ? { ...p, tasks: updated } : p
-      )
-    );
-    await updateDoc(doc(db, "projects", selectedProject.id), {
-      tasks: updated,
-    });
-  };
-
-  const toggleFavorite = async (taskId: string) => {
-    if (!selectedProject) return;
-    const updated = selectedProject.tasks.map((t) =>
-      t.id === taskId ? { ...t, favorite: !t.favorite } : t
     );
     setProjects((prev) =>
       prev.map((p) =>
@@ -330,10 +410,7 @@ export default function AreaProjectsPage({
                   {sec.title}
                 </h3>
                 <ul className="space-y-1">
-                  {" "}
-                  {/* Cambié space-y-2 a space-y-1 para que se vea más compacto */}
                   {(tasksBySection[sec.id] || []).map((t) => {
-                    // --- LÓGICA NUEVA: SI ES HEADER ---
                     if (t.isHeader) {
                       return (
                         <li
@@ -345,7 +422,6 @@ export default function AreaProjectsPage({
                       );
                     }
 
-                    // --- LÓGICA EXISTENTE: SI ES TAREA NORMAL ---
                     return (
                       <li
                         key={t.id}
@@ -360,13 +436,20 @@ export default function AreaProjectsPage({
                         }`}
                       >
                         <label className="flex items-center gap-2.5 flex-1 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={t.completed}
-                            disabled={t.na}
-                            onChange={() => toggleCompleted(t.id)}
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
+                          {/* Tooltip para el CHECKBOX */}
+                          <ActionTooltip
+                            active={t.completed}
+                            metadata={t.completedBy}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={t.completed}
+                              disabled={t.na}
+                              onChange={() => toggleCompleted(t.id)}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+                            />
+                          </ActionTooltip>
+
                           <span
                             className={`text-sm ${
                               t.completed
@@ -377,19 +460,27 @@ export default function AreaProjectsPage({
                             {t.title}
                           </span>
                         </label>
+
                         <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => toggleFavorite(t.id)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
+                          {/* Tooltip para la ESTRELLA */}
+                          <ActionTooltip
+                            active={!!t.favorite}
+                            metadata={t.favoriteBy}
                           >
-                            <Star
-                              className={`h-4 w-4 ${
-                                t.favorite
-                                  ? "text-yellow-500 fill-yellow-500"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          </button>
+                            <button
+                              onClick={() => toggleFavorite(t.id)}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            >
+                              <Star
+                                className={`h-4 w-4 ${
+                                  t.favorite
+                                    ? "text-yellow-500 fill-yellow-500"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            </button>
+                          </ActionTooltip>
+
                           <button
                             onClick={() => toggleNA(t.id)}
                             className={`text-xs px-2 py-0.5 rounded border transition-colors ${
@@ -404,7 +495,7 @@ export default function AreaProjectsPage({
                       </li>
                     );
                   })}
-                  {/* Mensaje si está vacío */}
+
                   {(!tasksBySection[sec.id] ||
                     tasksBySection[sec.id].length === 0) && (
                     <li className="text-sm text-gray-400 italic py-2">
