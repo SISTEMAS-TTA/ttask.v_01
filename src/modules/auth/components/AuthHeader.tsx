@@ -17,6 +17,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 
 import useUser from "@/modules/auth/hooks/useUser";
 import {
@@ -64,6 +65,7 @@ const directorAreas: { href: string; label: string }[] = [
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
+  const [logoutDate, setLogoutDate] = useState<Date | undefined>();
   const router = useRouter();
 
   // Verificar si el usuario es Director
@@ -217,15 +219,40 @@ export function AuthHeader() {
                 <DropdownMenuContent
                   align="end"
                   sideOffset={8}
-                  className="w-56 z-[10001]"
+                  className="w-80 z-[10001] p-0"
                 >
-                  <DropdownMenuLabel>
+                  <DropdownMenuLabel className="px-4 py-3">
                     {profile?.fullName || user?.email || "Usuario"}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    Cerrar Sesión
-                  </DropdownMenuItem>
+
+                  {/* Calendario con mejor espaciado */}
+                  <div className="px-4 py-4">
+                    <p className="text-xs text-gray-500 mb-3 font-medium">
+                    Tus Fechas de Vacaciones
+                    </p>
+                    <div className="flex justify-center">
+                      <Calendar
+                        mode="single"
+                        selected={logoutDate}
+                        onSelect={setLogoutDate}
+                        initialFocus
+                        className="rounded-md border"
+                      />
+                    </div>
+                  </div>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Botón de cerrar sesión con más espacio */}
+                  <div className="p-2">
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="cursor-pointer font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Cerrar Sesión
+                    </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
