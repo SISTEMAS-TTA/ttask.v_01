@@ -76,8 +76,8 @@ export interface ProjectTask {
   completedBy?: ActionMetadata;
   favoriteBy?: ActionMetadata;
   na?: boolean;
-  order?: number;
   isHeader?: boolean;
+  order?: number;
 }
 
 export interface ProjectSection {
