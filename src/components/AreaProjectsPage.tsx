@@ -32,7 +32,7 @@ const sanitizeTasksForFirestore = (tasks: ProjectTask[]) =>
         delete sanitized[key];
       }
     });
-    return sanitized as ProjectTask;
+    return sanitized as unknown as ProjectTask;
   });
 
 // --- SUB-COMPONENTE PARA EL TOOLTIP ---
