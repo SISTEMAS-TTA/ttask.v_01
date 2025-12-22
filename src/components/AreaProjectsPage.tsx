@@ -23,6 +23,18 @@ import {
 import { db } from "@/lib/firebase/config";
 import { doc, updateDoc } from "firebase/firestore";
 
+// Elimina campos undefined antes de persistir para evitar errores de Firestore
+const sanitizeTasksForFirestore = (tasks: ProjectTask[]) =>
+  tasks.map((task) => {
+    const sanitized = { ...task } as Record<string, unknown>;
+    Object.keys(sanitized).forEach((key) => {
+      if (sanitized[key] === undefined) {
+        delete sanitized[key];
+      }
+    });
+    return sanitized as ProjectTask;
+  });
+
 // --- SUB-COMPONENTE PARA EL TOOLTIP ---
 // Muestra quién realizó la acción y la hora al hacer hover
 const ActionTooltip = ({
@@ -188,7 +200,7 @@ export default function AreaProjectsPage({
       )
     );
     await updateDoc(doc(db, "projects", selectedProject.id), {
-      tasks: updated,
+      tasks: sanitizeTasksForFirestore(updated),
     });
   };
 
@@ -217,7 +229,7 @@ export default function AreaProjectsPage({
       )
     );
     await updateDoc(doc(db, "projects", selectedProject.id), {
-      tasks: updated,
+      tasks: sanitizeTasksForFirestore(updated),
     });
   };
 
@@ -239,7 +251,7 @@ export default function AreaProjectsPage({
       )
     );
     await updateDoc(doc(db, "projects", selectedProject.id), {
-      tasks: updated,
+      tasks: sanitizeTasksForFirestore(updated),
     });
   };
 
