@@ -18,24 +18,24 @@ import {
   Star,
   ChevronRight,
   ArrowLeft,
-  Info,
 } from "lucide-react";
 import { db } from "@/lib/firebase/config";
 import { doc, updateDoc } from "firebase/firestore";
 
-// --- SUB-COMPONENTE PARA EL TOOLTIP ---
-// Muestra quién realizó la acción y la hora al hacer hover
-const ActionTooltip = ({
-  active,
-  metadata,
-  children,
-}: {
-  active: boolean;
-  metadata?: ActionMetadata;
-  children: React.ReactNode;
-}) => {
-  if (!active || !metadata) return <div className="relative">{children}</div>;
+// Elimina campos undefined antes de persistir para evitar errores de Firestore
+const sanitizeTasksForFirestore = (tasks: ProjectTask[]) =>
+  tasks.map((task) => {
+    const sanitized = { ...task } as Record<string, unknown>;
+    Object.keys(sanitized).forEach((key) => {
+      if (sanitized[key] === undefined) {
+        delete sanitized[key];
+      }
+    });
+    return sanitized as unknown as ProjectTask;
+  });
 
+const formatActionMetadata = (metadata?: ActionMetadata) => {
+  if (!metadata) return null;
   const dateStr = new Date(metadata.at).toLocaleDateString("es-MX", {
     day: "2-digit",
     month: "2-digit",
@@ -44,21 +44,7 @@ const ActionTooltip = ({
     hour: "2-digit",
     minute: "2-digit",
   });
-
-  return (
-    <div className="group relative flex items-center justify-center">
-      {children}
-      {/* Tooltip Content */}
-      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max max-w-[150px] bg-gray-800 text-white text-[10px] rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none shadow-lg text-center leading-tight">
-        <p className="font-bold text-yellow-400 mb-0.5">{metadata.name}</p>
-        <p className="text-gray-300">
-          {dateStr} - {timeStr}
-        </p>
-        {/* Flechita del tooltip */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
-      </div>
-    </div>
-  );
+  return `${metadata.name} • ${dateStr} ${timeStr}`;
 };
 
 interface AreaProjectsPageProps {
@@ -188,7 +174,7 @@ export default function AreaProjectsPage({
       )
     );
     await updateDoc(doc(db, "projects", selectedProject.id), {
-      tasks: updated,
+      tasks: sanitizeTasksForFirestore(updated),
     });
   };
 
@@ -217,7 +203,7 @@ export default function AreaProjectsPage({
       )
     );
     await updateDoc(doc(db, "projects", selectedProject.id), {
-      tasks: updated,
+      tasks: sanitizeTasksForFirestore(updated),
     });
   };
 
@@ -239,7 +225,7 @@ export default function AreaProjectsPage({
       )
     );
     await updateDoc(doc(db, "projects", selectedProject.id), {
-      tasks: updated,
+      tasks: sanitizeTasksForFirestore(updated),
     });
   };
 
@@ -422,6 +408,13 @@ export default function AreaProjectsPage({
                       );
                     }
 
+                    const completedMeta = t.completed
+                      ? formatActionMetadata(t.completedBy)
+                      : null;
+                    const favoriteMeta = t.favorite
+                      ? formatActionMetadata(t.favoriteBy)
+                      : null;
+
                     return (
                       <li
                         key={t.id}
@@ -435,41 +428,40 @@ export default function AreaProjectsPage({
                             : "bg-white border-gray-200 hover:bg-gray-50"
                         }`}
                       >
-                        <label className="flex items-center gap-2.5 flex-1 cursor-pointer">
-                          {/* Tooltip para el CHECKBOX */}
-                          <ActionTooltip
-                            active={t.completed}
-                            metadata={t.completedBy}
-                          >
+                        <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <span
+                              className={`text-sm ${
+                                t.completed
+                                  ? "line-through text-gray-500"
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              {t.title}
+                            </span>
+                            {(completedMeta || favoriteMeta) && (
+                              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+                                {completedMeta && (
+                                  <span>Check: {completedMeta}</span>
+                                )}
+                                {favoriteMeta && <span>Star: {favoriteMeta}</span>}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
                             <input
                               type="checkbox"
                               checked={t.completed}
                               disabled={t.na}
                               onChange={() => toggleCompleted(t.id)}
-                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              aria-label="Marcar tarea como completada"
                             />
-                          </ActionTooltip>
-
-                          <span
-                            className={`text-sm ${
-                              t.completed
-                                ? "line-through text-gray-500"
-                                : "text-gray-700"
-                            }`}
-                          >
-                            {t.title}
-                          </span>
-                        </label>
-
-                        <div className="flex items-center gap-1.5">
-                          {/* Tooltip para la ESTRELLA */}
-                          <ActionTooltip
-                            active={!!t.favorite}
-                            metadata={t.favoriteBy}
-                          >
                             <button
                               onClick={() => toggleFavorite(t.id)}
                               className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              aria-label="Marcar tarea como favorita"
                             >
                               <Star
                                 className={`h-4 w-4 ${
@@ -479,18 +471,17 @@ export default function AreaProjectsPage({
                                 }`}
                               />
                             </button>
-                          </ActionTooltip>
-
-                          <button
-                            onClick={() => toggleNA(t.id)}
-                            className={`text-xs px-2 py-0.5 rounded border transition-colors ${
-                              t.na
-                                ? "bg-red-100 border-red-300 text-red-600"
-                                : "bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200"
-                            }`}
-                          >
-                            N/A
-                          </button>
+                            <button
+                              onClick={() => toggleNA(t.id)}
+                              className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                                t.na
+                                  ? "bg-red-100 border-red-300 text-red-600"
+                                  : "bg-gray-100 border-gray-300 text-gray-500 hover:bg-gray-200"
+                              }`}
+                            >
+                              N/A
+                            </button>
+                          </div>
                         </div>
                       </li>
                     );
