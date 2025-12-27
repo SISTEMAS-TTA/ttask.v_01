@@ -20,12 +20,10 @@ import {
   FolderOpen,
   ChevronRight,
   ArrowLeft,
-  UserPlus,
   FileText,
   Calculator,
   DollarSign,
   TrendingUp,
-  Users,
 } from "lucide-react";
 
 type DirectorOption = "cotizacion" | "corrida-financiera" | null;
@@ -465,29 +463,6 @@ export default function DirectorPage() {
             </p>
           </div>
 
-          {/* Botón de acción */}
-          <div className="px-4 py-3 bg-white border-b flex-shrink-0">
-            <div className="flex flex-col gap-2">
-              <Button
-                onClick={() => router.push("/register")}
-                size="sm"
-                className="w-full"
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Registrar Usuario
-              </Button>
-              <Button
-                onClick={() => router.push("/admon")}
-                size="sm"
-                variant="outline"
-                className="w-full"
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Administrar Usuarios
-              </Button>
-            </div>
-          </div>
-
           {/* Lista de proyectos */}
           <div
             className={`flex-1 overflow-hidden transition-transform duration-300 ${
@@ -591,20 +566,6 @@ export default function DirectorPage() {
                 {projects.length} proyecto{projects.length !== 1 ? "s" : ""}{" "}
                 asignado{projects.length !== 1 ? "s" : ""}
               </p>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => router.push("/register")} size="sm">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Registrar Usuario
-              </Button>
-              <Button
-                onClick={() => router.push("/admon")}
-                size="sm"
-                variant="outline"
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Administrar Usuarios
-              </Button>
             </div>
           </div>
         </div>

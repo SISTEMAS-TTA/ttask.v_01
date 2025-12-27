@@ -444,7 +444,9 @@ export default function AreaProjectsPage({
                                 {completedMeta && (
                                   <span>Check: {completedMeta}</span>
                                 )}
-                                {favoriteMeta && <span>Star: {favoriteMeta}</span>}
+                                {favoriteMeta && (
+                                  <span>Star: {favoriteMeta}</span>
+                                )}
                               </div>
                             )}
                           </div>
