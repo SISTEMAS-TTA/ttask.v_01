@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Plus,
   UserPlus,
+  Users,
   Pencil,
   Trash2,
   AlertTriangle,
@@ -1105,6 +1106,13 @@ export default function AuxAdminPage() {
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
+                <Button
+                  onClick={() => router.push("/admon")}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Users className="h-4 w-4" />
+                </Button>
               </div>
             </div>
             <div className="flex-1 overflow-hidden bg-white">
@@ -1160,6 +1168,13 @@ export default function AuxAdminPage() {
               variant="outline"
             >
               <UserPlus className="mr-2 h-4 w-4" /> Registrar Usuario
+            </Button>
+            <Button
+              onClick={() => router.push("/admon")}
+              size="sm"
+              variant="outline"
+            >
+              <Users className="mr-2 h-4 w-4" /> Administrar Usuarios
             </Button>
           </div>
         </div>

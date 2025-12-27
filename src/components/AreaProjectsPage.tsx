@@ -392,7 +392,7 @@ export default function AreaProjectsPage({
           <div className="space-y-4">
             {sections.map((sec) => (
               <Card key={sec.id} className="p-4">
-                <h3 className="text-base font-medium text-gray-800 mb-3 pb-2 border-b">
+                <h3 className="text-base font-medium text-white mb-3 px-3 py-2 rounded-md bg-gray-600">
                   {sec.title}
                 </h3>
                 <ul className="space-y-1">
@@ -401,7 +401,7 @@ export default function AreaProjectsPage({
                       return (
                         <li
                           key={t.id}
-                          className="mt-4 mb-2 px-1 text-xs font-bold text-gray-400 uppercase tracking-wider select-none border-b border-transparent"
+                          className="mt-4 mb-2 px-3 py-1.5 text-xs font-bold text-gray-700 uppercase tracking-wider select-none rounded bg-gray-200"
                         >
                           {t.title}
                         </li>
@@ -444,7 +444,9 @@ export default function AreaProjectsPage({
                                 {completedMeta && (
                                   <span>Check: {completedMeta}</span>
                                 )}
-                                {favoriteMeta && <span>Star: {favoriteMeta}</span>}
+                                {favoriteMeta && (
+                                  <span>Star: {favoriteMeta}</span>
+                                )}
                               </div>
                             )}
                           </div>
