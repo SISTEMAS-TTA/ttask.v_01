@@ -426,12 +426,12 @@ export function NotesColumn() {
     listType: "active" | "completed",
     overId: string | null
   ) => {
-    if (!draggingId || !overId) return;
+    if (!draggingId || !overId || draggingId === overId) return;
     const sourceList = listType === "active" ? activeNotes : completedNotes;
     const ids = sourceList.map((n) => n.id);
     const fromIndex = ids.indexOf(draggingId);
     const toIndex = ids.indexOf(overId);
-    if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return;
+    if (fromIndex === -1 || toIndex === -1) return;
 
     // Determinar orders base: si falta alguno, inicializar con huecos
     const hasMissingOrder = sourceList.some((n) => typeof n.order !== "number");
@@ -450,38 +450,64 @@ export function NotesColumn() {
         baseOrderById.set(n.id, val);
       });
 
-      // Reordenar localmente ids
-      const newIds = ids.slice();
-      const [moved] = newIds.splice(fromIndex, 1);
-      newIds.splice(toIndex, 0, moved);
-
-      // Calcular nuevo order para la nota movida usando vecinos
-      const prevId = newIds[toIndex - 1] ?? null;
-      const nextId = newIds[toIndex + 1] ?? null;
-      const prevOrder = prevId ? baseOrderById.get(prevId) ?? null : null;
-      const nextOrder = nextId ? baseOrderById.get(nextId) ?? null : null;
-
+      // Obtener el order del elemento destino
+      const targetOrder = baseOrderById.get(overId) ?? 0;
+      
+      // Determinar si estamos moviendo hacia arriba o hacia abajo
+      const movingUp = fromIndex > toIndex;
+      
+      // Calcular nuevo order: necesitamos posicionar la nota ANTES o DESPUÉS del destino
       let newOrder: number;
-      if (prevOrder != null && nextOrder != null) {
-        // Si no hay espacio entre vecinos, re-normalizar la lista con huecos
-        if (Math.floor(nextOrder) - Math.floor(prevOrder) <= 1) {
-          await initializeNotesOrder(newIds);
-          return;
+      
+      if (movingUp) {
+        // Moviendo hacia arriba: posicionar ANTES del destino
+        // Obtener el elemento anterior al destino
+        const prevId = toIndex > 0 ? ids[toIndex - 1] : null;
+        const prevOrder = prevId ? baseOrderById.get(prevId) ?? null : null;
+        
+        if (prevOrder != null) {
+          // Insertar entre el anterior y el destino
+          if (Math.floor(targetOrder) - Math.floor(prevOrder) <= 1) {
+            // No hay espacio, re-normalizar
+            const newIds = ids.slice();
+            const [moved] = newIds.splice(fromIndex, 1);
+            newIds.splice(toIndex, 0, moved);
+            await initializeNotesOrder(newIds);
+            return;
+          }
+          newOrder = Math.floor((prevOrder + targetOrder) / 2);
+        } else {
+          // No hay elemento anterior, poner al inicio
+          newOrder = Math.floor(targetOrder / 2);
+          if (newOrder <= 0) {
+            const newIds = ids.slice();
+            const [moved] = newIds.splice(fromIndex, 1);
+            newIds.splice(toIndex, 0, moved);
+            await initializeNotesOrder(newIds);
+            return;
+          }
         }
-        newOrder = Math.floor((prevOrder + nextOrder) / 2);
-      } else if (prevOrder == null && nextOrder != null) {
-        // Insertar al inicio: crear espacio antes del primero
-        newOrder = Math.floor(nextOrder / 2);
-        if (newOrder === nextOrder) {
-          await initializeNotesOrder(newIds);
-          return;
-        }
-      } else if (prevOrder != null && nextOrder == null) {
-        // Insertar al final: empujar más allá del último
-        newOrder = Math.floor(prevOrder + step);
       } else {
-        // Lista de un solo elemento
-        newOrder = step;
+        // Moviendo hacia abajo: posicionar DESPUÉS del destino
+        // Obtener el elemento siguiente al destino
+        const nextId = toIndex < ids.length - 1 ? ids[toIndex + 1] : null;
+        const nextOrder = nextId ? baseOrderById.get(nextId) ?? null : null;
+        
+        if (nextOrder != null) {
+          // Insertar entre el destino y el siguiente
+          if (Math.floor(nextOrder) - Math.floor(targetOrder) <= 1) {
+            // No hay espacio, re-normalizar
+            const newIds = ids.slice();
+            const [moved] = newIds.splice(fromIndex, 1);
+            newIds.splice(toIndex, 0, moved);
+            await initializeNotesOrder(newIds);
+            return;
+          }
+          newOrder = Math.floor((targetOrder + nextOrder) / 2);
+        } else {
+          // No hay elemento siguiente, poner al final
+          newOrder = Math.floor(targetOrder + step);
+        }
       }
 
       await updateNoteOrder(draggingId, newOrder);
