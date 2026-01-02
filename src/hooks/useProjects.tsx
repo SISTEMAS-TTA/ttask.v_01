@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { ProjectDoc, UserRole } from "@/modules/types";
 import { subscribeToProjectsForUser } from "@/lib/firebase/projects";
 
@@ -28,6 +28,15 @@ export default function useProjects(userId?: string, role?: UserRole) {
     return () => unsub();
   }, [userId, role]);
 
-  // 3. Retornamos projects Y loading
-  return { projects, loading } as const;
+  // 3. Ordenamos los proyectos alfabéticamente por título
+  const sortedProjects = useMemo(
+    () =>
+      [...projects].sort((a, b) =>
+        a.title.localeCompare(b.title, "es", { sensitivity: "base" })
+      ),
+    [projects]
+  );
+
+  // 4. Retornamos projects ordenados Y loading
+  return { projects: sortedProjects, loading } as const;
 }

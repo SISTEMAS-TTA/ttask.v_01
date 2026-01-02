@@ -3,16 +3,15 @@
 import { useEffect, useState, useMemo } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import useUser from "@/modules/auth/hooks/useUser";
+import useProjects from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { ProjectDoc, UserRole } from "@/modules/types";
 import { listAllUsers } from "@/lib/firebase/firestore";
 import {
   createProject,
   updateProject,
-  subscribeToProjectsForUser,
   deleteProject,
 } from "@/lib/firebase/projects";
 import { useRouter } from "next/navigation";
@@ -37,16 +36,6 @@ type AuxOption = "editar" | "eliminar" | null;
 type Asignacion =
   | { tipo: "area"; id: string }
   | { tipo: "usuario"; id: string };
-
-function useProjects(userId?: string, role?: UserRole) {
-  const [projects, setProjects] = useState<ProjectDoc[]>([]);
-  useEffect(() => {
-    if (!userId || !role) return;
-    const unsub = subscribeToProjectsForUser(userId, role, setProjects);
-    return () => unsub();
-  }, [userId, role]);
-  return { projects, setProjects } as const;
-}
 
 function buildTemplate() {
   const sections = [
@@ -569,7 +558,7 @@ function buildTemplate() {
 
 export default function AuxAdminPage() {
   const { user, profile, loading: userLoading } = useUser();
-  const { projects, setProjects } = useProjects(user?.uid, profile?.role);
+  const { projects } = useProjects(user?.uid, profile?.role);
   const router = useRouter();
 
   // --- ESTADOS ---

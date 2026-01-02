@@ -3,17 +3,16 @@
 import { useEffect, useState, useMemo } from "react";
 import AuthGuard from "@/components/AuthGuard";
 import useUser from "@/modules/auth/hooks/useUser";
+import useProjects from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { ProjectDoc, UserRole } from "@/modules/types";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { subscribeToProjectsForUser } from "@/lib/firebase/projects";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -27,18 +26,6 @@ import {
 } from "lucide-react";
 
 type DirectorOption = "cotizacion" | "corrida-financiera" | null;
-
-function useProjects(userId?: string, role?: UserRole) {
-  const [projects, setProjects] = useState<ProjectDoc[]>([]);
-
-  useEffect(() => {
-    if (!userId || !role) return;
-    const unsub = subscribeToProjectsForUser(userId, role, setProjects);
-    return () => unsub();
-  }, [userId, role]);
-
-  return { projects };
-}
 
 export default function DirectorPage() {
   const { user, profile, loading: userLoading } = useUser();
