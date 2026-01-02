@@ -452,19 +452,19 @@ export function NotesColumn() {
 
       // Obtener el order del elemento destino
       const targetOrder = baseOrderById.get(overId) ?? 0;
-      
+
       // Determinar si estamos moviendo hacia arriba o hacia abajo
       const movingUp = fromIndex > toIndex;
-      
+
       // Calcular nuevo order: necesitamos posicionar la nota ANTES o DESPUÉS del destino
       let newOrder: number;
-      
+
       if (movingUp) {
         // Moviendo hacia arriba: posicionar ANTES del destino
         // Obtener el elemento anterior al destino
         const prevId = toIndex > 0 ? ids[toIndex - 1] : null;
         const prevOrder = prevId ? baseOrderById.get(prevId) ?? null : null;
-        
+
         if (prevOrder != null) {
           // Insertar entre el anterior y el destino
           if (Math.floor(targetOrder) - Math.floor(prevOrder) <= 1) {
@@ -492,7 +492,7 @@ export function NotesColumn() {
         // Obtener el elemento siguiente al destino
         const nextId = toIndex < ids.length - 1 ? ids[toIndex + 1] : null;
         const nextOrder = nextId ? baseOrderById.get(nextId) ?? null : null;
-        
+
         if (nextOrder != null) {
           // Insertar entre el destino y el siguiente
           if (Math.floor(nextOrder) - Math.floor(targetOrder) <= 1) {
@@ -589,12 +589,11 @@ export function NotesColumn() {
             )}
 
             {/* Empty State */}
-            {activeNotes.length === 0 &&
-              completedNotes.length === 0 && (
-                <p className="text-sm text-gray-500 text-center">
-                  Aún no tienes notas guardadas.
-                </p>
-              )}
+            {activeNotes.length === 0 && completedNotes.length === 0 && (
+              <p className="text-sm text-gray-500 text-center">
+                Aún no tienes notas guardadas.
+              </p>
+            )}
           </>
         )}
       </div>
