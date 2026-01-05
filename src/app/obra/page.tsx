@@ -10,7 +10,7 @@ import {
   Loader2,
   FolderOpen,
   ArrowLeft,
-  ClipboardCheck,
+  Clipboard,
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
@@ -190,7 +190,7 @@ export default function ObraPage() {
                   : "bg-gray-100"
               }`}
             >
-              <ClipboardCheck
+              <Clipboard
                 className={`h-5 w-5 ${
                   selectedOption === "levantamiento"
                     ? "text-blue-600"
@@ -268,7 +268,7 @@ export default function ObraPage() {
           <>
             <Card className="p-5 shadow-sm">
               <div className="flex items-center gap-3">
-                <ClipboardCheck className="h-8 w-8 text-blue-500" />
+                <Clipboard className="h-8 w-8 text-blue-500" />
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
                     Levantamiento en curso (simulado)

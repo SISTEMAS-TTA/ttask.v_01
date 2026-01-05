@@ -45,6 +45,8 @@ declare module "lucide-react" {
   export const TrendingUp: LucideIcon;
   export const Info: LucideIcon;
   export const AlertTriangle: LucideIcon;
+  export const Clipboard: LucideIcon;
+  export const CheckCircle2: LucideIcon;
   const _default: LucideIcon;
   export default _default;
 }
