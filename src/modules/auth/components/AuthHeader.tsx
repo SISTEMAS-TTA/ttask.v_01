@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { auth } from "@/lib/firebase/config";
+import { updateUserVacationDays } from "@/lib/firebase/users";
 import { useRouter } from "next/navigation";
 import type { UserRole } from "@/modules/types";
 
@@ -65,7 +66,9 @@ const directorAreas: { href: string; label: string }[] = [
 export function AuthHeader() {
   const { profile, user } = useUser();
   const [isOpen, setIsOpen] = useState(false);
-  const [logoutDate, setLogoutDate] = useState<Date | undefined>();
+  const [vacationDates, setVacationDates] = useState<Date[]>([]);
+  const [vacationMonth, setVacationMonth] = useState<Date>(new Date());
+  const [isSavingVacation, setIsSavingVacation] = useState(false);
   const router = useRouter();
 
   // Verificar si el usuario es Director
@@ -101,6 +104,19 @@ export function AuthHeader() {
       router.push("/login");
     } catch (e) {
       console.error("Error al cerrar sesión", e);
+    }
+  };
+
+  const handleConfirmVacation = async () => {
+    if (!user) return;
+    if (vacationDates.length === 0) return;
+    setIsSavingVacation(true);
+    try {
+      await updateUserVacationDays(user.uid, vacationDates);
+    } catch (e) {
+      console.error("Error guardando vacaciones:", e);
+    } finally {
+      setIsSavingVacation(false);
     }
   };
 
@@ -229,17 +245,54 @@ export function AuthHeader() {
                   {/* Calendario con mejor espaciado */}
                   <div className="px-4 py-4">
                     <p className="text-xs text-gray-500 mb-3 font-medium">
-                    Tus Fechas de Vacaciones
+                      Tus Fechas de Vacaciones
                     </p>
                     <div className="flex justify-center">
                       <Calendar
-                        mode="single"
-                        selected={logoutDate}
-                        onSelect={setLogoutDate}
+                        mode="multiple"
+                        selected={vacationDates}
+                        onSelect={(dates) => setVacationDates(dates ?? [])}
+                        month={vacationMonth}
+                        onMonthChange={setVacationMonth}
                         initialFocus
                         className="rounded-md border"
                       />
                     </div>
+                    {vacationDates.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {vacationDates
+                            .filter(
+                              (d) =>
+                                d.getFullYear() ===
+                                  vacationMonth.getFullYear() &&
+                                d.getMonth() === vacationMonth.getMonth()
+                            )
+                            .sort((a, b) => a.getTime() - b.getTime())
+                            .map((d) => (
+                              <span
+                                key={`vac-${d.toISOString()}`}
+                                className="px-2 py-0.5 rounded-full text-[10px] bg-blue-50 text-blue-700 border border-blue-100"
+                              >
+                                {d.toLocaleDateString("es-MX", {
+                                  day: "2-digit",
+                                  month: "short",
+                                })}
+                              </span>
+                            ))}
+                        </div>
+                        <div className="flex items-center justify-end">
+                          <Button
+                            size="sm"
+                            className="h-7 px-3 text-xs"
+                            onClick={handleConfirmVacation}
+                            disabled={isSavingVacation}
+                          >
+                            {isSavingVacation ? "Guardando..." : "Confirmar"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <DropdownMenuSeparator />

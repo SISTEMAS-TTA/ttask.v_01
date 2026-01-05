@@ -68,6 +68,9 @@ export default function AuxAdminPage() {
   const [allUsers, setAllUsers] = useState<
     Array<{ id: string; name: string; role: string }>
   >([]);
+  const [usersVacations, setUsersVacations] = useState<
+    Array<{ id: string; name: string; role: string; vacationDays: Date[] }>
+  >([]);
   const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
 
   // Checklists desde Firestore
@@ -94,6 +97,68 @@ export default function AuxAdminPage() {
             name: u.fullName || u.email,
             role: u.role,
           }))
+        );
+        const normalizeVacationDays = (value: unknown): Date[] => {
+          if (!value) return [];
+          const rawDays = Array.isArray(value)
+            ? value
+            : typeof value === "object"
+            ? Object.keys(value as Record<string, boolean>)
+            : [];
+          const toDate = (entry: unknown): Date | null => {
+            if (!entry) return null;
+            if (entry instanceof Date) return entry;
+            if (typeof entry === "string" || typeof entry === "number") {
+              const parsed = new Date(entry);
+              return Number.isNaN(parsed.getTime()) ? null : parsed;
+            }
+            if (
+              typeof entry === "object" &&
+              entry !== null &&
+              "toDate" in entry &&
+              typeof (entry as { toDate: () => Date }).toDate === "function"
+            ) {
+              return (entry as { toDate: () => Date }).toDate();
+            }
+            if (
+              typeof entry === "object" &&
+              entry !== null &&
+              "seconds" in entry &&
+              typeof (entry as { seconds: number }).seconds === "number"
+            ) {
+              return new Date((entry as { seconds: number }).seconds * 1000);
+            }
+            return null;
+          };
+          const normalized = rawDays
+            .map((entry) => toDate(entry))
+            .filter((d): d is Date => Boolean(d));
+          const uniqueByDay = new Map(
+            normalized.map((d) => [
+              d.toISOString().slice(0, 10),
+              d,
+            ])
+          );
+          return Array.from(uniqueByDay.values()).sort(
+            (a, b) => a.getTime() - b.getTime()
+          );
+        };
+        setUsersVacations(
+          users
+            .map((u) => {
+              const vacationSource =
+                (u as { vacationDays?: unknown }).vacationDays ??
+                (u as { vacations?: unknown }).vacations ??
+                (u as { calendar?: unknown }).calendar ??
+                (u as { vacaciones?: unknown }).vacaciones;
+              return {
+                id: u.id,
+                name: u.fullName || u.email,
+                role: u.role,
+                vacationDays: normalizeVacationDays(vacationSource),
+              };
+            })
+            .sort((a, b) => a.name.localeCompare(b.name))
         );
         setAllAreas([...new Set(users.map((u) => u.role))].filter(Boolean));
       } catch (e) {
@@ -298,6 +363,94 @@ export default function AuxAdminPage() {
       </div>
     </>
   );
+  const renderUsersVacations = () => {
+    const formatMonthLabel = (date: Date) =>
+      date.toLocaleDateString("es-MX", {
+        month: "long",
+        year: "numeric",
+      });
+    const groupByMonth = (dates: Date[]) => {
+      const map = new Map<string, { label: string; days: Date[] }>();
+      dates.forEach((date) => {
+        const key = `${date.getFullYear()}-${date.getMonth()}`;
+        const entry = map.get(key);
+        if (entry) {
+          entry.days.push(date);
+        } else {
+          map.set(key, { label: formatMonthLabel(date), days: [date] });
+        }
+      });
+      return Array.from(map.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([, value]) => ({
+          label: value.label,
+          days: value.days.sort((a, b) => a.getTime() - b.getTime()),
+        }));
+    };
+
+    return (
+      <>
+        <div className="p-3 border-b bg-white flex items-center justify-between sticky top-0 z-10">
+          <span className="text-xs font-bold text-gray-500">
+            VACACIONES POR USUARIO
+          </span>
+          <span className="text-[10px] text-gray-400">
+            {usersVacations.length} usuarios
+          </span>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {usersVacations.length === 0 && (
+            <div className="p-6 text-center text-gray-400 text-sm">
+              No hay vacaciones registradas.
+            </div>
+          )}
+          {usersVacations.map((u) => (
+            <div
+              key={u.id}
+              className="w-full text-left p-4 border-b bg-white"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-800 truncate">
+                  {u.name}
+                </p>
+                <span className="text-[10px] text-gray-400 uppercase">
+                  {u.role}
+                </span>
+              </div>
+              {u.vacationDays.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {groupByMonth(u.vacationDays).map((group) => (
+                    <div key={`${u.id}-${group.label}`}>
+                      <p className="text-[10px] uppercase text-gray-400 mb-1">
+                        {group.label}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {group.days.map((d) => (
+                          <span
+                            key={`${u.id}-${d.toISOString().slice(0, 10)}`}
+                            className="px-2 py-0.5 rounded-full text-[10px] bg-blue-50 text-blue-700 border border-blue-100"
+                          >
+                            {d.toLocaleDateString("es-MX", {
+                              day: "2-digit",
+                              month: "short",
+                            })}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-gray-400">
+                  Sin vacaciones registradas.
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  };
 
   const renderOptions = () => (
     <div className="h-full flex flex-col bg-white">
@@ -783,7 +936,12 @@ export default function AuxAdminPage() {
 
         <div className="flex-1 flex overflow-hidden">
           <div className="w-72 border-r bg-gray-50 flex flex-col overflow-hidden">
-            {renderProjectList()}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {renderProjectList()}
+            </div>
+            <div className="flex-1 flex flex-col overflow-hidden border-t border-gray-200">
+              {renderUsersVacations()}
+            </div>
           </div>
           <div className="w-80 border-r bg-white flex flex-col">
             {renderOptions()}

@@ -1,5 +1,5 @@
 import { db } from "./config";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore"; //Añadido doc, getDoc
+import { collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore"; //Añadido doc, getDoc
 import type { UserProfile } from "@/modules/types";
 
 // NUEVA FUNCIÓN: Obtener un solo perfil por ID
@@ -49,4 +49,19 @@ export async function getAllUserProfiles(): Promise<UserProfile[]> {
   });
 
   return users;
+}
+
+export async function updateUserVacationDays(
+  userId: string,
+  vacationDays: Date[]
+): Promise<void> {
+  if (!userId) return;
+
+  try {
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, { vacationDays });
+  } catch (e) {
+    console.error("Error al guardar vacaciones del usuario:", e);
+    throw e;
+  }
 }
