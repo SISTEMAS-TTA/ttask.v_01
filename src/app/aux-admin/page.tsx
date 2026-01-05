@@ -14,6 +14,13 @@ import {
   updateProject,
   deleteProject,
 } from "@/lib/firebase/projects";
+import {
+  getChecklistsByType,
+  type ChecklistDoc,
+  type ChecklistSection,
+  type ChecklistTask,
+} from "@/lib/firebase/checklists";
+import { initializeAllChecklists } from "@/lib/firebase/initChecklists";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -36,525 +43,6 @@ type AuxOption = "editar" | "eliminar" | null;
 type Asignacion =
   | { tipo: "area"; id: string }
   | { tipo: "usuario"; id: string };
-
-function buildTemplate() {
-  const sections = [
-    { id: "sec-arq", title: "Proyecto Arquitectónico", order: 1 },
-    { id: "sec-eje", title: "Proyecto Ejecutivo Arquitectónico", order: 2 },
-    { id: "sec-est", title: "Diseño Estructural", order: 3 },
-    { id: "sec-ing", title: "Ingenierías", order: 4 },
-    { id: "sec-esp", title: "Instalaciones Especiales", order: 5 },
-    { id: "sec-tab", title: "Tablaroca", order: 6 },
-  ];
-
-  const tasks = [
-    // --- 2. PROYECTO ARQUITECTÓNICO ---
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-arq",
-      title: "2.1 INFORMACIÓN ARQUITECTÓNICA",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 50,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-arq",
-      title: "2.1.1 Planta de conjunto",
-      completed: false,
-      favorite: false,
-      order: 100,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-arq",
-      title: "2.1.2 Plantas arquitectónicas",
-      completed: false,
-      favorite: false,
-      order: 200,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-arq",
-      title: "2.1.3 Fachadas arquitectónicas",
-      completed: false,
-      favorite: false,
-      order: 300,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-arq",
-      title: "2.1.4 Secciones longitudinales",
-      completed: false,
-      favorite: false,
-      order: 400,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-arq",
-      title: "2.1.5 Secciones transversales",
-      completed: false,
-      favorite: false,
-      order: 500,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-arq",
-      title: "2.2 MATERIAL DE PRESENTACIÓN",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 550,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-arq",
-      title: "2.2.1 Visualización digital (Vista exterior e interior)",
-      completed: false,
-      favorite: false,
-      order: 600,
-    },
-    // --- 3. PROYECTO EJECUTIVO ---
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.1 INFORMACIÓN CONSTRUCTIVA",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 50,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.1.1 Detalles de cancelería",
-      completed: false,
-      favorite: false,
-      order: 100,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.1.2 Detalles de carpintería",
-      completed: false,
-      favorite: false,
-      order: 200,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.1.3 Detalles de herrería",
-      completed: false,
-      favorite: false,
-      order: 300,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.1.4 Detalles constructivos arquitectónicos",
-      completed: false,
-      favorite: false,
-      order: 400,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.1.5 Plano de albañilería",
-      completed: false,
-      favorite: false,
-      order: 500,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.2 ACABADOS",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 550,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.2.1 Plano de referencias de acabados",
-      completed: false,
-      favorite: false,
-      order: 600,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.2.2 Plantas de acabados",
-      completed: false,
-      favorite: false,
-      order: 700,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.2.3 Despiece de pisos y lambrines",
-      completed: false,
-      favorite: false,
-      order: 800,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.2.4 Accesorios y equipos",
-      completed: false,
-      favorite: false,
-      order: 900,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.2.4.1 Detalles accesorios y equipos",
-      completed: false,
-      favorite: false,
-      order: 950,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-eje",
-      title: "3.2.5 Plano de mármol",
-      completed: false,
-      favorite: false,
-      order: 1000,
-    },
-    // --- 4. DISEÑO ESTRUCTURAL ---
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-est",
-      title: "4.1 Planos de especificaciones generales",
-      completed: false,
-      favorite: false,
-      order: 100,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-est",
-      title: "4.2 Planta estructural de cimentación",
-      completed: false,
-      favorite: false,
-      order: 200,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-est",
-      title: "4.3 Plantas estructuradas de losas por nivel",
-      completed: false,
-      favorite: false,
-      order: 300,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-est",
-      title: "4.4 Secciones estructurales de refuerzo",
-      completed: false,
-      favorite: false,
-      order: 400,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-est",
-      title: "4.5 Secciones esquemáticas de niveles",
-      completed: false,
-      favorite: false,
-      order: 500,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-est",
-      title: "4.6 Memoria de cálculo",
-      completed: false,
-      favorite: false,
-      order: 600,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-est",
-      title: "4.7 Mecánica de suelos",
-      completed: false,
-      favorite: false,
-      order: 700,
-    },
-    // --- 5. INGENIERÍAS ---
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.1 INGENIERÍA HIDRÁULICA",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 50,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.1.1 Acometida general, cisterna y líneas generales",
-      completed: false,
-      favorite: false,
-      order: 100,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.1.2 Instalación de líneas por nivel",
-      completed: false,
-      favorite: false,
-      order: 200,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.1.3 Isométricos generales de instalación de agua",
-      completed: false,
-      favorite: false,
-      order: 300,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.1.4 Especificaciones y detalles hidráulicos",
-      completed: false,
-      favorite: false,
-      order: 400,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.1.5 Memoria descriptiva",
-      completed: false,
-      favorite: false,
-      order: 500,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.2 INGENIERÍA SANITARIA",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 550,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.2.1 Descargas generales y drenajes residuales",
-      completed: false,
-      favorite: false,
-      order: 600,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.2.2 Sistema de captación pluvial e interconexión a red",
-      completed: false,
-      favorite: false,
-      order: 700,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.2.3 Plantas e isométricos de instalación",
-      completed: false,
-      favorite: false,
-      order: 800,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.2.4 Especificaciones y detalles sanitarios",
-      completed: false,
-      favorite: false,
-      order: 900,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.2.5 Memoria descriptiva",
-      completed: false,
-      favorite: false,
-      order: 1000,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.3 INSTALACIÓN DE GAS",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 1050,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.3.1 Diseño de red de conducción",
-      completed: false,
-      favorite: false,
-      order: 1100,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.3.2 Líneas de alimentación",
-      completed: false,
-      favorite: false,
-      order: 1200,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.3.3 Equipos de consumo",
-      completed: false,
-      favorite: false,
-      order: 1300,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.3.4 Conjunto de abastecimiento, distribución y regulación",
-      completed: false,
-      favorite: false,
-      order: 1400,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.3.5 Memoria descriptiva",
-      completed: false,
-      favorite: false,
-      order: 1500,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.4 INGENIERÍA ELÉCTRICA",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 1550,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.4.1 Iluminación por nivel",
-      completed: false,
-      favorite: false,
-      order: 1600,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.4.2 Contactos por nivel",
-      completed: false,
-      favorite: false,
-      order: 1700,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.4.3 Diagrama unifilar",
-      completed: false,
-      favorite: false,
-      order: 1800,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.4.4 Cuadros y resúmenes de cargas",
-      completed: false,
-      favorite: false,
-      order: 1900,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.4.5 Especificaciones y detalles eléctricos",
-      completed: false,
-      favorite: false,
-      order: 2000,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-ing",
-      title: "5.4.6 Memoria descriptiva",
-      completed: false,
-      favorite: false,
-      order: 2100,
-    },
-    // --- 6. INSTALACIONES ESPECIALES ---
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-esp",
-      title: "6.1 Domótica",
-      completed: false,
-      favorite: false,
-      order: 100,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-esp",
-      title: "6.2 Aire acondicionado",
-      completed: false,
-      favorite: false,
-      order: 200,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-esp",
-      title: "6.3 Voz y datos",
-      completed: false,
-      favorite: false,
-      order: 300,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-esp",
-      title: "6.4 Sistema de riego",
-      completed: false,
-      favorite: false,
-      order: 400,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-esp",
-      title: "6.5 CCTV",
-      completed: false,
-      favorite: false,
-      order: 500,
-    },
-    // --- 7. TABLAROCA ---
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-tab",
-      title: "7.1 TABLAROCA",
-      completed: false,
-      favorite: false,
-      isHeader: true,
-      order: 50,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-tab",
-      title: "7.1.1 Plano de plafones",
-      completed: false,
-      favorite: false,
-      order: 100,
-    },
-    {
-      id: crypto.randomUUID(),
-      sectionId: "sec-tab",
-      title: "7.1.2 Plano muros de tablaroca",
-      completed: false,
-      favorite: false,
-      order: 200,
-    },
-  ];
-
-  return { sections, tasks };
-}
 
 export default function AuxAdminPage() {
   const { user, profile, loading: userLoading } = useUser();
@@ -582,6 +70,11 @@ export default function AuxAdminPage() {
   >([]);
   const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
 
+  // Checklists desde Firestore
+  const [checklists, setChecklists] = useState<ChecklistDoc[]>([]);
+  const [loadingChecklists, setLoadingChecklists] = useState(true);
+  const [checklistError, setChecklistError] = useState<string | null>(null);
+
   // --- EFECTOS ---
   useEffect(() => {
     const checkIsMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -590,6 +83,7 @@ export default function AuxAdminPage() {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
+  // Cargar usuarios y áreas
   useEffect(() => {
     (async () => {
       try {
@@ -604,6 +98,40 @@ export default function AuxAdminPage() {
         setAllAreas([...new Set(users.map((u) => u.role))].filter(Boolean));
       } catch (e) {
         console.warn(e);
+      }
+    })();
+  }, []);
+
+  // Cargar checklists desde Firestore
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingChecklists(true);
+        const arquitecturaChecklists = await getChecklistsByType(
+          "arquitectura"
+        );
+
+        if (arquitecturaChecklists.length === 0) {
+          // Si no hay checklists, ofrecer inicializarlos
+          console.warn(
+            "No se encontraron checklists de arquitectura en Firestore"
+          );
+          setChecklistError(
+            "No hay checklists disponibles. Se usará el template por defecto."
+          );
+          setChecklists([]);
+        } else {
+          setChecklists(arquitecturaChecklists);
+          setChecklistError(null);
+        }
+      } catch (e) {
+        console.error("Error cargando checklists:", e);
+        setChecklistError(
+          "Error al cargar checklists. Se usará el template por defecto."
+        );
+        setChecklists([]);
+      } finally {
+        setLoadingChecklists(false);
       }
     })();
   }, []);
@@ -632,11 +160,41 @@ export default function AuxAdminPage() {
     setSelectedOption("editar");
   };
 
+  const handleInitializeChecklists = async () => {
+    if (!user) return;
+
+    const confirmInit = window.confirm(
+      "¿Estás seguro de que quieres inicializar los checklists en Firestore? Esta acción creará nuevos documentos."
+    );
+
+    if (!confirmInit) return;
+
+    try {
+      setLoadingChecklists(true);
+      await initializeAllChecklists(user.uid);
+
+      // Recargar los checklists
+      const arquitecturaChecklists = await getChecklistsByType("arquitectura");
+      setChecklists(arquitecturaChecklists);
+      setChecklistError(null);
+
+      alert("✓ Checklists inicializados correctamente en Firestore");
+    } catch (error) {
+      console.error("Error inicializando checklists:", error);
+      alert(
+        "Error al inicializar checklists. Revisa la consola para más detalles."
+      );
+    } finally {
+      setLoadingChecklists(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user || !title.trim()) return;
     setIsSaving(true);
     try {
       if (selectedProject) {
+        // Actualizar proyecto existente
         await updateProject(selectedProject.id, {
           title: title.trim(),
           description: description.trim() || undefined,
@@ -645,19 +203,33 @@ export default function AuxAdminPage() {
           tasks: selectedProject.tasks,
         });
       } else {
-        const base = buildTemplate();
+        // Crear nuevo proyecto - REQUIERE checklist en Firestore
+        if (checklists.length === 0) {
+          alert(
+            "⚠️ No hay checklists disponibles en Firestore.\n\nPor favor, inicializa los checklists primero haciendo clic en el botón 'Inicializar Checklists en Firestore'."
+          );
+          setIsSaving(false);
+          return;
+        }
+
+        // Usar el primer checklist de arquitectura encontrado
+        const checklist = checklists[0];
+
         await createProject(user.uid, {
           title: title.trim(),
           description: description.trim() || undefined,
           asignaciones,
-          sections: base.sections,
-          tasks: base.tasks,
+          sections: checklist.sections,
+          tasks: checklist.tasks,
         });
       }
       setSelectedOption(null);
       if (isMobile && !selectedProject) setSelectedProjectId(null);
     } catch (e) {
       console.error(e);
+      alert(
+        "Error al guardar el proyecto. Revisa la consola para más detalles."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -835,6 +407,44 @@ export default function AuxAdminPage() {
                   <Pencil className="h-5 w-5 text-blue-600" />
                   {selectedProject ? "Modificar Proyecto" : "Nuevo Registro"}
                 </h2>
+
+                {/* Mensaje sobre checklists */}
+                {checklistError && (
+                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs text-yellow-800">
+                          {checklistError}
+                        </p>
+                        {checklists.length === 0 && (
+                          <button
+                            onClick={handleInitializeChecklists}
+                            disabled={loadingChecklists}
+                            className="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-700 underline disabled:opacity-50"
+                          >
+                            {loadingChecklists
+                              ? "Inicializando..."
+                              : "Inicializar Checklists en Firestore"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {checklists.length > 0 && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                      <p className="text-xs text-green-800">
+                        Usando checklist desde Firestore:{" "}
+                        <strong>{checklists[0].name}</strong>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-5">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-600 uppercase">
@@ -884,7 +494,7 @@ export default function AuxAdminPage() {
                             className="border-b last:border-b-0 bg-white"
                           >
                             <div className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-gray-50">
-                              <label className="flex items-center gap-3 text-sm font-medium flex-grow cursor-pointer">
+                              <label className="flex items-center gap-3 text-sm font-medium grow cursor-pointer">
                                 <input
                                   type="checkbox"
                                   className="w-4 h-4 rounded border-gray-300 text-blue-600"
@@ -966,7 +576,10 @@ export default function AuxAdminPage() {
                                             if (checked) {
                                               return [
                                                 ...filtrados,
-                                                { tipo: "usuario", id: u.id },
+                                                {
+                                                  tipo: "usuario",
+                                                  id: u.id,
+                                                },
                                               ];
                                             }
                                             return filtrados;
