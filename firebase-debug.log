@@ -1,0 +1,16 @@
+[debug] [2026-01-05T18:23:46.854Z] ----------------------------------------------------------------------
+[debug] [2026-01-05T18:23:46.856Z] Command:       C:\Users\jramirez\AppData\Local\fnm_multishells\30340_1767629613796\node.exe C:\Users\jramirez\Documents\003_Jonny\ttask.v_01\node_modules\firebase-tools\lib\bin\firebase.js deploy --only firestore:rules
+[debug] [2026-01-05T18:23:46.856Z] CLI Version:   14.26.0
+[debug] [2026-01-05T18:23:46.857Z] Platform:      win32
+[debug] [2026-01-05T18:23:46.857Z] Node Version:  v24.11.1
+[debug] [2026-01-05T18:23:46.857Z] Time:          Mon Jan 05 2026 12:23:46 GMT-0600 (hora estándar central)
+[debug] [2026-01-05T18:23:46.857Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-01-05T18:23:47.004Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-05T18:23:47.004Z] > authorizing via signed-in user (sistemas.ttarquitectos@gmail.com)
+[debug] [2026-01-05T18:23:47.004Z] [iam] checking project login-auth-ttarq-v1 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]
+[debug] [2026-01-05T18:23:47.005Z] Checked if tokens are valid: true, expires at: 1767640895742
+[debug] [2026-01-05T18:23:47.005Z] Checked if tokens are valid: true, expires at: 1767640895742
+[debug] [2026-01-05T18:23:47.006Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/login-auth-ttarq-v1:testIamPermissions [none]
+[debug] [2026-01-05T18:23:47.006Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/login-auth-ttarq-v1:testIamPermissions x-goog-quota-user=projects/login-auth-ttarq-v1
+[debug] [2026-01-05T18:23:47.006Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/login-auth-ttarq-v1:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get"]}

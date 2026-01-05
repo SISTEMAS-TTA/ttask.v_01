@@ -11,7 +11,6 @@ service cloud.firestore {
     
     //----------------NUEVO BLOQUE---------------------------------
     // Reglas para que los usuarios jefe de area agreguen usuarios a la misma area
-
     // Función helper para obtener el rol del usuario
     function getUserRole(uid) {
       return get(/databases/$(database)/documents/users/$(uid)).data.role;
@@ -134,6 +133,16 @@ service cloud.firestore {
       // Eliminación: solo gestores de proyectos
       allow delete: if canManageProjects();
     }
+
+			match /checklists/{checklistId} {
+  			// Permitir lectura a usuarios autenticados (cualquier rol)
+  			allow read: if request.auth != null;
+
+  			// Permitir escritura solo a admins y auxAdmin
+  			allow write: if request.auth != null &&
+  			  (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Director' ||
+  			   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Aux. Administrador');
+			}
     
     // Denegar todo lo demás por defecto
     match /{document=**} {
