@@ -209,7 +209,7 @@ export default function AdmonPage() {
 
   return (
     <AuthGuard>
-      <div className="h-[calc(100vh-4rem)] flex flex-col bg-white">
+      <div className="h-[calc(100vh-4rem)] flex flex-col bg-white mt-4">
         <div className="px-6 py-4 border-b flex justify-between items-center flex-shrink-0 bg-white shadow-sm">
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
@@ -222,37 +222,6 @@ export default function AdmonPage() {
           <Button variant="outline" size="sm" onClick={() => void loadUsers()}>
             Actualizar listado
           </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 px-6 py-4 border-b bg-gray-50">
-          <Card className="p-4 flex items-center gap-3">
-            <Users className="h-8 w-8 text-blue-600" />
-            <div>
-              <p className="text-xs text-gray-500 uppercase">Usuarios</p>
-              <p className="text-xl font-semibold text-gray-900">
-                {stats.total}
-              </p>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <p className="text-xs text-gray-500 uppercase">Activos</p>
-            <p className="text-xl font-semibold text-emerald-600">
-              {stats.active}
-            </p>
-            <p className="text-xs text-gray-400">
-              {stats.total
-                ? `${Math.round((stats.active / stats.total) * 100)}% activos`
-                : "Sin registros"}
-            </p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-xs text-gray-500 uppercase">
-              Roles representados
-            </p>
-            <p className="text-xl font-semibold text-gray-900">
-              {stats.roles}
-            </p>
-          </Card>
         </div>
 
         <div className="px-6 py-4 border-b bg-white">

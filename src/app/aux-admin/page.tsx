@@ -1134,7 +1134,7 @@ export default function AuxAdminPage() {
   return (
     <AuthGuard>
       <div className="h-[calc(100vh-4rem)] flex flex-col bg-white">
-        <div className="px-6 py-4 border-b flex justify-between items-center flex-shrink-0 bg-white shadow-sm">
+        <div className="px-6 py-4 border-b flex justify-between items-center shrink-0 bg-white shadow-sm">
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               AUX. ADMINISTRATIVO
