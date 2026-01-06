@@ -134,6 +134,15 @@ service cloud.firestore {
       allow delete: if canManageProjects();
     }
 
+    // Reglas para proveedores
+    match /proveedores/{providerId} {
+      // Lectura: usuarios autenticados
+      allow read: if request.auth != null;
+
+      // Escritura: Director, Administrador y Aux. Admin
+      allow create, update, delete: if canManageProjects();
+    }
+
 			match /checklists/{checklistId} {
   			// Permitir lectura a usuarios autenticados (cualquier rol)
   			allow read: if request.auth != null;
