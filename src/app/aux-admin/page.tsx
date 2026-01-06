@@ -14,7 +14,13 @@ import {
   updateProject,
   deleteProject,
 } from "@/lib/firebase/projects";
-import { createProvider } from "@/lib/firebase/providers";
+import {
+  createProvider,
+  deleteProvider,
+  listProviders,
+  updateProvider,
+  type ProviderDoc,
+} from "@/lib/firebase/providers";
 import {
   getChecklistsByType,
   type ChecklistDoc,
@@ -38,7 +44,14 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-type AuxOption = "editar" | "eliminar" | "proveedor" | null;
+type AuxOption =
+  | "editar"
+  | "eliminar"
+  | "proveedor"
+  | "proveedorDetalle"
+  | "proveedorEditar"
+  | "proveedorEliminar"
+  | null;
 
 type Asignacion =
   | { tipo: "area"; id: string }
@@ -67,6 +80,7 @@ export default function AuxAdminPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSavingProvider, setIsSavingProvider] = useState(false);
+  const [isDeletingProvider, setIsDeletingProvider] = useState(false);
   const [providerError, setProviderError] = useState<string | null>(null);
   const [providerArea, setProviderArea] = useState("");
   const [providerName, setProviderName] = useState("");
@@ -84,9 +98,12 @@ export default function AuxAdminPage() {
   const [usersVacations, setUsersVacations] = useState<
     Array<{ id: string; name: string; role: string; vacationDays: Date[] }>
   >([]);
-  const [providers, setProviders] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
+  const [providers, setProviders] = useState<ProviderDoc[]>([]);
+  const [providersLoading, setProvidersLoading] = useState(false);
+  const [providersError, setProvidersError] = useState<string | null>(null);
+  const [selectedProviderId, setSelectedProviderId] = useState<string | null>(
+    null
+  );
   const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
 
   // Checklists desde Firestore
@@ -327,9 +344,35 @@ export default function AuxAdminPage() {
     }
   };
 
+  const selectedProvider = useMemo(
+    () => providers.find((p) => p.id === selectedProviderId) || null,
+    [providers, selectedProviderId]
+  );
+
+  const loadProviders = async () => {
+    setProvidersLoading(true);
+    setProvidersError(null);
+    try {
+      const data = await listProviders();
+      setProviders(data);
+    } catch (error) {
+      console.error("Error cargando proveedores:", error);
+      setProvidersError("No se pudieron cargar los proveedores.");
+    } finally {
+      setProvidersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isProvidersExpanded) {
+      loadProviders();
+    }
+  }, [isProvidersExpanded]);
+
   const handleCreateNewProvider = () => {
     setSelectedProjectId(null);
     setSelectedOption("proveedor");
+    setSelectedProviderId(null);
     setProviderError(null);
     setProviderArea("");
     setProviderName("");
@@ -357,17 +400,33 @@ export default function AuxAdminPage() {
     setIsSavingProvider(true);
     setProviderError(null);
     try {
-      const result = await createProvider({
-        area,
-        name,
-        company,
-        specialty,
-        city,
-        phone: phone || null,
-        email: email || null,
-        createdBy: user?.uid ?? null,
-      });
-      setProviders((prev) => [{ id: result.id, name }, ...prev]);
+      if (selectedProviderId && selectedOption === "proveedorEditar") {
+        await updateProvider(selectedProviderId, {
+          area,
+          name,
+          company,
+          specialty,
+          city,
+          phone: phone || null,
+          email: email || null,
+        });
+        await loadProviders();
+        setSelectedOption("proveedorDetalle");
+      } else {
+        const result = await createProvider({
+          area,
+          name,
+          company,
+          specialty,
+          city,
+          phone: phone || null,
+          email: email || null,
+          createdBy: user?.uid ?? null,
+        });
+        await loadProviders();
+        setSelectedProviderId(result.id);
+        setSelectedOption("proveedorDetalle");
+      }
       setProviderArea("");
       setProviderName("");
       setProviderCompany("N/A");
@@ -380,6 +439,40 @@ export default function AuxAdminPage() {
       setProviderError("No se pudo guardar el proveedor.");
     } finally {
       setIsSavingProvider(false);
+    }
+  };
+
+  const handleSelectProvider = (providerId: string) => {
+    setSelectedProjectId(null);
+    setSelectedProviderId(providerId);
+    setSelectedOption("proveedorDetalle");
+  };
+
+  const handleEditProvider = (provider: ProviderDoc) => {
+    setSelectedOption("proveedorEditar");
+    setProviderError(null);
+    setProviderArea(provider.area);
+    setProviderName(provider.name);
+    setProviderCompany(provider.company || "N/A");
+    setProviderSpecialty(provider.specialty);
+    setProviderCity(provider.city);
+    setProviderPhone(provider.phone ?? "");
+    setProviderEmail(provider.email ?? "");
+  };
+
+  const handleDeleteProvider = async () => {
+    if (!selectedProviderId) return;
+    setIsDeletingProvider(true);
+    try {
+      await deleteProvider(selectedProviderId);
+      await loadProviders();
+      setSelectedProviderId(null);
+      setSelectedOption(null);
+    } catch (error) {
+      console.error("Error eliminando proveedor:", error);
+      setProviderError("No se pudo eliminar el proveedor.");
+    } finally {
+      setIsDeletingProvider(false);
     }
   };
 
@@ -570,21 +663,49 @@ export default function AuxAdminPage() {
       </div>
       {isProvidersExpanded && (
         <div className="flex-1 overflow-y-auto">
-          {providers.length === 0 && (
+          {providersLoading && (
+            <div className="p-6 text-center text-gray-400 text-sm">
+              Cargando proveedores...
+            </div>
+          )}
+          {!providersLoading && providersError && (
+            <div className="p-6 text-center text-red-500 text-sm">
+              {providersError}
+            </div>
+          )}
+          {!providersLoading && !providersError && providers.length === 0 && (
             <div className="p-6 text-center text-gray-400 text-sm">
               No hay proveedores registrados.
             </div>
           )}
-          {providers.map((provider) => (
-            <div
-              key={provider.id}
-              className="w-full text-left p-4 border-b bg-white"
-            >
-              <p className="text-sm font-semibold text-gray-800 truncate">
-                {provider.name}
-              </p>
-            </div>
-          ))}
+          {!providersLoading &&
+            !providersError &&
+            providers.map((provider) => (
+              <button
+                key={provider.id}
+                onClick={() => handleSelectProvider(provider.id)}
+                className={`w-full text-left p-4 border-b transition-all ${
+                  selectedProviderId === provider.id
+                    ? "bg-white border-l-4 border-l-blue-600 shadow-sm"
+                    : "hover:bg-gray-100 bg-white"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <p
+                    className={`text-sm font-semibold truncate ${
+                      selectedProviderId === provider.id
+                        ? "text-blue-700"
+                        : "text-gray-800"
+                    }`}
+                  >
+                    {provider.name}
+                  </p>
+                  {isMobile && (
+                    <ChevronRight className="h-4 w-4 text-gray-300" />
+                  )}
+                </div>
+              </button>
+            ))}
         </div>
       )}
     </>
@@ -964,7 +1085,10 @@ export default function AuxAdminPage() {
       );
     }
 
-    if (selectedOption === "proveedor") {
+    if (
+      selectedOption === "proveedor" ||
+      selectedOption === "proveedorEditar"
+    ) {
       const isProviderFormValid =
         providerArea.trim() &&
         providerName.trim() &&
@@ -979,7 +1103,9 @@ export default function AuxAdminPage() {
               <Card className="p-6 shadow-md border-0 bg-white">
                 <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                   <Plus className="h-5 w-5 text-blue-600" />
-                  Nuevo Proveedor
+                  {selectedOption === "proveedorEditar"
+                    ? "Editar Proveedor"
+                    : "Nuevo Proveedor"}
                 </h2>
                 {providerError && (
                   <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -1081,13 +1207,139 @@ export default function AuxAdminPage() {
                       {isSavingProvider ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        "Guardar Proveedor"
+                        selectedOption === "proveedorEditar"
+                          ? "Guardar Cambios"
+                          : "Guardar Proveedor"
                       )}
                     </Button>
                   </div>
                 </div>
               </Card>
             </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (selectedOption === "proveedorDetalle") {
+      if (!selectedProvider) {
+        return (
+          <div className="h-full flex flex-col items-center justify-center text-gray-400">
+            <p className="text-sm">Proveedor no encontrado.</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="h-full flex flex-col bg-white">
+          <MobileHeader title="Proveedor" />
+          <div className="flex-1 overflow-y-auto bg-gray-50/30">
+            <div className="p-4 md:p-8 max-w-2xl mx-auto">
+              <Card className="p-6 shadow-md border-0 bg-white space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold">
+                    {selectedProvider.name}
+                  </h2>
+                  <span className="text-xs font-semibold text-gray-500">
+                    {selectedProvider.area}
+                  </span>
+                </div>
+                <div className="grid gap-3 text-sm text-gray-700">
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500">
+                      Empresa
+                    </span>
+                    <p className="font-medium">{selectedProvider.company}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500">
+                      Especialidad
+                    </span>
+                    <p className="font-medium">{selectedProvider.specialty}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-gray-500">
+                      Ciudad
+                    </span>
+                    <p className="font-medium">{selectedProvider.city}</p>
+                  </div>
+                  {selectedProvider.phone && (
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">
+                        Telefono
+                      </span>
+                      <p className="font-medium">{selectedProvider.phone}</p>
+                    </div>
+                  )}
+                  {selectedProvider.email && (
+                    <div>
+                      <span className="text-xs font-semibold text-gray-500">
+                        Correo
+                      </span>
+                      <p className="font-medium">{selectedProvider.email}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleEditProvider(selectedProvider)}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={() => setSelectedOption("proveedorEliminar")}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (selectedOption === "proveedorEliminar") {
+      return (
+        <div className="h-full flex flex-col bg-white">
+          <MobileHeader title="Eliminar Proveedor" />
+          <div className="flex-1 flex items-center justify-center p-8 bg-gray-50/30">
+            <Card className="max-w-md w-full p-8 text-center border-red-200 shadow-lg bg-white">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="h-8 w-8" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                ¿Confirmar Baja?
+              </h2>
+              <p className="text-sm text-gray-500 mb-8">
+                Esta acción eliminará permanentemente{" "}
+                <strong>{selectedProvider?.name}</strong>.
+              </p>
+              {providerError && (
+                <p className="text-xs text-red-600 mb-4">{providerError}</p>
+              )}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-11"
+                  onClick={() => setSelectedOption("proveedorDetalle")}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1 h-11"
+                  onClick={handleDeleteProvider}
+                  disabled={isDeletingProvider}
+                >
+                  {isDeletingProvider ? "Procesando..." : "Sí, Eliminar"}
+                </Button>
+              </div>
+            </Card>
           </div>
         </div>
       );
