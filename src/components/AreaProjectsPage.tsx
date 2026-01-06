@@ -299,7 +299,7 @@ export default function AreaProjectsPage({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
                       <FolderOpen
-                        className={`h-4 w-4 flex-shrink-0 ${
+                        className={`h-4 w-4 shrink-0 ${
                           isSelected ? "text-blue-600" : "text-gray-400"
                         }`}
                       />
@@ -312,7 +312,7 @@ export default function AreaProjectsPage({
                       </span>
                     </div>
                     <ChevronRight
-                      className={`h-4 w-4 flex-shrink-0 ${
+                      className={`h-4 w-4 shrink-0 ${
                         isSelected ? "text-blue-500" : "text-gray-300"
                       }`}
                     />
@@ -527,7 +527,7 @@ export default function AreaProjectsPage({
       <AuthGuard>
         <div className="h-[calc(100vh-4rem)] relative overflow-hidden bg-gray-50">
           {/* Header fijo */}
-          <div className="px-4 py-4 border-b bg-white flex justify-between items-center shadow-sm z-10 flex-shrink-0">
+          <div className="px-4 py-4 border-b bg-white flex justify-between items-center shadow-sm z-10 shrink-0">
             <div>
               <h1 className="text-lg font-bold text-gray-900">{areaName}</h1>
               <p className="text-xs text-gray-500">
@@ -538,7 +538,7 @@ export default function AreaProjectsPage({
           </div>
 
           {error && (
-            <div className="mx-4 mt-3 bg-red-50 text-red-700 p-3 rounded-md text-sm flex-shrink-0">
+            <div className="mx-4 mt-3 bg-red-50 text-red-700 p-3 rounded-md text-sm shrink-0">
               {error}
             </div>
           )}
@@ -562,7 +562,7 @@ export default function AreaProjectsPage({
           >
             <div className="h-full flex flex-col">
               {/* Header con botón atrás */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b bg-white flex-shrink-0">
+              <div className="flex items-center gap-3 px-4 py-3 border-b bg-white shrink-0">
                 <button
                   onClick={() => setSelectedProjectId(null)}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -611,7 +611,7 @@ export default function AreaProjectsPage({
     <AuthGuard>
       <div className="h-[calc(100vh-4rem)] flex flex-col bg-white">
         {/* Header */}
-        <div className="px-6 py-4 border-b flex justify-between items-center flex-shrink-0 bg-white shadow-sm">
+        <div className="px-6 py-4 border-b flex justify-between items-center shrink-0 bg-white shadow-sm">
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               {areaName}
@@ -624,7 +624,7 @@ export default function AreaProjectsPage({
         </div>
 
         {error && (
-          <div className="mx-4 mt-3 bg-red-50 text-red-700 p-3 rounded-md text-sm flex-shrink-0">
+          <div className="mx-4 mt-3 bg-red-50 text-red-700 p-3 rounded-md text-sm shrink-0">
             {error}
           </div>
         )}
