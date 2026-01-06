@@ -37,7 +37,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-type AuxOption = "editar" | "eliminar" | null;
+type AuxOption = "editar" | "eliminar" | "proveedor" | null;
 
 type Asignacion =
   | { tipo: "area"; id: string }
@@ -57,6 +57,7 @@ export default function AuxAdminPage() {
   const [isProjectsExpanded, setIsProjectsExpanded] = useState(false);
   const [isVacationsExpanded, setIsVacationsExpanded] = useState(false);
   const [isUsersAdminExpanded, setIsUsersAdminExpanded] = useState(false);
+  const [isProvidersExpanded, setIsProvidersExpanded] = useState(false);
 
   // Formulario
   const [title, setTitle] = useState("");
@@ -64,6 +65,13 @@ export default function AuxAdminPage() {
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [providerArea, setProviderArea] = useState("");
+  const [providerName, setProviderName] = useState("");
+  const [providerCompany, setProviderCompany] = useState("N/A");
+  const [providerSpecialty, setProviderSpecialty] = useState("");
+  const [providerCity, setProviderCity] = useState("");
+  const [providerPhone, setProviderPhone] = useState("");
+  const [providerEmail, setProviderEmail] = useState("");
 
   // Datos
   const [allAreas, setAllAreas] = useState<string[]>([]);
@@ -73,6 +81,7 @@ export default function AuxAdminPage() {
   const [usersVacations, setUsersVacations] = useState<
     Array<{ id: string; name: string; role: string; vacationDays: Date[] }>
   >([]);
+  const [providers] = useState<Array<{ id: string; name: string }>>([]);
   const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
 
   // Checklists desde Firestore
@@ -313,6 +322,18 @@ export default function AuxAdminPage() {
     }
   };
 
+  const handleCreateNewProvider = () => {
+    setSelectedProjectId(null);
+    setSelectedOption("proveedor");
+    setProviderArea("");
+    setProviderName("");
+    setProviderCompany("N/A");
+    setProviderSpecialty("");
+    setProviderCity("");
+    setProviderPhone("");
+    setProviderEmail("");
+  };
+
   // --- RENDERIZADORES AUXILIARES ---
 
   const renderProjectList = () => (
@@ -476,6 +497,49 @@ export default function AuxAdminPage() {
       </>
     );
   };
+
+  const renderProviders = () => (
+    <>
+      <div className="p-3 border-b bg-white flex items-center justify-between sticky top-0 z-10">
+        <button
+          onClick={() => setIsProvidersExpanded(!isProvidersExpanded)}
+          className="flex items-center gap-2 hover:bg-gray-50 rounded px-2 py-1 -ml-2 transition-colors"
+        >
+          <ChevronDown
+            className={`h-4 w-4 text-gray-500 transition-transform ${
+              isProvidersExpanded ? "rotate-0" : "-rotate-90"
+            }`}
+          />
+          <span className="text-xs font-bold text-gray-500">PROVEEDORES</span>
+        </button>
+        <button
+          onClick={handleCreateNewProvider}
+          className="p-1 hover:bg-gray-100 rounded text-blue-600"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+      {isProvidersExpanded && (
+        <div className="flex-1 overflow-y-auto">
+          {providers.length === 0 && (
+            <div className="p-6 text-center text-gray-400 text-sm">
+              No hay proveedores registrados.
+            </div>
+          )}
+          {providers.map((provider) => (
+            <div
+              key={provider.id}
+              className="w-full text-left p-4 border-b bg-white"
+            >
+              <p className="text-sm font-semibold text-gray-800 truncate">
+                {provider.name}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
 
   const renderUsersAdmin = () => (
     <>
@@ -851,6 +915,114 @@ export default function AuxAdminPage() {
       );
     }
 
+    if (selectedOption === "proveedor") {
+      return (
+        <div className="h-full flex flex-col bg-white">
+          <MobileHeader title="Nuevo Proveedor" />
+          <div className="flex-1 overflow-y-auto bg-gray-50/30">
+            <div className="p-4 md:p-8 max-w-2xl mx-auto">
+              <Card className="p-6 shadow-md border-0 bg-white">
+                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                  <Plus className="h-5 w-5 text-blue-600" />
+                  Nuevo Proveedor
+                </h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">
+                      Area
+                    </label>
+                    <Input
+                      placeholder="Area"
+                      value={providerArea}
+                      onChange={(e) => setProviderArea(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">
+                      Nombre
+                    </label>
+                    <Input
+                      placeholder="Nombre"
+                      value={providerName}
+                      onChange={(e) => setProviderName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">
+                      Empresa
+                    </label>
+                    <div className="relative">
+                      <select
+                        className="w-full h-11 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={providerCompany}
+                        onChange={(e) => setProviderCompany(e.target.value)}
+                      >
+                        <option value="N/A">N/A</option>
+                        <option value="Empresa Alfa">Empresa Alfa</option>
+                        <option value="Empresa Beta">Empresa Beta</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">
+                      Especialidad
+                    </label>
+                    <div className="relative">
+                      <select
+                        className="w-full h-11 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={providerSpecialty}
+                        onChange={(e) => setProviderSpecialty(e.target.value)}
+                      >
+                        <option value="">Selecciona una especialidad</option>
+                        <option value="General">General</option>
+                        <option value="Mantenimiento">Mantenimiento</option>
+                        <option value="Instalaciones">Instalaciones</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">
+                      Ciudad
+                    </label>
+                    <Input
+                      placeholder="Ciudad"
+                      value={providerCity}
+                      onChange={(e) => setProviderCity(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">
+                      Telefono (opcional)
+                    </label>
+                    <Input
+                      placeholder="Telefono"
+                      value={providerPhone}
+                      onChange={(e) => setProviderPhone(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-2">
+                      Correo (opcional)
+                    </label>
+                    <Input
+                      placeholder="Correo"
+                      value={providerEmail}
+                      onChange={(e) => setProviderEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="pt-2">
+                    <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700">
+                      Guardar Proveedor
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (selectedOption === "eliminar") {
       return (
         <div className="h-full flex flex-col bg-white">
@@ -1005,10 +1177,19 @@ export default function AuxAdminPage() {
             >
               {renderUsersAdmin()}
             </div>
+            <div
+              className={`flex flex-col overflow-hidden border-t border-gray-200 ${
+                isProvidersExpanded ? "flex-1" : "shrink-0"
+              }`}
+            >
+              {renderProviders()}
+            </div>
           </div>
-          <div className="w-80 border-r bg-white flex flex-col">
-            {renderOptions()}
-          </div>
+          {isProjectsExpanded && (
+            <div className="w-80 border-r bg-white flex flex-col">
+              {renderOptions()}
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto bg-gray-50/30">
             {renderContent()}
           </div>
