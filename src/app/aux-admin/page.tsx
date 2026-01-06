@@ -55,6 +55,8 @@ export default function AuxAdminPage() {
     null
   );
   const [selectedOption, setSelectedOption] = useState<AuxOption>(null);
+  const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
+  const [isVacationsExpanded, setIsVacationsExpanded] = useState(true);
 
   // Formulario
   const [title, setTitle] = useState("");
@@ -134,10 +136,7 @@ export default function AuxAdminPage() {
             .map((entry) => toDate(entry))
             .filter((d): d is Date => Boolean(d));
           const uniqueByDay = new Map(
-            normalized.map((d) => [
-              d.toISOString().slice(0, 10),
-              d,
-            ])
+            normalized.map((d) => [d.toISOString().slice(0, 10), d])
           );
           return Array.from(uniqueByDay.values()).sort(
             (a, b) => a.getTime() - b.getTime()
@@ -319,9 +318,19 @@ export default function AuxAdminPage() {
   const renderProjectList = () => (
     <>
       <div className="p-3 border-b bg-white flex items-center justify-between sticky top-0 z-10">
-        <span className="text-xs font-bold text-gray-500">
-          PROYECTOS ACTIVOS
-        </span>
+        <button
+          onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
+          className="flex items-center gap-2 hover:bg-gray-50 rounded px-2 py-1 -ml-2 transition-colors"
+        >
+          <ChevronDown
+            className={`h-4 w-4 text-gray-500 transition-transform ${
+              isProjectsExpanded ? "rotate-0" : "-rotate-90"
+            }`}
+          />
+          <span className="text-xs font-bold text-gray-500">
+            PROYECTOS ACTIVOS
+          </span>
+        </button>
         <button
           onClick={handleCreateNew}
           className="p-1 hover:bg-gray-100 rounded text-blue-600"
@@ -329,38 +338,42 @@ export default function AuxAdminPage() {
           <Plus className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto">
-        {projects.length === 0 && (
-          <div className="p-6 text-center text-gray-400 text-sm">
-            No hay proyectos. Crea uno nuevo.
-          </div>
-        )}
-        {projects.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => {
-              setSelectedProjectId(p.id);
-              setSelectedOption(null);
-            }}
-            className={`w-full text-left p-4 border-b transition-all ${
-              selectedProjectId === p.id
-                ? "bg-white border-l-4 border-l-blue-600 shadow-sm"
-                : "hover:bg-gray-100 bg-white"
-            }`}
-          >
-            <div className="flex justify-between items-center">
-              <p
-                className={`text-sm font-semibold truncate ${
-                  selectedProjectId === p.id ? "text-blue-700" : "text-gray-800"
-                }`}
-              >
-                {p.title}
-              </p>
-              {isMobile && <ChevronRight className="h-4 w-4 text-gray-300" />}
+      {isProjectsExpanded && (
+        <div className="flex-1 overflow-y-auto">
+          {projects.length === 0 && (
+            <div className="p-6 text-center text-gray-400 text-sm">
+              No hay proyectos. Crea uno nuevo.
             </div>
-          </button>
-        ))}
-      </div>
+          )}
+          {projects.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => {
+                setSelectedProjectId(p.id);
+                setSelectedOption(null);
+              }}
+              className={`w-full text-left p-4 border-b transition-all ${
+                selectedProjectId === p.id
+                  ? "bg-white border-l-4 border-l-blue-600 shadow-sm"
+                  : "hover:bg-gray-100 bg-white"
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <p
+                  className={`text-sm font-semibold truncate ${
+                    selectedProjectId === p.id
+                      ? "text-blue-700"
+                      : "text-gray-800"
+                  }`}
+                >
+                  {p.title}
+                </p>
+                {isMobile && <ChevronRight className="h-4 w-4 text-gray-300" />}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
   const renderUsersVacations = () => {
@@ -391,63 +404,75 @@ export default function AuxAdminPage() {
     return (
       <>
         <div className="p-3 border-b bg-white flex items-center justify-between sticky top-0 z-10">
-          <span className="text-xs font-bold text-gray-500">
-            VACACIONES POR USUARIO
-          </span>
+          <button
+            onClick={() => setIsVacationsExpanded(!isVacationsExpanded)}
+            className="flex items-center gap-2 hover:bg-gray-50 rounded px-2 py-1 -ml-2 transition-colors"
+          >
+            <ChevronDown
+              className={`h-4 w-4 text-gray-500 transition-transform ${
+                isVacationsExpanded ? "rotate-0" : "-rotate-90"
+              }`}
+            />
+            <span className="text-xs font-bold text-gray-500">
+              VACACIONES POR USUARIO
+            </span>
+          </button>
           <span className="text-[10px] text-gray-400">
             {usersVacations.length} usuarios
           </span>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {usersVacations.length === 0 && (
-            <div className="p-6 text-center text-gray-400 text-sm">
-              No hay vacaciones registradas.
-            </div>
-          )}
-          {usersVacations.map((u) => (
-            <div
-              key={u.id}
-              className="w-full text-left p-4 border-b bg-white"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-800 truncate">
-                  {u.name}
-                </p>
-                <span className="text-[10px] text-gray-400 uppercase">
-                  {u.role}
-                </span>
+        {isVacationsExpanded && (
+          <div className="flex-1 overflow-y-auto">
+            {usersVacations.length === 0 && (
+              <div className="p-6 text-center text-gray-400 text-sm">
+                No hay vacaciones registradas.
               </div>
-              {u.vacationDays.length > 0 ? (
-                <div className="mt-3 space-y-3">
-                  {groupByMonth(u.vacationDays).map((group) => (
-                    <div key={`${u.id}-${group.label}`}>
-                      <p className="text-[10px] uppercase text-gray-400 mb-1">
-                        {group.label}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {group.days.map((d) => (
-                          <span
-                            key={`${u.id}-${d.toISOString().slice(0, 10)}`}
-                            className="px-2 py-0.5 rounded-full text-[10px] bg-blue-50 text-blue-700 border border-blue-100"
-                          >
-                            {d.toLocaleDateString("es-MX", {
-                              day: "2-digit",
-                              month: "short",
-                            })}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+            )}
+            {usersVacations.map((u) => (
+              <div
+                key={u.id}
+                className="w-full text-left p-4 border-b bg-white"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-800 truncate">
+                    {u.name}
+                  </p>
+                  <span className="text-[10px] text-gray-400 uppercase">
+                    {u.role}
+                  </span>
                 </div>
-              ) : (
-                <p className="mt-2 text-xs text-gray-400">
-                  Sin vacaciones registradas.
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
+                {u.vacationDays.length > 0 ? (
+                  <div className="mt-3 space-y-3">
+                    {groupByMonth(u.vacationDays).map((group) => (
+                      <div key={`${u.id}-${group.label}`}>
+                        <p className="text-[10px] uppercase text-gray-400 mb-1">
+                          {group.label}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {group.days.map((d) => (
+                            <span
+                              key={`${u.id}-${d.toISOString().slice(0, 10)}`}
+                              className="px-2 py-0.5 rounded-full text-[10px] bg-blue-50 text-blue-700 border border-blue-100"
+                            >
+                              {d.toLocaleDateString("es-MX", {
+                                day: "2-digit",
+                                month: "short",
+                              })}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-gray-400">
+                    Sin vacaciones registradas.
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </>
     );
   };
@@ -936,10 +961,18 @@ export default function AuxAdminPage() {
 
         <div className="flex-1 flex overflow-hidden">
           <div className="w-72 border-r bg-gray-50 flex flex-col overflow-hidden">
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div
+              className={`flex flex-col overflow-hidden ${
+                isProjectsExpanded ? "flex-1" : "flex-shrink-0"
+              }`}
+            >
               {renderProjectList()}
             </div>
-            <div className="flex-1 flex flex-col overflow-hidden border-t border-gray-200">
+            <div
+              className={`flex flex-col overflow-hidden border-t border-gray-200 ${
+                isVacationsExpanded ? "flex-1" : "flex-shrink-0"
+              }`}
+            >
               {renderUsersVacations()}
             </div>
           </div>
