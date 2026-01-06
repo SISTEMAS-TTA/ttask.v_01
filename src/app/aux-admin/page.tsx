@@ -14,6 +14,7 @@ import {
   updateProject,
   deleteProject,
 } from "@/lib/firebase/projects";
+import { createProvider } from "@/lib/firebase/providers";
 import {
   getChecklistsByType,
   type ChecklistDoc,
@@ -65,6 +66,8 @@ export default function AuxAdminPage() {
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingProvider, setIsSavingProvider] = useState(false);
+  const [providerError, setProviderError] = useState<string | null>(null);
   const [providerArea, setProviderArea] = useState("");
   const [providerName, setProviderName] = useState("");
   const [providerCompany, setProviderCompany] = useState("N/A");
@@ -81,7 +84,9 @@ export default function AuxAdminPage() {
   const [usersVacations, setUsersVacations] = useState<
     Array<{ id: string; name: string; role: string; vacationDays: Date[] }>
   >([]);
-  const [providers] = useState<Array<{ id: string; name: string }>>([]);
+  const [providers, setProviders] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [areaAbierta, setAreaAbierta] = useState<string | null>(null);
 
   // Checklists desde Firestore
@@ -325,6 +330,7 @@ export default function AuxAdminPage() {
   const handleCreateNewProvider = () => {
     setSelectedProjectId(null);
     setSelectedOption("proveedor");
+    setProviderError(null);
     setProviderArea("");
     setProviderName("");
     setProviderCompany("N/A");
@@ -332,6 +338,49 @@ export default function AuxAdminPage() {
     setProviderCity("");
     setProviderPhone("");
     setProviderEmail("");
+  };
+
+  const handleSaveProvider = async () => {
+    const area = providerArea.trim();
+    const name = providerName.trim();
+    const company = providerCompany.trim() || "N/A";
+    const specialty = providerSpecialty.trim();
+    const city = providerCity.trim();
+    const phone = providerPhone.trim();
+    const email = providerEmail.trim();
+
+    if (!area || !name || !specialty || !city) {
+      setProviderError("Completa los campos requeridos.");
+      return;
+    }
+
+    setIsSavingProvider(true);
+    setProviderError(null);
+    try {
+      const result = await createProvider({
+        area,
+        name,
+        company,
+        specialty,
+        city,
+        phone: phone || null,
+        email: email || null,
+        createdBy: user?.uid ?? null,
+      });
+      setProviders((prev) => [{ id: result.id, name }, ...prev]);
+      setProviderArea("");
+      setProviderName("");
+      setProviderCompany("N/A");
+      setProviderSpecialty("");
+      setProviderCity("");
+      setProviderPhone("");
+      setProviderEmail("");
+    } catch (error) {
+      console.error("Error guardando proveedor:", error);
+      setProviderError("No se pudo guardar el proveedor.");
+    } finally {
+      setIsSavingProvider(false);
+    }
   };
 
   // --- RENDERIZADORES AUXILIARES ---
@@ -916,6 +965,12 @@ export default function AuxAdminPage() {
     }
 
     if (selectedOption === "proveedor") {
+      const isProviderFormValid =
+        providerArea.trim() &&
+        providerName.trim() &&
+        providerSpecialty.trim() &&
+        providerCity.trim();
+
       return (
         <div className="h-full flex flex-col bg-white">
           <MobileHeader title="Nuevo Proveedor" />
@@ -926,6 +981,11 @@ export default function AuxAdminPage() {
                   <Plus className="h-5 w-5 text-blue-600" />
                   Nuevo Proveedor
                 </h2>
+                {providerError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-xs text-red-700">{providerError}</p>
+                  </div>
+                )}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-2">
@@ -995,6 +1055,7 @@ export default function AuxAdminPage() {
                       Telefono (opcional)
                     </label>
                     <Input
+                      type="tel"
                       placeholder="Telefono"
                       value={providerPhone}
                       onChange={(e) => setProviderPhone(e.target.value)}
@@ -1005,14 +1066,23 @@ export default function AuxAdminPage() {
                       Correo (opcional)
                     </label>
                     <Input
+                      type="email"
                       placeholder="Correo"
                       value={providerEmail}
                       onChange={(e) => setProviderEmail(e.target.value)}
                     />
                   </div>
                   <div className="pt-2">
-                    <Button className="w-full h-11 bg-blue-600 hover:bg-blue-700">
-                      Guardar Proveedor
+                    <Button
+                      className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+                      onClick={handleSaveProvider}
+                      disabled={isSavingProvider || !isProviderFormValid}
+                    >
+                      {isSavingProvider ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Guardar Proveedor"
+                      )}
                     </Button>
                   </div>
                 </div>
