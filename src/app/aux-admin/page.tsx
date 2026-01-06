@@ -27,7 +27,6 @@ import {
   FolderOpen,
   ChevronRight,
   Plus,
-  UserPlus,
   Users,
   Pencil,
   Trash2,
@@ -55,8 +54,9 @@ export default function AuxAdminPage() {
     null
   );
   const [selectedOption, setSelectedOption] = useState<AuxOption>(null);
-  const [isProjectsExpanded, setIsProjectsExpanded] = useState(true);
-  const [isVacationsExpanded, setIsVacationsExpanded] = useState(true);
+  const [isProjectsExpanded, setIsProjectsExpanded] = useState(false);
+  const [isVacationsExpanded, setIsVacationsExpanded] = useState(false);
+  const [isUsersAdminExpanded, setIsUsersAdminExpanded] = useState(false);
 
   // Formulario
   const [title, setTitle] = useState("");
@@ -476,6 +476,52 @@ export default function AuxAdminPage() {
       </>
     );
   };
+
+  const renderUsersAdmin = () => (
+    <>
+      <div className="p-3 border-b bg-white flex items-center justify-between sticky top-0 z-10">
+        <button
+          onClick={() => setIsUsersAdminExpanded(!isUsersAdminExpanded)}
+          className="flex items-center gap-2 hover:bg-gray-50 rounded px-2 py-1 -ml-2 transition-colors"
+        >
+          <ChevronDown
+            className={`h-4 w-4 text-gray-500 transition-transform ${
+              isUsersAdminExpanded ? "rotate-0" : "-rotate-90"
+            }`}
+          />
+          <span className="text-xs font-bold text-gray-500">
+            ADMINISTRACION DE USUARIOS
+          </span>
+        </button>
+      </div>
+      {isUsersAdminExpanded && (
+        <div className="flex-1 overflow-y-auto">
+          <button
+            onClick={() => router.push("/admon")}
+            className="w-full text-left p-4 border-b transition-all hover:bg-gray-100 bg-white"
+          >
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-800 truncate">
+                Administracion de Usuarios
+              </p>
+              {isMobile && <ChevronRight className="h-4 w-4 text-gray-300" />}
+            </div>
+          </button>
+          <button
+            onClick={() => router.push("/register")}
+            className="w-full text-left p-4 border-b transition-all hover:bg-gray-100 bg-white"
+          >
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-semibold text-gray-800 truncate">
+                Registrar Usuario
+              </p>
+              {isMobile && <ChevronRight className="h-4 w-4 text-gray-300" />}
+            </div>
+          </button>
+        </div>
+      )}
+    </>
+  );
 
   const renderOptions = () => (
     <div className="h-full flex flex-col bg-white">
@@ -927,35 +973,12 @@ export default function AuxAdminPage() {
       <div className="h-[calc(100vh-4rem)] flex flex-col bg-white">
         <div className="px-6 py-4 border-b flex justify-between items-center shrink-0 bg-white shadow-sm">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight mt-4">
               AUX. ADMINISTRATIVO
             </h1>
             <p className="text-xs text-gray-500 uppercase font-medium">
               Panel de Gestión de Proyectos
             </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={handleCreateNew}
-              size="sm"
-              className="bg-zinc-900 hover:bg-zinc-800"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Proyecto
-            </Button>
-            <Button
-              onClick={() => router.push("/register")}
-              size="sm"
-              variant="outline"
-            >
-              <UserPlus className="mr-2 h-4 w-4" /> Registrar Usuario
-            </Button>
-            <Button
-              onClick={() => router.push("/admon")}
-              size="sm"
-              variant="outline"
-            >
-              <Users className="mr-2 h-4 w-4" /> Administrar Usuarios
-            </Button>
           </div>
         </div>
 
@@ -963,17 +986,24 @@ export default function AuxAdminPage() {
           <div className="w-72 border-r bg-gray-50 flex flex-col overflow-hidden">
             <div
               className={`flex flex-col overflow-hidden ${
-                isProjectsExpanded ? "flex-1" : "flex-shrink-0"
+                isProjectsExpanded ? "flex-1" : "shrink-0"
               }`}
             >
               {renderProjectList()}
             </div>
             <div
               className={`flex flex-col overflow-hidden border-t border-gray-200 ${
-                isVacationsExpanded ? "flex-1" : "flex-shrink-0"
+                isVacationsExpanded ? "flex-1" : "shrink-0"
               }`}
             >
               {renderUsersVacations()}
+            </div>
+            <div
+              className={`flex flex-col overflow-hidden border-t border-gray-200 ${
+                isUsersAdminExpanded ? "flex-1" : "shrink-0"
+              }`}
+            >
+              {renderUsersAdmin()}
             </div>
           </div>
           <div className="w-80 border-r bg-white flex flex-col">
