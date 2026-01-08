@@ -575,13 +575,13 @@ export default function ObraPage() {
               <p className="text-xs font-semibold text-gray-600 mb-2">
                 Calendario (días marcados)
               </p>
-              <div className="flex justify-center">
+              <div className="flex justify-center px-0 sm:px-2">
                 <Calendar
                   mode="multiple"
                   selected={diasDiferencia}
                   month={bitacoraMonth}
                   onMonthChange={setBitacoraMonth}
-                  className="rounded-md border"
+                  className="w-full max-w-xs sm:max-w-sm rounded-md border"
                 />
               </div>
             </div>
