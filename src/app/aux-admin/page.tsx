@@ -801,7 +801,7 @@ export default function AuxAdminPage() {
   const renderOptions = () => (
     <div className="h-full flex flex-col bg-white">
       {isMobile && (
-        <div className="px-4 py-3 border-b bg-white flex items-center gap-2 sticky top-0 z-10">
+        <div className="px-4 py-3 border-b bg-white flex items-center gap-2 sticky top-0 z-10 mt-4">
           <button
             onClick={() => setSelectedProjectId(null)}
             className="p-1 -ml-2"
@@ -895,7 +895,7 @@ export default function AuxAdminPage() {
 
     if (selectedOption === "editar") {
       return (
-        <div className="h-full flex flex-col bg-white">
+        <div className="h-full flex flex-col bg-white mt-4">
           <MobileHeader
             title={selectedProject ? "Editar Proyecto" : "Nuevo Proyecto"}
           />
@@ -1237,7 +1237,7 @@ export default function AuxAdminPage() {
         providerCity.trim();
 
       return (
-        <div className="h-full flex flex-col bg-white">
+        <div className="h-full flex flex-col bg-white mt-4">
           <MobileHeader title="Nuevo Proveedor" />
           <div className="flex-1 overflow-y-auto bg-gray-50/30">
             <div className="p-4 md:p-8 max-w-2xl mx-auto">
@@ -1577,7 +1577,36 @@ export default function AuxAdminPage() {
               </div>
             </div>
             <div className="flex-1 overflow-hidden bg-white">
-              {renderProjectList()}
+              <div className="flex flex-col h-full overflow-hidden">
+                <div
+                  className={`flex flex-col overflow-hidden ${
+                    isProjectsExpanded ? "flex-1" : "shrink-0"
+                  }`}
+                >
+                  {renderProjectList()}
+                </div>
+                <div
+                  className={`flex flex-col overflow-hidden border-t border-gray-200 ${
+                    isVacationsExpanded ? "flex-1" : "shrink-0"
+                  }`}
+                >
+                  {renderUsersVacations()}
+                </div>
+                <div
+                  className={`flex flex-col overflow-hidden border-t border-gray-200 ${
+                    isUsersAdminExpanded ? "flex-1" : "shrink-0"
+                  }`}
+                >
+                  {renderUsersAdmin()}
+                </div>
+                <div
+                  className={`flex flex-col overflow-hidden border-t border-gray-200 ${
+                    isProvidersExpanded ? "flex-1" : "shrink-0"
+                  }`}
+                >
+                  {renderProviders()}
+                </div>
+              </div>
             </div>
           </div>
 
