@@ -92,6 +92,7 @@ export interface ProjectDoc {
   description?: string;
   clientName?: string;
   workType?: string;
+  habitationalType?: string;
   propertyAddress?: string;
   city?: string;
   contactPhone?: string;

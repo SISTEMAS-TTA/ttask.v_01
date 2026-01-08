@@ -33,6 +33,7 @@ export type NewProjectINput = {
   description?: string;
   clientName?: string;
   workType?: string;
+  habitationalType?: string;
   propertyAddress?: string;
   city?: string;
   contactPhone?: string;
@@ -60,6 +61,7 @@ export async function createProject(createdBy: string, input: NewProjectINput) {
     description: input.description ?? null,
     clientName: input.clientName ?? null,
     workType: input.workType ?? null,
+    habitationalType: input.habitationalType ?? null,
     propertyAddress: input.propertyAddress ?? null,
     city: input.city ?? null,
     contactPhone: input.contactPhone ?? null,
@@ -261,6 +263,7 @@ function mapDocToProject(id: string, data: DocumentData): ProjectDoc {
     description: data.description ?? undefined,
     clientName: data.clientName ?? undefined,
     workType: data.workType ?? undefined,
+    habitationalType: data.habitationalType ?? undefined,
     propertyAddress: data.propertyAddress ?? undefined,
     city: data.city ?? undefined,
     contactPhone: data.contactPhone ?? undefined,

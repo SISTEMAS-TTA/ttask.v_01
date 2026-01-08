@@ -78,6 +78,7 @@ export default function AuxAdminPage() {
   const [description, setDescription] = useState("");
   const [clientName, setClientName] = useState("");
   const [workType, setWorkType] = useState("");
+  const [habitationalType, setHabitationalType] = useState("");
   const [propertyAddress, setPropertyAddress] = useState("");
   const [city, setCity] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -249,6 +250,7 @@ export default function AuxAdminPage() {
       setDescription(selectedProject.description || "");
       setClientName(selectedProject.clientName || "");
       setWorkType(selectedProject.workType || "");
+      setHabitationalType(selectedProject.habitationalType || "");
       setPropertyAddress(selectedProject.propertyAddress || "");
       setCity(selectedProject.city || "");
       setContactPhone(selectedProject.contactPhone || "");
@@ -259,6 +261,7 @@ export default function AuxAdminPage() {
       setDescription("");
       setClientName("");
       setWorkType("");
+      setHabitationalType("");
       setPropertyAddress("");
       setCity("");
       setContactPhone("");
@@ -313,6 +316,10 @@ export default function AuxAdminPage() {
           description: description.trim() || undefined,
           clientName: clientName.trim() || undefined,
           workType: workType.trim() || undefined,
+          habitationalType:
+            workType.trim() === "Habitacional"
+              ? habitationalType.trim() || undefined
+              : undefined,
           propertyAddress: propertyAddress.trim() || undefined,
           city: city.trim() || undefined,
           contactPhone: contactPhone.trim() || undefined,
@@ -339,6 +346,10 @@ export default function AuxAdminPage() {
           description: description.trim() || undefined,
           clientName: clientName.trim() || undefined,
           workType: workType.trim() || undefined,
+          habitationalType:
+            workType.trim() === "Habitacional"
+              ? habitationalType.trim() || undefined
+              : undefined,
           propertyAddress: propertyAddress.trim() || undefined,
           city: city.trim() || undefined,
           contactPhone: contactPhone.trim() || undefined,
@@ -963,13 +974,37 @@ export default function AuxAdminPage() {
                     <select
                       className="w-full h-11 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       value={workType}
-                      onChange={(e) => setWorkType(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setWorkType(value);
+                        if (value !== "Habitacional") {
+                          setHabitationalType("");
+                        }
+                      }}
                     >
                       <option value="">Selecciona una opción</option>
-                      <option value="Remodelacion">Remodelacion</option>
-                      <option value="Obra de cero">Obra de cero</option>
+                      <option value="Habitacional">Habitacional</option>
+                      <option value="Paisajismo">Paisajismo</option>
+                      <option value="Interiorismo">Interiorismo</option>
                     </select>
                   </div>
+                  {workType === "Habitacional" && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-600 uppercase">
+                        Tipo de Obra Habitacional
+                      </label>
+                      <select
+                        className="w-full h-11 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={habitationalType}
+                        onChange={(e) => setHabitationalType(e.target.value)}
+                      >
+                        <option value="">Selecciona una opción</option>
+                        <option value="Nueva">Nueva</option>
+                        <option value="Remodelacion">Remodelacion</option>
+                        <option value="Opcion3">Opcion3</option>
+                      </select>
+                    </div>
+                  )}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-600 uppercase">
                       Direccion del Inmueble
