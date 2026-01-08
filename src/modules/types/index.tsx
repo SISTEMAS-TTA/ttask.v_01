@@ -90,6 +90,12 @@ export interface ProjectDoc {
   id: string;
   title: string;
   description?: string;
+  clientName?: string;
+  workType?: string;
+  propertyAddress?: string;
+  city?: string;
+  contactPhone?: string;
+  contactEmail?: string;
   createdBy: string;
   createdAt: Timestamp;
   members: string[]; // userIds

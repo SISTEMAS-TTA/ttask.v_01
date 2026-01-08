@@ -31,6 +31,12 @@ export type Asignacion =
 export type NewProjectINput = {
   title: string;
   description?: string;
+  clientName?: string;
+  workType?: string;
+  propertyAddress?: string;
+  city?: string;
+  contactPhone?: string;
+  contactEmail?: string;
   asignaciones: Asignacion[];
   sections: ProjectSection[];
   tasks: ProjectTask[];
@@ -52,6 +58,12 @@ export async function createProject(createdBy: string, input: NewProjectINput) {
   const projectData = {
     title: input.title,
     description: input.description ?? null,
+    clientName: input.clientName ?? null,
+    workType: input.workType ?? null,
+    propertyAddress: input.propertyAddress ?? null,
+    city: input.city ?? null,
+    contactPhone: input.contactPhone ?? null,
+    contactEmail: input.contactEmail ?? null,
     createdBy,
     createdAt: serverTimestamp(),
 
@@ -247,6 +259,12 @@ function mapDocToProject(id: string, data: DocumentData): ProjectDoc {
     id: id,
     title: data.title ?? "",
     description: data.description ?? undefined,
+    clientName: data.clientName ?? undefined,
+    workType: data.workType ?? undefined,
+    propertyAddress: data.propertyAddress ?? undefined,
+    city: data.city ?? undefined,
+    contactPhone: data.contactPhone ?? undefined,
+    contactEmail: data.contactEmail ?? undefined,
     createdBy: data.createdBy,
     createdAt: data.createdAt,
     asignaciones: data.asignaciones ?? [], // Aseguramos que venga del DB

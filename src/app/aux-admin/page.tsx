@@ -76,6 +76,12 @@ export default function AuxAdminPage() {
   // Formulario
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [workType, setWorkType] = useState("");
+  const [propertyAddress, setPropertyAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
   const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -241,10 +247,22 @@ export default function AuxAdminPage() {
     if (selectedProject && selectedOption === "editar") {
       setTitle(selectedProject.title);
       setDescription(selectedProject.description || "");
+      setClientName(selectedProject.clientName || "");
+      setWorkType(selectedProject.workType || "");
+      setPropertyAddress(selectedProject.propertyAddress || "");
+      setCity(selectedProject.city || "");
+      setContactPhone(selectedProject.contactPhone || "");
+      setContactEmail(selectedProject.contactEmail || "");
       setAsignaciones((selectedProject.asignaciones as Asignacion[]) || []);
     } else if (selectedOption === "editar" && !selectedProjectId) {
       setTitle("");
       setDescription("");
+      setClientName("");
+      setWorkType("");
+      setPropertyAddress("");
+      setCity("");
+      setContactPhone("");
+      setContactEmail("");
       setAsignaciones([]);
     }
   }, [selectedProject, selectedOption, selectedProjectId]);
@@ -293,6 +311,12 @@ export default function AuxAdminPage() {
         await updateProject(selectedProject.id, {
           title: title.trim(),
           description: description.trim() || undefined,
+          clientName: clientName.trim() || undefined,
+          workType: workType.trim() || undefined,
+          propertyAddress: propertyAddress.trim() || undefined,
+          city: city.trim() || undefined,
+          contactPhone: contactPhone.trim() || undefined,
+          contactEmail: contactEmail.trim() || undefined,
           asignaciones,
           sections: selectedProject.sections,
           tasks: selectedProject.tasks,
@@ -313,6 +337,12 @@ export default function AuxAdminPage() {
         await createProject(user.uid, {
           title: title.trim(),
           description: description.trim() || undefined,
+          clientName: clientName.trim() || undefined,
+          workType: workType.trim() || undefined,
+          propertyAddress: propertyAddress.trim() || undefined,
+          city: city.trim() || undefined,
+          contactPhone: contactPhone.trim() || undefined,
+          contactEmail: contactEmail.trim() || undefined,
           asignaciones,
           sections: checklist.sections,
           tasks: checklist.tasks,
@@ -917,7 +947,83 @@ export default function AuxAdminPage() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-600 uppercase">
-                      Notas Adicionales
+                      Nombre del Cliente
+                    </label>
+                    <Input
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      placeholder="Ej. Grupo Rivera"
+                      className="bg-gray-50 border-gray-200"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      Tipo de Obra
+                    </label>
+                    <select
+                      className="w-full h-11 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={workType}
+                      onChange={(e) => setWorkType(e.target.value)}
+                    >
+                      <option value="">Selecciona una opción</option>
+                      <option value="Remodelacion">Remodelacion</option>
+                      <option value="Obra de cero">Obra de cero</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      Direccion del Inmueble
+                    </label>
+                    <Input
+                      value={propertyAddress}
+                      onChange={(e) => setPropertyAddress(e.target.value)}
+                      placeholder="Calle, numero, colonia"
+                      className="bg-gray-50 border-gray-200"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      Ciudad
+                    </label>
+                    <select
+                      className="w-full h-11 rounded-md border border-gray-200 bg-gray-50 px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                    >
+                      <option value="">Selecciona una ciudad</option>
+                      <option value="Puebla">Puebla</option>
+                      <option value="Guadalajara">Guadalajara</option>
+                      <option value="Merida">Merida</option>
+                      <option value="CDMX">CDMX</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      Telefono del Contacto
+                    </label>
+                    <Input
+                      type="tel"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="Ej. 222 123 4567"
+                      className="bg-gray-50 border-gray-200"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      Correo Electronico
+                    </label>
+                    <Input
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="correo@cliente.com"
+                      className="bg-gray-50 border-gray-200"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-600 uppercase">
+                      Notas
                     </label>
                     <Textarea
                       value={description}
