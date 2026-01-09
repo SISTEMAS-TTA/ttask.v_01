@@ -38,6 +38,8 @@ declare module "lucide-react" {
   export const Pencil: LucideIcon;
   export const ArrowLeft: LucideIcon;
   export const Calendar: LucideIcon;
+  export const CalendarDays: LucideIcon;
+  export const Package: LucideIcon;
   export const Layout: LucideIcon;
   export const LayoutDashboard: LucideIcon;
   export const Calculator: LucideIcon;

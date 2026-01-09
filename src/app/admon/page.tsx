@@ -27,7 +27,7 @@ import {
   type UserWithId,
 } from "@/lib/firebase/firestore";
 import { ALL_USER_ROLES, type UserRole } from "@/modules/types";
-import { Loader2, Pencil, Trash2, Users } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface EditFormState {
@@ -113,11 +113,11 @@ export default function AdmonPage() {
     });
   }, [users, search]);
 
-  const stats = useMemo(() => {
-    const active = users.filter((u) => u.active !== false).length;
-    const roleSet = new Set(users.map((u) => normalizeRole(u.role)));
-    return { total: users.length, active, roles: roleSet.size };
-  }, [users]);
+  // const stats = useMemo(() => {
+  //   const active = users.filter((u) => u.active !== false).length;
+  //   const roleSet = new Set(users.map((u) => normalizeRole(u.role)));
+  //   return { total: users.length, active, roles: roleSet.size };
+  // }, [users]);
 
   const openEdit = (target: UserWithId) => {
     setEditTarget(target);

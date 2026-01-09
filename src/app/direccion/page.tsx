@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import {
   Loader2,
   FolderOpen,
@@ -30,7 +30,7 @@ type DirectorOption = "cotizacion" | "corrida-financiera" | null;
 export default function DirectorPage() {
   const { user, profile, loading: userLoading } = useUser();
   const { projects } = useProjects(user?.uid, profile?.role);
-  const router = useRouter();
+  // const router = useRouter();
 
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null
