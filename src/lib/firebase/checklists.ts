@@ -11,6 +11,7 @@ import {
   where,
   onSnapshot,
   deleteDoc,
+  Timestamp,
 } from "firebase/firestore";
 
 const CHECKLISTS_COLLECTION = "checklists";
@@ -51,8 +52,8 @@ export interface ChecklistDoc {
   description?: string;
   sections: ChecklistSection[];
   tasks: ChecklistTask[];
-  createdAt: any;
-  updatedAt: any;
+  createdAt: Timestamp | null;
+  updatedAt: Timestamp | null;
   createdBy?: string;
 }
 

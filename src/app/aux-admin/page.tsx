@@ -24,8 +24,8 @@ import {
 import {
   getChecklistsByType,
   type ChecklistDoc,
-  type ChecklistSection,
-  type ChecklistTask,
+  // type ChecklistSection,
+  // type ChecklistTask,
 } from "@/lib/firebase/checklists";
 import { initializeAllChecklists } from "@/lib/firebase/initChecklists";
 import { useRouter } from "next/navigation";

@@ -7,7 +7,7 @@
  * 3. Comenta o elimina la llamada después de la primera ejecución
  */
 
-import { createChecklist, ChecklistType } from "./checklists";
+import { createChecklist } from "./checklists";
 
 /**
  * Checklist para Arquitectura
